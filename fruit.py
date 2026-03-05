@@ -1,1 +1,2 @@
-# Truong's random writing
+def favorite_fruits():
+    return []
