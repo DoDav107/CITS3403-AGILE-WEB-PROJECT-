@@ -1,2 +1,2 @@
-def favorite_fruits():   
-    return ["apple","peach"]
+def favorite_fruits():
+    return ["apple", "peach"]
