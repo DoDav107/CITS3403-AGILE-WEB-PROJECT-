@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Fork &amp; Frame | Discover where to eat next</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <script src="assets/js/app.js" defer></script>
+  </head>
+  <body data-page="home">
+    <nav class="site-nav navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <span class="brand-mark">F</span>
+          <span>Fork &amp; Frame</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#siteNav"
+          aria-controls="siteNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="siteNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            <li class="nav-item"><a class="nav-link active" href="index.html">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="browse.html">Browse</a></li>
+            <li class="nav-item"><a class="nav-link" href="restaurant.html?id=ember-lane">Restaurant</a></li>
+            <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+            <li class="nav-item"><a class="nav-link nav-pill" href="login.html">Log in</a></li>
+            <li class="nav-item"><a class="btn-brand" href="signup.html">Create account</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <header class="hero-panel fade-up">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">Perth dining guide</span>
+          <h1 class="display-title">Find the place, the dish, and the mood in one pass.</h1>
+          <p class="lead-copy">
+            Fork &amp; Frame helps people discover restaurants through atmosphere, cuisine,
+            community reviews, and saved shortlists instead of endless tabs and guesswork.
+          </p>
+          <div class="hero-actions mt-4">
+            <a class="btn-brand" href="browse.html">Browse restaurants</a>
+            <a class="btn-ghost" href="signup.html">Start a profile</a>
+          </div>
+          <div class="stat-row mt-4">
+            <div class="mini-stat">
+              <strong>6 curated</strong>
+              <span class="muted-copy">demo venues across Perth</span>
+            </div>
+            <div class="mini-stat">
+              <strong>Local save state</strong>
+              <span class="muted-copy">favorites and reviews persist</span>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stack">
+          <section class="shortlist-card">
+            <h2>Tonight&apos;s shortlist</h2>
+            <div class="shortlist-item">
+              <strong>Ember Lane</strong>
+              <div class="muted-copy">Woodfire plates, Northbridge, perfect for a longer dinner.</div>
+            </div>
+            <div class="shortlist-item">
+              <strong>Harbor Leaf</strong>
+              <div class="muted-copy">Coastal Thai lunch with grilled seafood and bright herbs.</div>
+            </div>
+            <div class="shortlist-item">
+              <strong>Noodle Theory</strong>
+              <div class="muted-copy">Late-night ramen and hand rolls for fast comfort.</div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <section class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="eyebrow">How it works</span>
+            <h2 class="section-title">Designed around how people actually choose food.</h2>
+          </div>
+          <p class="section-copy">
+            The MVP flow covers account creation, browsing, venue details, review writing, and
+            profile management in a way a client can evaluate quickly.
+          </p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card fade-up">
+            <div class="feature-icon">01</div>
+            <h3 class="feature-title">Discover with context</h3>
+            <p class="card-copy">
+              Search by cuisine, suburb, price, or vibe so users can narrow the field fast.
+            </p>
+          </article>
+          <article class="feature-card fade-up">
+            <div class="feature-icon">02</div>
+            <h3 class="feature-title">Read what matters</h3>
+            <p class="card-copy">
+              Each restaurant page combines signature dishes, atmosphere tags, and community reviews.
+            </p>
+          </article>
+          <article class="feature-card fade-up">
+            <div class="feature-icon">03</div>
+            <h3 class="feature-title">Save and return later</h3>
+            <p class="card-copy">
+              Favorites and demo reviews persist locally to show how a full account system would feel.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="eyebrow">Featured now</span>
+            <h2 class="section-title">A few starting points for the prototype.</h2>
+          </div>
+          <a class="btn-soft" href="browse.html">See full directory</a>
+        </div>
+        <div class="restaurant-grid" id="featuredDeck"></div>
+      </section>
+
+      <section class="page-section">
+        <div class="section-header">
+          <div>
+            <span class="eyebrow">Browse by mood</span>
+            <h2 class="section-title">Discovery can be emotional, not just functional.</h2>
+          </div>
+          <p class="section-copy">
+            These categories suggest how future recommendation flows could feel beyond a basic search bar.
+          </p>
+        </div>
+        <div class="mood-grid">
+          <div class="mood-chip">Weekend brunch</div>
+          <div class="mood-chip">Date night</div>
+          <div class="mood-chip">Late-night comfort</div>
+          <div class="mood-chip">Quick after work</div>
+        </div>
+      </section>
+
+      <section class="page-section">
+        <div class="cta-band fade-up">
+          <div>
+            <span class="eyebrow">Client view</span>
+            <h2 class="section-title mb-2">This prototype already shows the full MVP journey.</h2>
+            <p class="section-copy mb-0">
+              Move from homepage to discovery, detail, review, and profile screens without needing a backend.
+            </p>
+          </div>
+          <div class="inline-actions">
+            <a class="btn-brand" href="browse.html">Explore the journey</a>
+            <a class="btn-ghost" href="review.html?id=ember-lane">Write a review</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p class="mb-1">Fork &amp; Frame prototype for a restaurant discovery and review website.</p>
+      <p class="mb-0">Built as a local multi-page HTML, CSS, Bootstrap, and JavaScript demo.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>

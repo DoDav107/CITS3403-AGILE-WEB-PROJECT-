@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Write a Review | Fork &amp; Frame</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+    <script src="assets/js/app.js" defer></script>
+  </head>
+  <body data-page="review">
+    <nav class="site-nav navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">
+          <span class="brand-mark">F</span>
+          <span>Fork &amp; Frame</span>
+        </a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#siteNav"
+          aria-controls="siteNav"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="siteNav">
+          <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+            <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="browse.html">Browse</a></li>
+            <li class="nav-item"><a class="nav-link" href="restaurant.html?id=ember-lane">Restaurant</a></li>
+            <li class="nav-item"><a class="nav-link" href="profile.html">Profile</a></li>
+            <li class="nav-item"><a class="nav-link nav-pill" href="login.html">Log in</a></li>
+            <li class="nav-item"><a class="btn-brand" href="signup.html">Create account</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main>
+      <section class="page-section">
+        <div class="auth-grid">
+          <article class="summary-card fade-up">
+            <span class="eyebrow">Write review</span>
+            <h1 class="section-title" id="reviewRestaurantName">Restaurant name</h1>
+            <p class="section-copy" id="reviewRestaurantMeta">Cuisine · Suburb · Price</p>
+            <ul class="summary-list">
+              <li>Pick a star rating to show overall satisfaction.</li>
+              <li>Add a short review describing taste, service, or atmosphere.</li>
+              <li>The saved review will appear on the profile and restaurant pages.</li>
+            </ul>
+            <div class="inline-actions mt-4">
+              <a class="btn-soft" id="reviewBackLink" href="restaurant.html">Back to restaurant</a>
+              <a class="btn-ghost" href="profile.html">Open profile</a>
+            </div>
+          </article>
+
+          <section class="form-card fade-up">
+            <span class="eyebrow">Your perspective</span>
+            <h2 class="form-title">Save a demo review locally.</h2>
+            <p class="form-copy">
+              This prototype does not post to a server, but it does keep the result in browser storage
+              so the flow feels realistic.
+            </p>
+            <form class="form-grid mt-4" id="reviewForm">
+              <input type="hidden" id="reviewRating" value="" />
+              <div>
+                <label class="filter-label">Star rating</label>
+                <div class="star-picker" role="group" aria-label="Choose a star rating">
+                  <button type="button" class="star-button" data-value="1">1</button>
+                  <button type="button" class="star-button" data-value="2">2</button>
+                  <button type="button" class="star-button" data-value="3">3</button>
+                  <button type="button" class="star-button" data-value="4">4</button>
+                  <button type="button" class="star-button" data-value="5">5</button>
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="visitMoment">Visit moment</label>
+                <select id="visitMoment">
+                  <option value="Dinner">Dinner</option>
+                  <option value="Lunch">Lunch</option>
+                  <option value="Brunch">Brunch</option>
+                  <option value="Late night">Late night</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="reviewText">Review</label>
+                <textarea
+                  id="reviewText"
+                  maxlength="280"
+                  placeholder="What should other diners know before they book?"
+                ></textarea>
+              </div>
+              <div class="char-count">
+                <span class="muted-copy">Short, clear feedback works best in this prototype.</span>
+                <span id="reviewCharCount">0 / 280</span>
+              </div>
+              <div class="status-banner is-hidden" id="reviewStatus"></div>
+              <div class="inline-actions">
+                <button class="btn-brand" type="submit">Save review</button>
+                <a class="btn-ghost" href="browse.html">Keep browsing</a>
+              </div>
+            </form>
+          </section>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p class="mb-0">Review page prototype with star selection, live character counting, and local persistence.</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
