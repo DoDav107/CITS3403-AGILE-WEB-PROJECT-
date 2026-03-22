@@ -153,6 +153,11 @@
     }
   ];
 
+  const RESTAURANTS_BY_ID = RESTAURANTS.reduce(function (acc, restaurant) {
+    acc[restaurant.id] = restaurant;
+    return acc;
+  }, Object.create(null));
+
   const DEFAULT_PROFILE = {
     name: "Avery Tan",
     email: "avery@example.com",
@@ -194,9 +199,7 @@
   };
 
   const getRestaurantById = function (id) {
-    return RESTAURANTS.find(function (restaurant) {
-      return restaurant.id === id;
-    });
+    return RESTAURANTS_BY_ID[id] || undefined;
   };
 
   const getRestaurantReviews = function (restaurantId) {
@@ -364,7 +367,6 @@
 
     [searchInput, cuisineFilter, priceFilter, ratingFilter].forEach(function (element) {
       element.addEventListener("input", render);
-      element.addEventListener("change", render);
     });
 
     document.addEventListener("app:favorites-changed", render);
@@ -381,8 +383,9 @@
     const restaurant = getRestaurantById(params.get("id")) || RESTAURANTS[0];
 
     document.title = restaurant.name + " | Fork & Frame";
-    $("#detailCover").className = "detail-cover " + restaurant.coverClass;
-    $("#detailCover").textContent = restaurant.heroLabel;
+    const coverEl = $("#detailCover");
+    coverEl.className = "detail-cover " + restaurant.coverClass;
+    coverEl.textContent = restaurant.heroLabel;
     nameEl.textContent = restaurant.name;
     $("#detailCuisine").textContent = restaurant.cuisine;
     $("#detailSuburb").textContent = restaurant.suburb;
@@ -574,6 +577,5 @@
     initReviewPage();
     initProfilePage();
     initAuthPages();
-    syncFavoriteButtons(document);
   });
 })();
