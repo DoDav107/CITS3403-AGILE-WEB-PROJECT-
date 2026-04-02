@@ -3,7 +3,6 @@
 
   var navContainer = document.getElementById("layout-nav");
   var footerContainer = document.getElementById("layout-footer");
-
   var page = (document.body && document.body.dataset && document.body.dataset.page) || "";
 
   if (!navContainer && !footerContainer) {
@@ -21,44 +20,39 @@
     var profileActive = isPage("profile") ? " active" : "";
     var loginActive = isPage("login") ? " active" : "";
 
-    // Keep markup consistent with existing pages so Bootstrap classes + custom CSS work.
     return (
-      '<nav class="site-nav navbar navbar-expand-lg">' +
-      '  <div class="container">' +
+      '<nav class="site-nav">' +
+      '  <div class="site-nav-inner">' +
       '    <a class="navbar-brand" href="index.html">' +
       '      <span class="brand-mark">F</span>' +
       '      <span>Fork &amp; Frame</span>' +
       "    </a>" +
-      '    <button' +
-      '      class="navbar-toggler"' +
-      '      type="button"' +
-      '      data-bs-toggle="collapse"' +
-      '      data-bs-target="#siteNav"' +
-      '      aria-controls="siteNav"' +
-      '      aria-expanded="false"' +
-      '      aria-label="Toggle navigation"' +
-      "    >" +
-      '      <span class="navbar-toggler-icon"></span>' +
+      '    <button class="site-nav-toggle" type="button" aria-controls="site-menu" aria-expanded="false" aria-label="Toggle navigation">' +
+      '      <span class="site-nav-toggle-bar"></span>' +
+      '      <span class="site-nav-toggle-bar"></span>' +
+      '      <span class="site-nav-toggle-bar"></span>' +
       "    </button>" +
-      '    <div class="collapse navbar-collapse" id="siteNav">' +
-      '      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">' +
-      '        <li class="nav-item"><a class="nav-link' +
+      '    <div class="site-menu" id="site-menu">' +
+      '      <ul class="site-nav-list">' +
+      '        <li><a class="nav-link' +
       homeActive +
       '" href="index.html">Home</a></li>' +
-      '        <li class="nav-item"><a class="nav-link' +
+      '        <li><a class="nav-link' +
       browseActive +
       '" href="browse.html">Browse</a></li>' +
-      '        <li class="nav-item"><a class="nav-link' +
+      '        <li><a class="nav-link' +
       restaurantActive +
       '" href="restaurant.html?id=ember-lane">Restaurant</a></li>' +
-      '        <li class="nav-item"><a class="nav-link' +
+      '        <li><a class="nav-link' +
       profileActive +
       '" href="profile.html">Profile</a></li>' +
-      '        <li class="nav-item"><a class="nav-link nav-pill' +
-      loginActive +
-      '" href="login.html">Log in</a></li>' +
-      '        <li class="nav-item"><a class="btn-brand" href="signup.html">Create account</a></li>' +
       "      </ul>" +
+      '      <div class="site-nav-actions">' +
+      '        <a class="nav-link nav-pill' +
+      loginActive +
+      '" href="login.html">Log in</a>' +
+      '        <a class="btn-brand" href="signup.html">Create account</a>' +
+      "      </div>" +
       "    </div>" +
       "  </div>" +
       "</nav>"
@@ -104,6 +98,12 @@
           '  <p class="mb-0">Profile page prototype showing persisted favorites and saved reviews between sessions.</p>' +
           "</footer>"
         );
+      case "review":
+        return (
+          '<footer class="site-footer">' +
+          '  <p class="mb-0">Review page prototype with star selection, live character counting, and local persistence.</p>' +
+          "</footer>"
+        );
       default:
         return "";
     }
@@ -116,5 +116,23 @@
   if (footerContainer) {
     footerContainer.innerHTML = buildFooter();
   }
-})();
 
+  var toggle = document.querySelector(".site-nav-toggle");
+  var menu = document.getElementById("site-menu");
+
+  if (toggle && menu) {
+    toggle.addEventListener("click", function () {
+      var isOpen = menu.classList.toggle("is-open");
+      toggle.setAttribute("aria-expanded", String(isOpen));
+    });
+
+    menu.addEventListener("click", function (event) {
+      if (!event.target.closest("a")) {
+        return;
+      }
+
+      menu.classList.remove("is-open");
+      toggle.setAttribute("aria-expanded", "false");
+    });
+  }
+})();
