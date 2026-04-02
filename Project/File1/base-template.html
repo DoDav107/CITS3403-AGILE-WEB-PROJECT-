@@ -1,0 +1,41 @@
+<!--
+  Base template for Fork & Frame.
+
+  Notes:
+  - The assignment asks for a reusable navbar + footer template.
+  - In this project, the actual pages inject the shared navbar/footer at runtime via
+    `assets/js/layout.js` and use a lightweight native toggle instead of Bootstrap JS.
+  - This file exists as a human-readable reference of the shared markup.
+-->
+
+<nav class="site-nav">
+  <div class="site-nav-inner">
+    <a class="navbar-brand" href="index.html">
+      <span class="brand-mark">F</span>
+      <span>Fork &amp; Frame</span>
+    </a>
+    <button class="site-nav-toggle" type="button" aria-controls="site-menu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="site-nav-toggle-bar"></span>
+      <span class="site-nav-toggle-bar"></span>
+      <span class="site-nav-toggle-bar"></span>
+    </button>
+    <div class="site-menu" id="site-menu">
+      <ul class="site-nav-list">
+        <li><a class="nav-link" href="index.html">Home</a></li>
+        <li><a class="nav-link" href="browse.html">Browse</a></li>
+        <li>
+          <a class="nav-link" href="restaurant.html?id=ember-lane">Restaurant</a>
+        </li>
+        <li><a class="nav-link" href="profile.html">Profile</a></li>
+      </ul>
+      <div class="site-nav-actions">
+        <a class="nav-link nav-pill" href="login.html">Log in</a>
+        <a class="btn-brand" href="signup.html">Create account</a>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<footer class="site-footer">
+  <p class="mb-0">Fork &amp; Frame prototype for a restaurant discovery and review website.</p>
+</footer>
