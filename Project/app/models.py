@@ -1,11 +1,13 @@
 from datetime import datetime, UTC
 
+from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from .extensions import login_manager
 from .extensions import db
 
 
-class User(db.Model):
+class User(UserMixin, db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
@@ -25,6 +27,14 @@ class User(db.Model):
 
     def check_password(self, raw_password: str) -> bool:
         return check_password_hash(self.password_hash, raw_password)
+
+
+@login_manager.user_loader
+def load_user(user_id: str):
+    try:
+        return db.session.get(User, int(user_id))
+    except (TypeError, ValueError):
+        return None
 
 
 class Restaurant(db.Model):
