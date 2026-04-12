@@ -1,0 +1,159 @@
+
+:root {
+  --brand: #e05d2f;
+  --brand-dark: #b94720;
+  --ink: #1f2937;
+  --muted: #6b7280;
+  --bg-gradient: linear-gradient(135deg, #fff8f2 0%, #ffffff 55%, #fff3e6 100%);
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  color: var(--ink);
+  background: #fcfcfd;
+}
+
+main {
+  min-height: calc(100vh - 160px);
+}
+
+.navbar-brand strong {
+  letter-spacing: -0.03em;
+}
+
+.hero-section,
+.page-banner {
+  background: var(--bg-gradient);
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--brand);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.badge-soft {
+  background: rgba(224, 93, 47, 0.12);
+  color: var(--brand-dark);
+  border: 1px solid rgba(224, 93, 47, 0.2);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+}
+
+.mini-feature {
+  background: #fff7f3;
+  border: 1px solid rgba(224, 93, 47, 0.12);
+  border-radius: 1rem;
+  padding: 1rem;
+  font-weight: 600;
+  color: #5a2d1c;
+  min-height: 100%;
+}
+
+.btn-primary {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--brand-dark);
+  border-color: var(--brand-dark);
+}
+
+.restaurant-card,
+.dish-card,
+.review-card,
+.favorite-card {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 1rem;
+  background: white;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+  height: 100%;
+}
+
+.restaurant-image,
+.detail-image {
+  background: linear-gradient(135deg, #ffe2d4, #fff4ee);
+  min-height: 180px;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  color: #8a3d20;
+  font-weight: 800;
+  font-size: 1.25rem;
+}
+
+.detail-image {
+  min-height: 220px;
+}
+
+.rating-pill,
+.price-pill,
+.distance-pill,
+.cuisine-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #374151;
+  margin-right: 0.35rem;
+  margin-bottom: 0.35rem;
+}
+
+.distance-pill {
+  background: #edf7ff;
+  color: #14557a;
+}
+
+.cuisine-pill {
+  background: #fff1ea;
+  color: #8a3d20;
+}
+
+.footer-note {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.empty-state {
+  padding: 1.5rem;
+  border: 1px dashed rgba(15, 23, 42, 0.16);
+  border-radius: 1rem;
+  color: var(--muted);
+  background: #fff;
+}
+
+.review-meta {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+.auth-shell {
+  background: var(--bg-gradient);
+}
+
+.site-footer {
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+  background: white;
+}
+
+.nav-link.active {
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .display-5 {
+    font-size: 2.3rem;
+  }
+}
