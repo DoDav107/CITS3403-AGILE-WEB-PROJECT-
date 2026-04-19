@@ -7,7 +7,8 @@ db = SQLAlchemy()
 
 
 def create_app(test_config=None):
-    app = Flask(__name__, static_folder="static", static_url_path="/static")
+    frontend_dir = Path(__file__).resolve().parents[2] / "bitescout_frontend"
+    app = Flask(__name__, static_folder=str(frontend_dir), static_url_path="")
     app.config.update(
         SECRET_KEY="dev-change-me",
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{Path(app.instance_path) / 'bitescout.db'}",

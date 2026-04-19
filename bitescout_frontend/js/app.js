@@ -1,51 +1,86 @@
-
 (function () {
   const STORAGE_KEYS = {
-    users: 'bitescout_users',
-    session: 'bitescout_session',
-    reviews: 'bitescout_reviews',
-    favRestaurants: 'bitescout_fav_restaurants',
-    favDishes: 'bitescout_fav_dishes',
     userLocation: 'bitescout_user_location'
   };
 
-  const data = window.BiteScoutData;
+  const data = window.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
 
   const App = {
-    init() {
-      this.seedData();
+    state: {
+      currentUser: null,
+      restaurants: [],
+      reviews: [],
+      favourites: { restaurants: [], dishes: [] }
+    },
+
+    async init() {
+      await this.bootstrap();
       this.renderLayout();
-      this.routePage();
+      await this.routePage();
     },
 
-    seedData() {
-      if (!localStorage.getItem(STORAGE_KEYS.users)) {
-        const seeded = [
-          {
-            id: 'u-local-demo',
-            name: 'Demo User',
-            username: 'demouser',
-            email: 'demo@bitescout.app',
-            password: 'password123',
-            preferredCuisine: 'Japanese',
-            bio: 'I love finding hidden gems around Perth.'
-          }
-        ];
-        localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(seeded));
+    async bootstrap() {
+      await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
+    },
+
+    async api(path, options = {}) {
+      const config = {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' },
+        ...options
+      };
+
+      if (config.body && !(config.body instanceof FormData)) {
+        config.headers = { 'Content-Type': 'application/json', ...config.headers };
+        config.body = JSON.stringify(config.body);
       }
 
-      if (!localStorage.getItem(STORAGE_KEYS.reviews)) {
-        localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify([]));
+      const response = await fetch(path, config);
+      const contentType = response.headers.get('content-type') || '';
+      const payload = contentType.includes('application/json') ? await response.json() : await response.text();
+
+      if (!response.ok) {
+        const message = typeof payload === 'object' && payload && payload.error ? payload.error : 'Request failed';
+        throw new Error(message);
       }
-      if (!localStorage.getItem(STORAGE_KEYS.favRestaurants)) {
-        localStorage.setItem(STORAGE_KEYS.favRestaurants, JSON.stringify([]));
-      }
-      if (!localStorage.getItem(STORAGE_KEYS.favDishes)) {
-        localStorage.setItem(STORAGE_KEYS.favDishes, JSON.stringify([]));
+
+      return payload;
+    },
+
+    async loadCurrentUser() {
+      try {
+        const payload = await this.api('/api/auth/me');
+        this.state.currentUser = payload.user;
+      } catch (error) {
+        this.state.currentUser = null;
       }
     },
 
-    routePage() {
+    async loadRestaurants(force = false) {
+      if (this.state.restaurants.length && !force) return this.state.restaurants;
+      this.state.restaurants = await this.api('/api/restaurants');
+      return this.state.restaurants;
+    },
+
+    async loadReviews(force = false) {
+      if (this.state.reviews.length && !force) return this.state.reviews;
+      this.state.reviews = await this.api('/api/reviews');
+      return this.state.reviews;
+    },
+
+    async loadFavourites(force = false) {
+      if (!this.state.currentUser) {
+        this.state.favourites = { restaurants: [], dishes: [] };
+        return this.state.favourites;
+      }
+      if ((this.state.favourites.restaurants.length || this.state.favourites.dishes.length) && !force) {
+        return this.state.favourites;
+      }
+      this.state.favourites = await this.api('/api/favourites');
+      return this.state.favourites;
+    },
+
+    async routePage() {
       const page = document.body.dataset.page;
       const routes = {
         home: () => this.initHome(),
@@ -63,7 +98,7 @@
         about: () => this.initAbout(),
         logout: () => this.initLogout()
       };
-      if (routes[page]) routes[page]();
+      if (routes[page]) await routes[page]();
     },
 
     renderLayout() {
@@ -127,49 +162,22 @@
       });
     },
 
-    getUsers() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.users) || '[]');
-    },
-
-    saveUsers(users) {
-      localStorage.setItem(STORAGE_KEYS.users, JSON.stringify(users));
-    },
-
     getCurrentUser() {
-      const session = JSON.parse(localStorage.getItem(STORAGE_KEYS.session) || 'null');
-      if (!session) return null;
-      return this.getUsers().find(user => user.id === session.userId) || null;
-    },
-
-    setSession(userId) {
-      localStorage.setItem(STORAGE_KEYS.session, JSON.stringify({ userId }));
-    },
-
-    clearSession() {
-      localStorage.removeItem(STORAGE_KEYS.session);
-    },
-
-    getAllReviews() {
-      const localReviews = JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || '[]');
-      return [...data.sampleReviews, ...localReviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-    },
-
-    getLocalReviews() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.reviews) || '[]');
-    },
-
-    saveLocalReviews(reviews) {
-      localStorage.setItem(STORAGE_KEYS.reviews, JSON.stringify(reviews));
+      return this.state.currentUser;
     },
 
     getRestaurantById(id) {
-      return data.restaurants.find(r => r.id === id);
+      return this.state.restaurants.find(r => r.id === id) || data.restaurants.find(r => r.id === id) || null;
     },
 
     getDish(restaurantId, dishId) {
       const restaurant = this.getRestaurantById(restaurantId);
-      if (!restaurant) return null;
-      return restaurant.dishes.find(d => d.id === dishId);
+      if (!restaurant || !restaurant.dishes) return null;
+      return restaurant.dishes.find(dish => dish.id === dishId) || null;
+    },
+
+    getAllReviews() {
+      return [...this.state.reviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     },
 
     getUserLocation() {
@@ -184,23 +192,25 @@
       return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     },
 
-    getDisplayUser(userId) {
-      return this.getUsers().find(u => u.id === userId) || data.sampleUsers.find(u => u.id === userId) || { id: userId, name: 'Unknown User', username: 'unknown' };
+    getDisplayUser(userId, inlineUser = null) {
+      if (inlineUser) return inlineUser;
+      if (this.state.currentUser && this.state.currentUser.id === userId) return this.state.currentUser;
+      return data.sampleUsers.find(user => user.id === userId) || { id: userId, name: 'Unknown User', username: 'unknown' };
     },
 
     haversine(lat1, lon1, lat2, lon2) {
       const toRad = value => (value * Math.PI) / 180;
-      const R = 6371;
-      const dLat = toRad(lat2 - lat1);
-      const dLon = toRad(lon2 - lon1);
-      const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
-      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
+      const earthRadiusKm = 6371;
+      const deltaLat = toRad(lat2 - lat1);
+      const deltaLng = toRad(lon2 - lon1);
+      const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(deltaLng / 2) ** 2;
+      return earthRadiusKm * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
     },
 
     attachDistance(restaurants, coords) {
-      return restaurants.map(r => ({
-        ...r,
-        distanceKm: coords ? this.haversine(coords.lat, coords.lng, r.lat, r.lng) : null
+      return restaurants.map(restaurant => ({
+        ...restaurant,
+        distanceKm: coords ? this.haversine(coords.lat, coords.lng, restaurant.lat, restaurant.lng) : null
       }));
     },
 
@@ -248,10 +258,11 @@
     },
 
     renderReviewCard(review, own = false) {
-      const user = this.getDisplayUser(review.userId);
+      const user = this.getDisplayUser(review.userId, review.user);
       const restaurant = this.getRestaurantById(review.restaurantId);
       const dish = review.dishId ? this.getDish(review.restaurantId, review.dishId) : null;
-      const manageButton = own && !review.id.startsWith('sr') ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${review.id}">Edit</a>` : '';
+      const editable = own && !String(review.id).startsWith('sr');
+      const manageButton = editable ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${review.id}">Edit</a>` : '';
       return `
         <div class="review-card p-3 mb-3">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
@@ -274,21 +285,25 @@
     },
 
     showMessage(targetId, message, type = 'info') {
-      const el = document.getElementById(targetId);
-      if (!el) return;
-      const map = {
+      const element = document.getElementById(targetId);
+      if (!element) return;
+      const classes = {
         info: 'text-secondary',
         success: 'text-success',
         error: 'text-danger'
       };
-      el.className = map[type] || 'text-secondary';
-      el.textContent = message;
+      element.className = classes[type] || 'text-secondary';
+      element.textContent = message;
     },
 
-    initHome() {
+    async initHome() {
       const target = document.getElementById('homeTrending');
       if (!target) return;
-      const cards = [...data.restaurants].sort((a, b) => b.rating - a.rating).slice(0, 3).map(r => this.renderRestaurantCard(r)).join('');
+      const cards = [...this.state.restaurants]
+        .sort((left, right) => right.rating - left.rating)
+        .slice(0, 3)
+        .map(restaurant => this.renderRestaurantCard(restaurant))
+        .join('');
       target.innerHTML = cards;
       this.bindSaveButtons();
     },
@@ -296,60 +311,63 @@
     initSignup() {
       const form = document.getElementById('signupForm');
       if (!form) return;
-      form.addEventListener('submit', e => {
-        e.preventDefault();
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
         const formData = new FormData(form);
         const payload = Object.fromEntries(formData.entries());
-        const users = this.getUsers();
-        if (users.some(u => u.email.toLowerCase() === payload.email.toLowerCase())) {
-          return this.showMessage('signupMessage', 'That email is already registered.', 'error');
+        try {
+          await this.api('/api/auth/signup', { method: 'POST', body: payload });
+          await this.loadCurrentUser();
+          this.renderLayout();
+          this.showMessage('signupMessage', 'Account created. Redirecting to your profile...', 'success');
+          window.setTimeout(() => {
+            window.location.href = 'profile.html';
+          }, 900);
+        } catch (error) {
+          this.showMessage('signupMessage', error.message, 'error');
         }
-        const newUser = {
-          id: `u-${Date.now()}`,
-          ...payload,
-          bio: `Hi, I'm ${payload.name}. I enjoy finding good food around the city.`
-        };
-        users.push(newUser);
-        this.saveUsers(users);
-        this.setSession(newUser.id);
-        this.showMessage('signupMessage', 'Account created. Redirecting to your profile...', 'success');
-        setTimeout(() => window.location.href = 'profile.html', 900);
       });
     },
 
     initLogin() {
       const form = document.getElementById('loginForm');
       if (!form) return;
-      form.addEventListener('submit', e => {
-        e.preventDefault();
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
         const formData = new FormData(form);
-        const email = (formData.get('email') || '').toString().toLowerCase();
-        const password = formData.get('password');
-        const user = this.getUsers().find(u => u.email.toLowerCase() === email && u.password === password);
-        if (!user) return this.showMessage('loginMessage', 'Incorrect email or password.', 'error');
-        this.setSession(user.id);
-        this.showMessage('loginMessage', 'Logged in successfully. Redirecting...', 'success');
-        setTimeout(() => window.location.href = 'profile.html', 900);
+        const payload = Object.fromEntries(formData.entries());
+        try {
+          await this.api('/api/auth/login', { method: 'POST', body: payload });
+          await this.loadCurrentUser();
+          this.renderLayout();
+          this.showMessage('loginMessage', 'Logged in successfully. Redirecting...', 'success');
+          window.setTimeout(() => {
+            window.location.href = 'profile.html';
+          }, 900);
+        } catch (error) {
+          this.showMessage('loginMessage', error.message, 'error');
+        }
       });
     },
 
     initBrowse() {
       const cuisineSelect = document.getElementById('cuisineFilter');
-      const cuisines = [...new Set(data.restaurants.map(r => r.cuisine))];
-      cuisineSelect.innerHTML = `<option value="">Any</option>${cuisines.map(c => `<option value="${c}">${c}</option>`).join('')}`;
+      const cuisines = [...new Set(this.state.restaurants.map(restaurant => restaurant.cuisine))];
+      cuisineSelect.innerHTML = `<option value="">Any</option>${cuisines.map(cuisine => `<option value="${cuisine}">${cuisine}</option>`).join('')}`;
       const render = () => {
         const search = document.getElementById('searchInput').value.trim().toLowerCase();
         const cuisine = cuisineSelect.value;
         const price = document.getElementById('priceFilter').value;
         const rating = parseFloat(document.getElementById('ratingFilter').value || '0');
         const coords = this.getUserLocation();
-        let restaurants = this.attachDistance(data.restaurants, coords);
-        restaurants = restaurants.filter(r => {
-          const haystack = `${r.name} ${r.suburb} ${r.cuisine} ${r.tags.join(' ')}`.toLowerCase();
-          return (!search || haystack.includes(search)) && (!cuisine || r.cuisine === cuisine) && (!price || r.price === price) && (r.rating >= rating);
+        let restaurants = this.attachDistance(this.state.restaurants, coords);
+        restaurants = restaurants.filter(restaurant => {
+          const tags = Array.isArray(restaurant.tags) ? restaurant.tags.join(' ') : '';
+          const haystack = `${restaurant.name} ${restaurant.suburb} ${restaurant.cuisine} ${tags}`.toLowerCase();
+          return (!search || haystack.includes(search)) && (!cuisine || restaurant.cuisine === cuisine) && (!price || restaurant.price === price) && restaurant.rating >= rating;
         });
-        if (coords) restaurants.sort((a, b) => (a.distanceKm ?? 999) - (b.distanceKm ?? 999));
-        document.getElementById('browseResults').innerHTML = restaurants.length ? restaurants.map(r => this.renderRestaurantCard(r)).join('') : this.emptyState('No restaurants matched those filters.');
+        if (coords) restaurants.sort((left, right) => (left.distanceKm ?? 999) - (right.distanceKm ?? 999));
+        document.getElementById('browseResults').innerHTML = restaurants.length ? restaurants.map(restaurant => this.renderRestaurantCard(restaurant)).join('') : this.emptyState('No restaurants matched those filters.');
         document.getElementById('resultsCount').textContent = `${restaurants.length} place${restaurants.length === 1 ? '' : 's'} found`;
         this.bindSaveButtons();
       };
@@ -357,92 +375,106 @@
       document.getElementById('useLocationBrowse').addEventListener('click', () => {
         this.requestLocation('browseLocationMessage', coords => {
           this.setUserLocation(coords);
-          this.showMessage('browseLocationMessage', `Location saved. Results are now sorted by distance from you.`, 'success');
+          this.showMessage('browseLocationMessage', 'Location saved. Results are now sorted by distance from you.', 'success');
           render();
         });
       });
-      const coords = this.getUserLocation();
-      if (coords) this.showMessage('browseLocationMessage', 'Using your saved location to sort results by distance.', 'info');
+      if (this.getUserLocation()) this.showMessage('browseLocationMessage', 'Using your saved location to sort results by distance.', 'info');
       render();
     },
 
-    initRestaurantPage() {
+    async initRestaurantPage() {
       const id = new URLSearchParams(window.location.search).get('id');
-      const restaurant = this.getRestaurantById(id);
-      if (!restaurant) return;
-      const reviews = this.getAllReviews().filter(r => r.restaurantId === restaurant.id);
-      const average = reviews.length ? (reviews.reduce((sum, r) => sum + Number(r.rating), 0) / reviews.length).toFixed(1) : restaurant.rating.toFixed(1);
-      document.getElementById('restaurantHero').innerHTML = `
-        <p class="eyebrow mb-2">Restaurant details</p>
-        <div class="row g-4 align-items-center">
-          <div class="col-lg-8">
-            <h1 class="fw-bold mb-3">${restaurant.name}</h1>
-            <p class="text-secondary mb-3">${restaurant.suburb} • ${restaurant.address}</p>
-            <div class="d-flex flex-wrap">
-              <span class="rating-pill">⭐ ${average}</span>
-              <span class="price-pill">${restaurant.price}</span>
-              <span class="cuisine-pill">${restaurant.cuisine}</span>
+      if (!id) return;
+      try {
+        const [restaurant, reviews] = await Promise.all([
+          this.api(`/api/restaurants/${id}`),
+          this.api(`/api/restaurants/${id}/reviews`)
+        ]);
+        this.upsertRestaurant(restaurant);
+        const average = reviews.length ? (reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length).toFixed(1) : restaurant.rating.toFixed(1);
+        document.getElementById('restaurantHero').innerHTML = `
+          <p class="eyebrow mb-2">Restaurant details</p>
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+              <h1 class="fw-bold mb-3">${restaurant.name}</h1>
+              <p class="text-secondary mb-3">${restaurant.suburb} • ${restaurant.address}</p>
+              <div class="d-flex flex-wrap">
+                <span class="rating-pill">⭐ ${average}</span>
+                <span class="price-pill">${restaurant.price}</span>
+                <span class="cuisine-pill">${restaurant.cuisine}</span>
+              </div>
             </div>
+            <div class="col-lg-4"><div class="detail-image">${restaurant.name}</div></div>
           </div>
-          <div class="col-lg-4"><div class="detail-image">${restaurant.name}</div></div>
-        </div>
-      `;
-      document.getElementById('restaurantAbout').innerHTML = `
-        <h2 class="h4 fw-bold mb-3">About this place</h2>
-        <p class="text-secondary">${restaurant.blurb}</p>
-        <p class="mb-0 text-secondary"><strong>Popular tags:</strong> ${restaurant.tags.join(', ')}</p>
-      `;
-      document.getElementById('restaurantDishes').innerHTML = restaurant.dishes.map(d => this.renderDishCard(restaurant, d)).join('');
-      document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(r => this.renderReviewCard(r, this.getCurrentUser()?.id === r.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
-      document.getElementById('restaurantSidebar').innerHTML = `
-        <h3 class="h5 fw-bold mb-3">Quick facts</h3>
-        <p class="mb-2"><strong>Cuisine:</strong> ${restaurant.cuisine}</p>
-        <p class="mb-2"><strong>Price range:</strong> ${restaurant.price}</p>
-        <p class="mb-2"><strong>Average rating:</strong> ${average}</p>
-        <p class="mb-0"><strong>Dishes listed:</strong> ${restaurant.dishes.length}</p>
-      `;
-      document.getElementById('saveRestaurantBtn').addEventListener('click', () => {
-        this.saveRestaurant(restaurant.id, 'saveRestaurantMessage');
-      });
-      this.bindSaveButtons();
+        `;
+        document.getElementById('restaurantAbout').innerHTML = `
+          <h2 class="h4 fw-bold mb-3">About this place</h2>
+          <p class="text-secondary">${restaurant.blurb}</p>
+          <p class="mb-0 text-secondary"><strong>Popular tags:</strong> ${(restaurant.tags || []).join(', ')}</p>
+        `;
+        document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('');
+        document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
+        document.getElementById('restaurantSidebar').innerHTML = `
+          <h3 class="h5 fw-bold mb-3">Quick facts</h3>
+          <p class="mb-2"><strong>Cuisine:</strong> ${restaurant.cuisine}</p>
+          <p class="mb-2"><strong>Price range:</strong> ${restaurant.price}</p>
+          <p class="mb-2"><strong>Average rating:</strong> ${average}</p>
+          <p class="mb-0"><strong>Dishes listed:</strong> ${(restaurant.dishes || []).length}</p>
+        `;
+        document.getElementById('saveRestaurantBtn').addEventListener('click', async () => {
+          await this.saveRestaurant(restaurant.id, 'saveRestaurantMessage');
+        });
+        this.bindSaveButtons();
+      } catch (error) {
+        this.showFullPageNotice(error.message, 'browse.html');
+      }
     },
 
-    initDishPage() {
+    async initDishPage() {
       const params = new URLSearchParams(window.location.search);
       const restaurantId = params.get('restaurant');
       const dishId = params.get('dish');
-      const restaurant = this.getRestaurantById(restaurantId);
-      const dish = this.getDish(restaurantId, dishId);
-      if (!restaurant || !dish) return;
-      const reviews = this.getAllReviews().filter(r => r.restaurantId === restaurantId && r.dishId === dishId);
-      document.getElementById('dishHero').innerHTML = `
-        <p class="eyebrow mb-2">Dish details</p>
-        <div class="row g-4 align-items-center">
-          <div class="col-lg-8">
-            <h1 class="fw-bold mb-3">${dish.name}</h1>
-            <p class="text-secondary mb-3">From <a href="restaurant.html?id=${restaurant.id}">${restaurant.name}</a></p>
-            <div class="d-flex flex-wrap">
-              <span class="rating-pill">⭐ ${dish.rating}</span>
-              <span class="price-pill">$${dish.price}</span>
-              <span class="cuisine-pill">${restaurant.cuisine}</span>
+      if (!restaurantId || !dishId) return;
+      try {
+        const [restaurant, dish, reviews] = await Promise.all([
+          this.api(`/api/restaurants/${restaurantId}`),
+          this.api(`/api/dishes/${restaurantId}/${dishId}`),
+          this.api(`/api/restaurants/${restaurantId}/reviews`)
+        ]);
+        this.upsertRestaurant(restaurant);
+        const dishReviews = reviews.filter(review => review.dishId === dishId);
+        document.getElementById('dishHero').innerHTML = `
+          <p class="eyebrow mb-2">Dish details</p>
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+              <h1 class="fw-bold mb-3">${dish.name}</h1>
+              <p class="text-secondary mb-3">From <a href="restaurant.html?id=${restaurant.id}">${restaurant.name}</a></p>
+              <div class="d-flex flex-wrap">
+                <span class="rating-pill">⭐ ${dish.rating}</span>
+                <span class="price-pill">$${dish.price}</span>
+                <span class="cuisine-pill">${restaurant.cuisine}</span>
+              </div>
             </div>
+            <div class="col-lg-4"><div class="detail-image">${dish.name}</div></div>
           </div>
-          <div class="col-lg-4"><div class="detail-image">${dish.name}</div></div>
-        </div>
-      `;
-      document.getElementById('dishDetails').innerHTML = `
-        <h2 class="h4 fw-bold mb-3">About this dish</h2>
-        <p class="text-secondary">${dish.description}</p>
-        <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${restaurant.name} • ${restaurant.suburb}</p>
-      `;
-      document.getElementById('dishReviews').innerHTML = reviews.length ? reviews.map(r => this.renderReviewCard(r, this.getCurrentUser()?.id === r.userId)).join('') : this.emptyState('No dish reviews yet.');
-      document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${restaurant.id}`;
-      document.getElementById('saveDishBtn').addEventListener('click', () => {
-        this.saveDish(restaurantId, dishId, 'saveDishMessage');
-      });
+        `;
+        document.getElementById('dishDetails').innerHTML = `
+          <h2 class="h4 fw-bold mb-3">About this dish</h2>
+          <p class="text-secondary">${dish.description}</p>
+          <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${restaurant.name} • ${restaurant.suburb}</p>
+        `;
+        document.getElementById('dishReviews').innerHTML = dishReviews.length ? dishReviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No dish reviews yet.');
+        document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${restaurant.id}`;
+        document.getElementById('saveDishBtn').addEventListener('click', async () => {
+          await this.saveDish(restaurantId, dishId, 'saveDishMessage');
+        });
+      } catch (error) {
+        this.showFullPageNotice(error.message, 'browse.html');
+      }
     },
 
-    initWriteReview() {
+    async initWriteReview() {
       const currentUser = this.getCurrentUser();
       if (!currentUser) {
         this.showFullPageNotice('Please log in before writing a review.', 'login.html');
@@ -450,48 +482,55 @@
       }
       const restaurantSelect = document.getElementById('reviewRestaurantSelect');
       const dishSelect = document.getElementById('reviewDishSelect');
-      restaurantSelect.innerHTML = data.restaurants.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-      const fillDishes = (restaurantId) => {
+      restaurantSelect.innerHTML = this.state.restaurants.map(restaurant => `<option value="${restaurant.id}">${restaurant.name}</option>`).join('');
+      const fillDishes = restaurantId => {
         const restaurant = this.getRestaurantById(restaurantId);
-        dishSelect.innerHTML = `<option value="">Restaurant review only</option>` + restaurant.dishes.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+        const dishes = restaurant && restaurant.dishes ? restaurant.dishes : [];
+        dishSelect.innerHTML = `<option value="">Restaurant review only</option>${dishes.map(dish => `<option value="${dish.id}">${dish.name}</option>`).join('')}`;
       };
-      restaurantSelect.addEventListener('change', () => fillDishes(restaurantSelect.value));
+      restaurantSelect.addEventListener('change', async () => {
+        if (!this.getRestaurantById(restaurantSelect.value)?.dishes) {
+          this.upsertRestaurant(await this.api(`/api/restaurants/${restaurantSelect.value}`));
+        }
+        fillDishes(restaurantSelect.value);
+      });
       const params = new URLSearchParams(window.location.search);
       const presetRestaurant = params.get('restaurantId');
       const presetDish = params.get('dishId');
-      if (presetRestaurant) restaurantSelect.value = presetRestaurant;
+      if (presetRestaurant) {
+        if (!this.getRestaurantById(presetRestaurant)?.dishes) {
+          this.upsertRestaurant(await this.api(`/api/restaurants/${presetRestaurant}`));
+        }
+        restaurantSelect.value = presetRestaurant;
+      }
       fillDishes(restaurantSelect.value);
       if (presetDish) dishSelect.value = presetDish;
-      document.getElementById('writeReviewForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
+      document.getElementById('writeReviewForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
         const payload = Object.fromEntries(formData.entries());
-        const reviews = this.getLocalReviews();
-        reviews.push({
-          id: `lr-${Date.now()}`,
-          userId: currentUser.id,
-          restaurantId: payload.restaurantId,
-          dishId: payload.dishId,
-          rating: Number(payload.rating),
-          title: payload.title,
-          content: payload.content,
-          createdAt: new Date().toISOString()
-        });
-        this.saveLocalReviews(reviews);
-        this.showMessage('writeReviewMessage', 'Review posted successfully. Redirecting to your profile...', 'success');
-        setTimeout(() => window.location.href = 'profile.html', 1000);
+        try {
+          await this.api('/api/reviews', { method: 'POST', body: payload });
+          this.state.reviews = [];
+          this.showMessage('writeReviewMessage', 'Review posted successfully. Redirecting to your profile...', 'success');
+          window.setTimeout(() => {
+            window.location.href = 'profile.html';
+          }, 1000);
+        } catch (error) {
+          this.showMessage('writeReviewMessage', error.message, 'error');
+        }
       });
     },
 
-    initEditReview() {
+    async initEditReview() {
       const currentUser = this.getCurrentUser();
       if (!currentUser) {
         this.showFullPageNotice('Please log in before editing reviews.', 'login.html');
         return;
       }
-      const reviewId = new URLSearchParams(window.location.search).get('id');
-      const localReviews = this.getLocalReviews();
-      const review = localReviews.find(r => r.id === reviewId && r.userId === currentUser.id);
+      const reviewId = Number(new URLSearchParams(window.location.search).get('id'));
+      await this.loadReviews(true);
+      const review = this.getAllReviews().find(item => item.id === reviewId && item.userId === currentUser.id);
       if (!review) {
         this.showMessage('editReviewMessage', 'Review not found or not editable.', 'error');
         return;
@@ -500,31 +539,42 @@
       document.getElementById('editRating').value = review.rating;
       document.getElementById('editTitle').value = review.title;
       document.getElementById('editContent').value = review.content;
-      document.getElementById('editReviewForm').addEventListener('submit', e => {
-        e.preventDefault();
-        const formData = new FormData(e.target);
+      document.getElementById('editReviewForm').addEventListener('submit', async event => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
         const updates = Object.fromEntries(formData.entries());
-        const revised = localReviews.map(r => r.id === review.id ? { ...r, rating: Number(updates.rating), title: updates.title, content: updates.content } : r);
-        this.saveLocalReviews(revised);
-        this.showMessage('editReviewMessage', 'Review updated.', 'success');
+        try {
+          await this.api(`/api/reviews/${review.id}`, { method: 'PUT', body: updates });
+          this.state.reviews = [];
+          this.showMessage('editReviewMessage', 'Review updated.', 'success');
+        } catch (error) {
+          this.showMessage('editReviewMessage', error.message, 'error');
+        }
       });
-      document.getElementById('deleteReviewBtn').addEventListener('click', () => {
-        const revised = localReviews.filter(r => r.id !== review.id);
-        this.saveLocalReviews(revised);
-        this.showMessage('editReviewMessage', 'Review deleted. Redirecting...', 'success');
-        setTimeout(() => window.location.href = 'profile.html', 900);
+      document.getElementById('deleteReviewBtn').addEventListener('click', async () => {
+        try {
+          await this.api(`/api/reviews/${review.id}`, { method: 'DELETE' });
+          this.state.reviews = [];
+          this.showMessage('editReviewMessage', 'Review deleted. Redirecting...', 'success');
+          window.setTimeout(() => {
+            window.location.href = 'profile.html';
+          }, 900);
+        } catch (error) {
+          this.showMessage('editReviewMessage', error.message, 'error');
+        }
       });
     },
 
-    initProfile() {
+    async initProfile() {
       const currentUser = this.getCurrentUser();
       if (!currentUser) {
         this.showFullPageNotice('Please log in to view your profile.', 'login.html');
         return;
       }
-      const myReviews = this.getAllReviews().filter(r => r.userId === currentUser.id);
-      const favRestaurants = this.getFavouriteRestaurants();
-      const favDishes = this.getFavouriteDishes();
+      await Promise.all([this.loadReviews(true), this.loadFavourites(true)]);
+      const myReviews = this.getAllReviews().filter(review => review.userId === currentUser.id);
+      const favouriteRestaurants = this.state.favourites.restaurants;
+      const favouriteDishes = this.state.favourites.dishes;
       document.getElementById('profileHeader').innerHTML = `
         <p class="eyebrow mb-2">My profile</p>
         <h1 class="fw-bold mb-3">${currentUser.name}</h1>
@@ -535,55 +585,59 @@
         <p class="text-secondary">${currentUser.bio || 'No bio yet.'}</p>
         <p class="mb-2"><strong>Email:</strong> ${currentUser.email}</p>
         <p class="mb-2"><strong>Reviews:</strong> ${myReviews.length}</p>
-        <p class="mb-0"><strong>Favourites:</strong> ${favRestaurants.length + favDishes.length}</p>
+        <p class="mb-0"><strong>Favourites:</strong> ${favouriteRestaurants.length + favouriteDishes.length}</p>
       `;
-      document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(r => this.renderReviewCard(r, true)).join('') : this.emptyState('You have not written any reviews yet.');
-      const favHtml = [
-        ...favRestaurants.map(r => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${r.name}</h3><p class="text-secondary mb-2">${r.suburb} • ${r.cuisine}</p><a href="restaurant.html?id=${r.id}" class="btn btn-sm btn-primary">Open</a></div>`),
-        ...favDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${item.dish.name}</h3><p class="text-secondary mb-2">${item.restaurant.name}</p><a href="dish.html?restaurant=${item.restaurant.id}&dish=${item.dish.id}" class="btn btn-sm btn-primary">Open</a></div>`)
+      document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(review => this.renderReviewCard(review, true)).join('') : this.emptyState('You have not written any reviews yet.');
+      const favouriteHtml = [
+        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${restaurant.name}</h3><p class="text-secondary mb-2">${restaurant.suburb} • ${restaurant.cuisine}</p><a href="restaurant.html?id=${restaurant.id}" class="btn btn-sm btn-primary">Open</a></div>`),
+        ...favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${item.dish.name}</h3><p class="text-secondary mb-2">${item.restaurant.name}</p><a href="dish.html?restaurant=${item.restaurant.id}&dish=${item.dish.id}" class="btn btn-sm btn-primary">Open</a></div>`)
       ].join('');
-      document.getElementById('profileFavourites').innerHTML = favHtml || this.emptyState('Nothing saved yet.');
+      document.getElementById('profileFavourites').innerHTML = favouriteHtml || this.emptyState('Nothing saved yet.');
     },
 
-    initOtherUser() {
-      const userId = new URLSearchParams(window.location.search).get('id') || 'u-demo-1';
-      const user = this.getDisplayUser(userId);
-      const reviews = this.getAllReviews().filter(r => r.userId === user.id);
-      document.getElementById('otherUserHeader').innerHTML = `
-        <p class="eyebrow mb-2">Community member</p>
-        <h1 class="fw-bold mb-3">${user.name}</h1>
-        <p class="text-secondary mb-0">@${user.username || 'member'}</p>
-      `;
-      document.getElementById('otherUserSummary').innerHTML = `
-        <h2 class="h4 fw-bold mb-3">Profile summary</h2>
-        <p class="text-secondary mb-0">${user.bio || 'This user has not added a bio yet.'}</p>
-      `;
-      document.getElementById('otherUserReviews').innerHTML = reviews.length ? reviews.map(r => this.renderReviewCard(r)).join('') : this.emptyState('This user has no reviews yet.');
+    async initOtherUser() {
+      const userId = new URLSearchParams(window.location.search).get('id');
+      if (!userId) return;
+      try {
+        const user = await this.api(`/api/users/${userId}`);
+        document.getElementById('otherUserHeader').innerHTML = `
+          <p class="eyebrow mb-2">Community member</p>
+          <h1 class="fw-bold mb-3">${user.name}</h1>
+          <p class="text-secondary mb-0">@${user.username || 'member'}</p>
+        `;
+        document.getElementById('otherUserSummary').innerHTML = `
+          <h2 class="h4 fw-bold mb-3">Profile summary</h2>
+          <p class="text-secondary mb-0">${user.bio || 'This user has not added a bio yet.'}</p>
+        `;
+        document.getElementById('otherUserReviews').innerHTML = user.reviews.length ? user.reviews.map(review => this.renderReviewCard(review)).join('') : this.emptyState('This user has no reviews yet.');
+      } catch (error) {
+        this.showFullPageNotice(error.message, 'browse.html');
+      }
     },
 
     initRecommendations() {
       const target = document.getElementById('recommendationsGrid');
       const render = (coords = null) => {
-        let items = this.attachDistance(data.restaurants, coords);
+        let items = this.attachDistance(this.state.restaurants, coords);
         if (coords) {
           const currentUser = this.getCurrentUser();
-          items = items.sort((a, b) => {
-            const distCompare = (a.distanceKm ?? 999) - (b.distanceKm ?? 999);
-            if (Math.abs(distCompare) > 0.15) return distCompare;
-            const aBonus = currentUser && currentUser.preferredCuisine === a.cuisine ? 0.2 : 0;
-            const bBonus = currentUser && currentUser.preferredCuisine === b.cuisine ? 0.2 : 0;
-            return (b.rating + bBonus) - (a.rating + aBonus);
+          items = items.sort((left, right) => {
+            const distanceDiff = (left.distanceKm ?? 999) - (right.distanceKm ?? 999);
+            if (Math.abs(distanceDiff) > 0.15) return distanceDiff;
+            const leftBonus = currentUser && currentUser.preferredCuisine === left.cuisine ? 0.2 : 0;
+            const rightBonus = currentUser && currentUser.preferredCuisine === right.cuisine ? 0.2 : 0;
+            return (right.rating + rightBonus) - (left.rating + leftBonus);
           });
         } else {
-          items = items.sort((a, b) => b.rating - a.rating);
+          items = items.sort((left, right) => right.rating - left.rating);
         }
-        target.innerHTML = items.map(r => this.renderRestaurantCard(r)).join('');
+        target.innerHTML = items.map(restaurant => this.renderRestaurantCard(restaurant)).join('');
         this.bindSaveButtons();
       };
       document.getElementById('detectLocationBtn').addEventListener('click', () => {
         this.requestLocation('recommendationStatus', coords => {
           this.setUserLocation(coords);
-          this.showMessage('recommendationStatus', `Location found. Nearby recommendations are now ranked from closest to furthest.`, 'success');
+          this.showMessage('recommendationStatus', 'Location found. Nearby recommendations are now ranked from closest to furthest.', 'success');
           render(coords);
         });
       });
@@ -600,71 +654,93 @@
       }
     },
 
-    initFavourites() {
+    async initFavourites() {
       const restaurantContainer = document.getElementById('favouriteRestaurants');
       const dishContainer = document.getElementById('favouriteDishes');
-      const favRestaurants = this.getFavouriteRestaurants();
-      const favDishes = this.getFavouriteDishes();
-      restaurantContainer.innerHTML = favRestaurants.length ? favRestaurants.map(r => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${r.name}</h3><p class="text-secondary mb-2">${r.suburb} • ${r.cuisine}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${r.id}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
-      dishContainer.innerHTML = favDishes.length ? favDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${item.dish.name}</h3><p class="text-secondary mb-2">${item.restaurant.name}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${item.restaurant.id}&dish=${item.dish.id}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
+      if (!this.getCurrentUser()) {
+        this.showFullPageNotice('Please log in to view your favourites.', 'login.html');
+        return;
+      }
+      try {
+        await this.loadFavourites(true);
+        const favouriteRestaurants = this.state.favourites.restaurants;
+        const favouriteDishes = this.state.favourites.dishes;
+        restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${restaurant.name}</h3><p class="text-secondary mb-2">${restaurant.suburb} • ${restaurant.cuisine}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${restaurant.id}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
+        dishContainer.innerHTML = favouriteDishes.length ? favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${item.dish.name}</h3><p class="text-secondary mb-2">${item.restaurant.name}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${item.restaurant.id}&dish=${item.dish.id}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
+      } catch (error) {
+        restaurantContainer.innerHTML = this.emptyState(error.message);
+        dishContainer.innerHTML = this.emptyState(error.message);
+      }
     },
 
     initAbout() {},
 
-    initLogout() {
-      this.clearSession();
+    async initLogout() {
+      if (this.getCurrentUser()) {
+        try {
+          await this.api('/api/auth/logout', { method: 'POST' });
+        } catch (error) {
+          // Keep the logged out screen even if the session is already gone.
+        }
+      }
+      this.state.currentUser = null;
+      this.state.favourites = { restaurants: [], dishes: [] };
+      this.renderLayout();
     },
 
     requestLocation(messageTarget, onSuccess) {
       if (!navigator.geolocation) {
-        return this.showMessage(messageTarget, 'Geolocation is not supported in this browser.', 'error');
+        this.showMessage(messageTarget, 'Geolocation is not supported in this browser.', 'error');
+        return;
       }
       navigator.geolocation.getCurrentPosition(
         position => {
-          const coords = { lat: position.coords.latitude, lng: position.coords.longitude };
-          onSuccess(coords);
+          onSuccess({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
         () => this.showMessage(messageTarget, 'Location access was denied or unavailable. Try localhost or HTTPS.', 'error')
       );
     },
 
-    saveRestaurant(restaurantId, targetId = '') {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.favRestaurants) || '[]');
-      if (!stored.includes(restaurantId)) stored.push(restaurantId);
-      localStorage.setItem(STORAGE_KEYS.favRestaurants, JSON.stringify(stored));
-      if (targetId) this.showMessage(targetId, 'Restaurant saved to favourites.', 'success');
+    async saveRestaurant(restaurantId, targetId = '') {
+      if (!this.getCurrentUser()) {
+        if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
+        return;
+      }
+      try {
+        await this.api(`/api/favourites/restaurants/${restaurantId}`, { method: 'POST' });
+        this.state.favourites = { restaurants: [], dishes: [] };
+        await this.loadFavourites(true);
+        if (targetId) this.showMessage(targetId, 'Restaurant saved to favourites.', 'success');
+      } catch (error) {
+        if (targetId) this.showMessage(targetId, error.message, 'error');
+      }
     },
 
-    saveDish(restaurantId, dishId, targetId = '') {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.favDishes) || '[]');
-      const token = `${restaurantId}:${dishId}`;
-      if (!stored.includes(token)) stored.push(token);
-      localStorage.setItem(STORAGE_KEYS.favDishes, JSON.stringify(stored));
-      if (targetId) this.showMessage(targetId, 'Dish saved to favourites.', 'success');
-    },
-
-    getFavouriteRestaurants() {
-      const ids = JSON.parse(localStorage.getItem(STORAGE_KEYS.favRestaurants) || '[]');
-      return ids.map(id => this.getRestaurantById(id)).filter(Boolean);
-    },
-
-    getFavouriteDishes() {
-      const ids = JSON.parse(localStorage.getItem(STORAGE_KEYS.favDishes) || '[]');
-      return ids.map(token => {
-        const [restaurantId, dishId] = token.split(':');
-        const restaurant = this.getRestaurantById(restaurantId);
-        const dish = this.getDish(restaurantId, dishId);
-        if (!restaurant || !dish) return null;
-        return { restaurant, dish };
-      }).filter(Boolean);
+    async saveDish(restaurantId, dishId, targetId = '') {
+      if (!this.getCurrentUser()) {
+        if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
+        return;
+      }
+      try {
+        await this.api('/api/favourites/dishes', { method: 'POST', body: { restaurantId, dishId } });
+        this.state.favourites = { restaurants: [], dishes: [] };
+        await this.loadFavourites(true);
+        if (targetId) this.showMessage(targetId, 'Dish saved to favourites.', 'success');
+      } catch (error) {
+        if (targetId) this.showMessage(targetId, error.message, 'error');
+      }
     },
 
     bindSaveButtons() {
-      document.querySelectorAll('.save-restaurant-trigger').forEach(btn => {
-        btn.addEventListener('click', () => this.saveRestaurant(btn.dataset.id));
+      document.querySelectorAll('.save-restaurant-trigger').forEach(button => {
+        button.onclick = async () => {
+          await this.saveRestaurant(button.dataset.id);
+        };
       });
-      document.querySelectorAll('.save-dish-trigger').forEach(btn => {
-        btn.addEventListener('click', () => this.saveDish(btn.dataset.restaurant, btn.dataset.id));
+      document.querySelectorAll('.save-dish-trigger').forEach(button => {
+        button.onclick = async () => {
+          await this.saveDish(button.dataset.restaurant, button.dataset.id);
+        };
       });
     },
 
@@ -681,8 +757,21 @@
           </div>
         </section>
       `;
+    },
+
+    upsertRestaurant(restaurant) {
+      const existingIndex = this.state.restaurants.findIndex(item => item.id === restaurant.id);
+      if (existingIndex >= 0) {
+        this.state.restaurants.splice(existingIndex, 1, restaurant);
+      } else {
+        this.state.restaurants.push(restaurant);
+      }
     }
   };
 
-  window.addEventListener('DOMContentLoaded', () => App.init());
+  window.addEventListener('DOMContentLoaded', () => {
+    App.init().catch(error => {
+      console.error(error);
+    });
+  });
 })();

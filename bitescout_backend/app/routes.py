@@ -1,6 +1,6 @@
 from datetime import datetime
 from functools import wraps
-from flask import Blueprint, jsonify, request, session, send_from_directory
+from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
@@ -82,10 +82,7 @@ def review_to_dict(review):
 
 @bp.get('/')
 def index():
-    return jsonify({
-        'message': 'BiteScout backend is running',
-        'routes': ['/api/restaurants', '/api/auth/signup', '/api/auth/login', '/api/reviews']
-    })
+    return current_app.send_static_file('index.html')
 
 
 @bp.get('/health')
