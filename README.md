@@ -18,3 +18,19 @@ This project demonstrates both frontend and backend development in a team-based 
 - User authentication flow
 - Location-based discovery support
 - Backend route and model setup for future expansion
+
+
+How to use:
+Run Locally
+
+cd bitescout_backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python run.py
+Open in your browser:
+
+http://127.0.0.1:5000/
+http://127.0.0.1:5000/login.html
+http://127.0.0.1:5000/signup.html
+http://127.0.0.1:5000/browse.html
