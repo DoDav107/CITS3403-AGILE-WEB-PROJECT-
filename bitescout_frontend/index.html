@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiteScout | Discover places to eat and drink</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="home">
+  <div id="site-header"></div>
+  <main>
+    
+<section class="hero-section py-5">
+  <div class="container py-4">
+    <div class="row align-items-center g-4">
+      <div class="col-lg-7">
+        <span class="badge badge-soft mb-3">Food discovery • Reviews • Favourites • Nearby finds</span>
+        <h1 class="display-5 fw-bold mb-3">Find your next meal, dish, or drink near you.</h1>
+        <p class="lead text-secondary mb-4">BiteScout helps users discover restaurants and dishes, search by cuisine and price, save favourites, and get recommendations based on location and community ratings.</p>
+        <div class="d-flex flex-wrap gap-3">
+          <a class="btn btn-primary btn-lg" href="browse.html">Browse places</a>
+          <a class="btn btn-outline-dark btn-lg" href="recommendations.html">Use my location</a>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="glass-card p-4">
+          <h2 class="h4 fw-bold mb-3">What users can do</h2>
+          <div class="row g-3 small-feature-grid">
+            <div class="col-6"><div class="mini-feature">Create an account</div></div>
+            <div class="col-6"><div class="mini-feature">Search restaurants</div></div>
+            <div class="col-6"><div class="mini-feature">Filter by cuisine, price, rating</div></div>
+            <div class="col-6"><div class="mini-feature">Save favourites</div></div>
+            <div class="col-6"><div class="mini-feature">Rate dishes</div></div>
+            <div class="col-6"><div class="mini-feature">Get nearby recommendations</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+    <div class="section-heading d-flex justify-content-between align-items-end gap-3 mb-4">
+      <div>
+        <p class="eyebrow mb-2">Popular now</p>
+        <h2 class="fw-bold mb-0">Trending restaurants</h2>
+      </div>
+      <a href="browse.html" class="text-decoration-none fw-semibold">See all →</a>
+    </div>
+    <div id="homeTrending" class="row g-4"></div>
+  </div>
+</section>
+
+<section class="py-5 bg-light-subtle border-top border-bottom">
+  <div class="container">
+    <div class="row g-4 align-items-center">
+      <div class="col-lg-6">
+        <p class="eyebrow mb-2">Location feature</p>
+        <h2 class="fw-bold">Use current location to find food and drinks nearby</h2>
+        <p class="text-secondary">The recommendations page can request the user’s current location through the browser and sort sample restaurants by nearest distance. This is a strong feature to show in your Agile project demo.</p>
+      </div>
+      <div class="col-lg-6">
+        <div class="glass-card p-4">
+          <h3 class="h5 fw-bold">Demo flow</h3>
+          <ol class="mb-0 text-secondary">
+            <li>Click “Use my location”</li>
+            <li>Allow browser location access</li>
+            <li>See nearby places ranked by distance + rating</li>
+            <li>Open a restaurant and save it to favourites</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

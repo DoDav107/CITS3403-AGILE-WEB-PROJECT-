@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiteScout | About and help</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="about">
+  <div id="site-header"></div>
+  <main>
+    
+<section class="py-5 page-banner border-bottom">
+  <div class="container">
+    <p class="eyebrow mb-2">About the project</p>
+    <h1 class="fw-bold mb-3">About & Help</h1>
+    <p class="text-secondary mb-0">What the app does, how to use it, and which features are currently mocked on the frontend.</p>
+  </div>
+</section>
+<section class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h4 fw-bold mb-3">What BiteScout does</h2>
+          <ul class="text-secondary mb-0">
+            <li>Create accounts and log in on the frontend demo</li>
+            <li>Search and filter restaurants by cuisine, price, rating and suburb</li>
+            <li>Open restaurant and dish details pages</li>
+            <li>Write, edit and delete reviews</li>
+            <li>Save favourites</li>
+            <li>Use browser location to find nearby spots</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h4 fw-bold mb-3">Help</h2>
+          <div class="accordion" id="helpAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#faq1">Why is location not working?</button></h2>
+              <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion"><div class="accordion-body">Geolocation usually works on localhost or HTTPS. Some browsers block it on plain file paths.</div></div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">Is login secure yet?</button></h2>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">This starter version uses localStorage for a front-end demo. Real security should be built later with your Flask backend.</div></div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq3">How are recommendations calculated?</button></h2>
+              <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Nearby recommendations are sorted using geographic distance and then displayed with rating and cuisine information.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
