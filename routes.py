@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
 
+
 bp = Blueprint('main', __name__)
 
 
