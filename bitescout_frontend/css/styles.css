@@ -312,6 +312,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
 .detail-image {
   background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-950));
   min-height: 180px;
+  height: 260px;
   border-radius: 1rem;
   display: grid;
   place-items: center;
