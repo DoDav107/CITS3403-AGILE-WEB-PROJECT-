@@ -1,100 +1,282 @@
 
 :root {
-  --brand: #e05d2f;
-  --brand-dark: #b94720;
-  --ink: #1f2937;
-  --muted: #6b7280;
+  --charcoal-950: #0a0a0a;
+  --charcoal-900: #121212;
+  --charcoal-800: #2a2a2a;
+  --charcoal-100: #e9e9e9;
+  --charcoal-50: #f5f5f5;
+  --gold-400: #e6c55c;
+  --gold-500: #d4af37;
+  --gold-600: #b5952f;
+  --gold-glow: rgba(212, 175, 55, 0.25);
+  --white: #ffffff;
+  --off-white: #f8f7f4;
+  --ink: #0a0a0a;
+  --muted: #7a7a8e;
   --bg-gradient: linear-gradient(135deg, #fff8f2 0%, #ffffff 55%, #fff3e6 100%);
 }
 
 body {
   font-family: 'Inter', sans-serif;
   color: var(--ink);
-  background: #fcfcfd;
+  background: var(--white);
 }
 
 main {
   min-height: calc(100vh - 160px);
 }
 
+/* ── Typography ── */
+h1, h2, .section-title, .hero-title, .cta-title {
+  font-family: 'Playfair Display', serif;
+}
+
 .navbar-brand strong {
   letter-spacing: -0.03em;
 }
 
-.hero-section,
-.page-banner {
-  background: var(--bg-gradient);
+.text-gold {
+  color: var(--gold-500) !important;
 }
 
+.link-gold {
+  color: var(--gold-500);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.link-gold:hover {
+  color: var(--gold-600);
+}
+
+/* ── Eyebrow / Badge ── */
 .eyebrow {
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  color: var(--brand);
+  letter-spacing: 0.15em;
+  color: var(--gold-500);
   font-size: 0.78rem;
   font-weight: 700;
 }
 
 .badge-soft {
-  background: rgba(224, 93, 47, 0.12);
-  color: var(--brand-dark);
-  border: 1px solid rgba(224, 93, 47, 0.2);
+  background: var(--gold-glow);
+  color: var(--gold-600);
+  border: 1px solid rgba(212, 175, 55, 0.3);
 }
 
-.glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(15, 23, 42, 0.08);
-  border-radius: 1.25rem;
-  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+/* ── Hero Premium ── */
+.hero-premium {
+  position: relative;
+  background: var(--charcoal-950);
+  background-image:
+    url('../img/hero-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  min-height: 85vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
 
-.mini-feature {
-  background: #fff7f3;
-  border: 1px solid rgba(224, 93, 47, 0.12);
-  border-radius: 1rem;
-  padding: 1rem;
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(10,10,10,0.8) 0%, rgba(18,18,18,0.6) 50%, rgba(10,10,10,0.95) 100%);
+  z-index: 1;
+}
+
+.min-vh-80 {
+  min-height: 80vh;
+}
+
+.hero-badge {
+  display: inline-block;
+  background: var(--gold-glow);
+  color: var(--gold-400);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  border-radius: 999px;
+  padding: 0.45rem 1.2rem;
+  font-size: 0.82rem;
   font-weight: 600;
-  color: #5a2d1c;
-  min-height: 100%;
+  letter-spacing: 0.04em;
 }
 
-.btn-primary {
-  background: var(--brand);
-  border-color: var(--brand);
+.hero-title {
+  font-size: clamp(2.5rem, 5.5vw, 4.5rem);
+  font-weight: 800;
+  color: var(--white);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 
-.btn-primary:hover,
-.btn-primary:focus {
-  background: var(--brand-dark);
-  border-color: var(--brand-dark);
+.hero-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255,255,255,0.7);
+  max-width: 520px;
+  line-height: 1.6;
 }
 
+/* ── Search Bar ── */
+.hero-search-wrapper {
+  max-width: 560px;
+}
+
+.hero-search-bar {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 999px;
+  padding: 0.35rem 0.35rem 0.35rem 1.25rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.hero-search-bar:focus-within {
+  border-color: var(--gold-500);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.search-icon {
+  color: rgba(255,255,255,0.5);
+  display: flex;
+  align-items: center;
+  margin-right: 0.75rem;
+}
+
+.hero-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--white);
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  min-width: 0;
+}
+
+.hero-search-input::placeholder {
+  color: rgba(255,255,255,0.45);
+}
+
+/* ── Gold Button ── */
+.btn-gold {
+  background: var(--gold-500);
+  color: var(--charcoal-950);
+  border: none;
+  font-weight: 600;
+  border-radius: 999px;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.btn-gold:hover,
+.btn-gold:focus {
+  background: var(--gold-400);
+  color: var(--charcoal-950);
+  transform: translateY(-1px);
+}
+
+.btn-outline-light:hover {
+  background: rgba(255,255,255,0.1);
+  color: var(--white);
+}
+
+/* ── Stats Bar ── */
+.stats-bar {
+  background: var(--charcoal-900);
+  border-bottom: 1px solid rgba(212,175,55,0.15);
+  padding: 1.5rem 0;
+}
+
+.stat-item {
+  padding: 0.75rem 0.5rem;
+  border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+.stat-item:last-child {
+  border-right: none;
+}
+
+.stat-number {
+  display: block;
+  font-family: 'Playfair Display', serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--gold-500);
+}
+
+.stat-label {
+  display: block;
+  font-size: 0.82rem;
+  color: rgba(255,255,255,0.55);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-top: 0.15rem;
+}
+
+/* ── Section Titles ── */
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--charcoal-950);
+}
+
+.py-lg-6 {
+  padding-top: 4.5rem;
+  padding-bottom: 4.5rem;
+}
+
+/* ── Top Rated Section ── */
+.section-top-rated {
+  background: var(--off-white);
+}
+
+/* ── Restaurant / Dish Cards (shared) ── */
 .restaurant-card,
 .dish-card,
 .review-card,
 .favorite-card {
-  border: 1px solid rgba(15, 23, 42, 0.08);
+  border: 1px solid rgba(26,26,46,0.06);
   border-radius: 1rem;
-  background: white;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+  background: var(--white);
+  box-shadow: 0 8px 30px rgba(26,26,46,0.06);
   height: 100%;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.restaurant-card:hover,
+.dish-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 16px 40px rgba(26,26,46,0.1);
 }
 
 .restaurant-image,
 .detail-image {
-  background: linear-gradient(135deg, #ffe2d4, #fff4ee);
+  background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-950));
   min-height: 180px;
   border-radius: 1rem;
   display: grid;
   place-items: center;
-  color: #8a3d20;
+  color: var(--gold-500);
   font-weight: 800;
   font-size: 1.25rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.restaurant-image::after,
+.detail-image::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(212,175,55,0.08), transparent);
+  border-radius: inherit;
 }
 
 .detail-image {
   min-height: 220px;
 }
 
+/* ── Pills ── */
 .rating-pill,
 .price-pill,
 .distance-pill,
@@ -102,13 +284,22 @@ main {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  font-size: 0.85rem;
-  padding: 0.35rem 0.65rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  padding: 0.3rem 0.65rem;
   border-radius: 999px;
-  background: #f3f4f6;
-  color: #374151;
   margin-right: 0.35rem;
   margin-bottom: 0.35rem;
+}
+
+.rating-pill {
+  background: var(--gold-glow);
+  color: var(--gold-600);
+}
+
+.price-pill {
+  background: #eef0f5;
+  color: #3a3a5c;
 }
 
 .distance-pill {
@@ -117,10 +308,158 @@ main {
 }
 
 .cuisine-pill {
-  background: #fff1ea;
-  color: #8a3d20;
+  background: rgba(212,175,55,0.1);
+  color: var(--gold-600);
 }
 
+/* ── Primary Button (non-landing pages) ── */
+.btn-primary {
+  background: var(--gold-500);
+  border-color: var(--gold-500);
+  color: var(--charcoal-950);
+  font-weight: 600;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background: var(--gold-600);
+  border-color: var(--gold-600);
+  color: var(--charcoal-950);
+}
+
+/* ── How It Works ── */
+.section-how {
+  background: var(--white);
+}
+
+.how-card {
+  padding: 2.5rem 1.5rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(26,26,46,0.06);
+  background: var(--off-white);
+  transition: transform 0.2s, box-shadow 0.2s;
+  height: 100%;
+}
+
+.how-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 36px rgba(26,26,46,0.08);
+}
+
+.how-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 1rem;
+  background: var(--gold-glow);
+  color: var(--gold-600);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Testimonials ── */
+.section-testimonials {
+  background: var(--charcoal-950);
+  color: var(--white);
+}
+
+.section-testimonials .section-title {
+  color: var(--white);
+}
+
+.section-testimonials .eyebrow {
+  color: var(--gold-400);
+}
+
+.testimonial-card {
+  background: var(--charcoal-900);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  height: 100%;
+  transition: transform 0.2s;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-4px);
+}
+
+.testimonial-stars {
+  color: var(--gold-500);
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+}
+
+.testimonial-text {
+  color: rgba(255,255,255,0.75);
+  font-size: 1rem;
+  line-height: 1.65;
+  margin-bottom: 1.25rem;
+}
+
+.testimonial-author {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.testimonial-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--gold-500);
+  color: var(--charcoal-950);
+  font-weight: 700;
+  font-size: 0.85rem;
+  display: grid;
+  place-items: center;
+}
+
+/* ── CTA Section ── */
+.section-cta {
+  background: linear-gradient(135deg, var(--charcoal-950) 0%, var(--charcoal-800) 100%);
+  color: var(--white);
+}
+
+.cta-title {
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.15;
+}
+
+.cta-subtitle {
+  color: rgba(255,255,255,0.6);
+  font-size: 1.15rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+/* ── Glass Card (other pages) ── */
+.glass-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(26, 26, 46, 0.08);
+  border-radius: 1.25rem;
+  box-shadow: 0 18px 45px rgba(26, 26, 46, 0.06);
+}
+
+.mini-feature {
+  background: var(--gold-glow);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 1rem;
+  padding: 1rem;
+  font-weight: 600;
+  color: var(--gold-600);
+  min-height: 100%;
+}
+
+/* ── Other pages hero/banner ── */
+.hero-section,
+.page-banner {
+  background: var(--bg-gradient);
+}
+
+/* ── Misc ── */
 .footer-note {
   color: var(--muted);
   font-size: 0.95rem;
@@ -128,10 +467,10 @@ main {
 
 .empty-state {
   padding: 1.5rem;
-  border: 1px dashed rgba(15, 23, 42, 0.16);
+  border: 1px dashed rgba(26, 26, 46, 0.16);
   border-radius: 1rem;
   color: var(--muted);
-  background: #fff;
+  background: var(--white);
 }
 
 .review-meta {
@@ -144,16 +483,50 @@ main {
 }
 
 .site-footer {
-  border-top: 1px solid rgba(15, 23, 42, 0.08);
-  background: white;
+  border-top: 1px solid rgba(26, 26, 46, 0.08);
+  background: var(--white);
 }
 
 .nav-link.active {
   font-weight: 700;
 }
 
+/* ── Responsive ── */
 @media (max-width: 768px) {
   .display-5 {
     font-size: 2.3rem;
+  }
+
+  .hero-premium {
+    min-height: 70vh;
+  }
+
+  .min-vh-80 {
+    min-height: 60vh;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+
+  .stat-item {
+    padding: 0.5rem 0.25rem;
+  }
+
+  .stat-number {
+    font-size: 1.35rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+  }
+
+  .py-lg-6 {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
   }
 }

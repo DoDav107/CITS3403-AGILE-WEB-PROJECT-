@@ -540,14 +540,28 @@
 
     async initHome() {
       const target = document.getElementById('homeTrending');
-      if (!target) return;
-      const cards = [...this.state.restaurants]
-        .sort((left, right) => right.rating - left.rating)
-        .slice(0, 3)
-        .map(restaurant => this.renderRestaurantCard(restaurant))
-        .join('');
-      target.innerHTML = cards;
-      this.bindSaveButtons();
+      if (target) {
+        const cards = [...this.state.restaurants]
+          .sort((left, right) => right.rating - left.rating)
+          .slice(0, 3)
+          .map(restaurant => this.renderRestaurantCard(restaurant))
+          .join('');
+        target.innerHTML = cards;
+        this.bindSaveButtons();
+      }
+
+      const heroSearchInput = document.getElementById('heroSearchInput');
+      const heroSearchBtn = document.getElementById('heroSearchBtn');
+      if (heroSearchInput && heroSearchBtn) {
+        const doSearch = () => {
+          const query = heroSearchInput.value.trim();
+          if (query) window.location.href = `browse.html?search=${encodeURIComponent(query)}`;
+        };
+        heroSearchBtn.addEventListener('click', doSearch);
+        heroSearchInput.addEventListener('keydown', event => {
+          if (event.key === 'Enter') { event.preventDefault(); doSearch(); }
+        });
+      }
     },
 
     initSignup() {
@@ -596,8 +610,11 @@
       const cuisineSelect = document.getElementById('cuisineFilter');
       const cuisines = [...new Set(this.state.restaurants.map(restaurant => restaurant.cuisine))];
       cuisineSelect.innerHTML = `<option value="">Any</option>${cuisines.map(cuisine => `<option value="${cuisine}">${cuisine}</option>`).join('')}`;
+      const searchInput = document.getElementById('searchInput');
+      const urlSearch = new URLSearchParams(window.location.search).get('search');
+      if (urlSearch && searchInput) searchInput.value = urlSearch;
       const render = () => {
-        const search = document.getElementById('searchInput').value.trim().toLowerCase();
+        const search = searchInput.value.trim().toLowerCase();
         const cuisine = cuisineSelect.value;
         const price = document.getElementById('priceFilter').value;
         const rating = parseFloat(document.getElementById('ratingFilter').value || '0');
