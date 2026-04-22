@@ -5,6 +5,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
 
+<<<<<<< ours
+<<<<<<< ours
+=======
+
+>>>>>>> theirs
+=======
+
+>>>>>>> theirs
 bp = Blueprint('main', __name__)
 
 
@@ -79,6 +87,29 @@ def review_to_dict(review):
         'user': {'id': review.user.id, 'name': review.user.name, 'username': review.user.username},
     }
 
+<<<<<<< ours
+<<<<<<< ours
+=======
+=======
+>>>>>>> theirs
+def update_restaurant_rating(restaurant_id):
+    restaurant = Restaurant.query.get(restaurant_id)
+    if not restaurant:
+        return
+
+    reviews = Review.query.filter_by(restaurant_id=restaurant_id).all()
+    if not reviews:
+        restaurant.rating = 0
+    else:
+        restaurant.rating = round(
+            sum(review.rating for review in reviews) / len(reviews), 1
+        )
+
+    db.session.commit()
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
 @bp.get('/')
 def index():
@@ -214,6 +245,8 @@ def create_review():
     if dish_id and not Dish.query.filter_by(id=dish_id, restaurant_id=payload['restaurantId']).first():
         return jsonify({'error': 'Dish not found for restaurant'}), 404
 
+<<<<<<< ours
+<<<<<<< ours
     review = Review(
         user_id=current_user().id,
         restaurant_id=payload['restaurantId'],
@@ -226,6 +259,32 @@ def create_review():
     )
     db.session.add(review)
     db.session.commit()
+=======
+=======
+>>>>>>> theirs
+rating = int(payload['rating'])
+
+if rating < 1 or rating > 5:
+    return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+
+
+review = Review(
+    user_id=current_user().id,
+    restaurant_id=payload['restaurantId'],
+    dish_id=dish_id,
+    rating=rating,
+    title=payload['title'],
+    content=payload['content'],
+    created_at=datetime.utcnow(),
+    updated_at=datetime.utcnow(),
+)
+    db.session.add(review)
+    db.session.commit()
+    update_restaurant_rating(review.restaurant_id)
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     return jsonify({'message': 'Review created', 'review': review_to_dict(review)}), 201
 
 
@@ -233,6 +292,8 @@ def create_review():
 @login_required
 def update_review(review_id):
     review = Review.query.get_or_404(review_id)
+<<<<<<< ours
+<<<<<<< ours
     if review.user_id != current_user().id:
         return jsonify({'error': 'Forbidden'}), 403
     payload = request.get_json(silent=True) or request.form.to_dict()
@@ -242,6 +303,37 @@ def update_review(review_id):
     review.updated_at = datetime.utcnow()
     db.session.commit()
     return jsonify({'message': 'Review updated', 'review': review_to_dict(review)})
+=======
+=======
+>>>>>>> theirs
+
+    if review.user_id != current_user().id:
+        return jsonify({'error': 'Forbidden'}), 403
+
+    payload = request.get_json(silent=True) or request.form.to_dict()
+
+    new_rating = int(payload.get('rating', review.rating))
+
+    if new_rating < 1 or new_rating > 5:
+        return jsonify({'error': 'Rating must be between 1 and 5'}), 400
+
+    review.rating = new_rating
+    review.title = payload.get('title', review.title)
+    review.content = payload.get('content', review.content)
+    review.updated_at = datetime.utcnow()
+
+    db.session.commit()
+
+    update_restaurant_rating(review.restaurant_id)
+
+    return jsonify({
+        'message': 'Review updated',
+        'review': review_to_dict(review)
+    })
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
 
 
 @bp.delete('/api/reviews/<int:review_id>')
@@ -250,8 +342,22 @@ def delete_review(review_id):
     review = Review.query.get_or_404(review_id)
     if review.user_id != current_user().id:
         return jsonify({'error': 'Forbidden'}), 403
+<<<<<<< ours
+<<<<<<< ours
     db.session.delete(review)
     db.session.commit()
+=======
+=======
+>>>>>>> theirs
+
+    restaurant_id = review.restaurant_id
+    db.session.delete(review)
+    db.session.commit()
+    update_restaurant_rating(restaurant_id)
+<<<<<<< ours
+>>>>>>> theirs
+=======
+>>>>>>> theirs
     return jsonify({'message': 'Review deleted'})
 
 
