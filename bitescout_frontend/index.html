@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiteScout | Discover Your Next Favorite Bite</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="home">
+  <div id="site-header"></div>
+  <main>
+
+    <!-- Hero Section -->
+    <section class="hero-premium">
+      <div class="hero-overlay"></div>
+      <div class="container position-relative z-1">
+        <div class="row align-items-center min-vh-80">
+          <div class="col-lg-7 py-5">
+            <span class="hero-badge mb-4">✦ Premium Food Discovery</span>
+            <h1 class="hero-title mb-4">Find your next<br>favorite <span class="text-gold">bite</span></h1>
+            <p class="hero-subtitle mb-5">Discover curated restaurants, honest reviews, and hidden gems — all powered by the community.</p>
+
+            <!-- Search Bar -->
+            <div class="hero-search-wrapper mb-4">
+              <div class="hero-search-bar">
+                <span class="search-icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                </span>
+                <input id="heroSearchInput" type="text" placeholder="Find your next favorite bite..." class="hero-search-input" />
+                <button id="heroSearchBtn" class="btn btn-gold px-4">Search</button>
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap gap-3">
+              <a class="btn btn-outline-light btn-lg rounded-pill px-4" href="browse.html">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                Browse places
+              </a>
+              <a class="btn btn-gold btn-lg rounded-pill px-4" href="recommendations.html">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+                Near me
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Stats Bar -->
+    <section class="stats-bar">
+      <div class="container">
+        <div class="row g-0 text-center">
+          <div class="col-6 col-md-3 stat-item">
+            <span class="stat-number">50+</span>
+            <span class="stat-label">Restaurants</span>
+          </div>
+          <div class="col-6 col-md-3 stat-item">
+            <span class="stat-number">200+</span>
+            <span class="stat-label">Dishes Rated</span>
+          </div>
+          <div class="col-6 col-md-3 stat-item">
+            <span class="stat-number">1K+</span>
+            <span class="stat-label">Reviews</span>
+          </div>
+          <div class="col-6 col-md-3 stat-item">
+            <span class="stat-number">15+</span>
+            <span class="stat-label">Cuisines</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Top Rated Section -->
+    <section class="section-top-rated py-5 py-lg-6">
+      <div class="container">
+        <div class="section-heading d-flex justify-content-between align-items-end gap-3 mb-5">
+          <div>
+            <p class="eyebrow mb-2">Curated picks</p>
+            <h2 class="section-title mb-0">Top Rated Near You</h2>
+          </div>
+          <a href="browse.html" class="link-gold fw-semibold">See all →</a>
+        </div>
+        <div id="homeTrending" class="row g-4"></div>
+      </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="section-how py-5 py-lg-6">
+      <div class="container">
+        <div class="text-center mb-5">
+          <p class="eyebrow mb-2">Simple & elegant</p>
+          <h2 class="section-title">How BiteScout Works</h2>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="how-card text-center">
+              <div class="how-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </div>
+              <h3 class="h5 fw-bold mt-3 mb-2">Discover</h3>
+              <p class="text-secondary mb-0">Browse restaurants by cuisine, price, and location. Find hidden gems loved by locals.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="how-card text-center">
+              <div class="how-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+              <h3 class="h5 fw-bold mt-3 mb-2">Review</h3>
+              <p class="text-secondary mb-0">Share your honest experience. Rate dishes and help the community find the best bites.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="how-card text-center">
+              <div class="how-icon">
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.74 0-3 .41-4.5 2.09C10.5 3.41 9.24 3 7.5 3A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+              </div>
+              <h3 class="h5 fw-bold mt-3 mb-2">Favourite</h3>
+              <p class="text-secondary mb-0">Save restaurants and dishes you love. Build your personal collection of go-to spots.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Testimonials -->
+    <section class="section-testimonials py-5 py-lg-6">
+      <div class="container">
+        <div class="text-center mb-5">
+          <p class="eyebrow mb-2">What foodies say</p>
+          <h2 class="section-title">Loved by the Community</h2>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="testimonial-card">
+              <div class="testimonial-stars mb-3">★★★★★</div>
+              <p class="testimonial-text">"BiteScout helped me find the best ramen spot in Perth. The reviews are genuine and the recommendations are spot on!"</p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">SM</div>
+                <div>
+                  <div class="fw-bold">Sarah M.</div>
+                  <div class="text-secondary small">Food enthusiast</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="testimonial-card">
+              <div class="testimonial-stars mb-3">★★★★★</div>
+              <p class="testimonial-text">"Finally an app where I can track all my favourite dishes. The location feature is a game changer for finding nearby gems."</p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">JL</div>
+                <div>
+                  <div class="fw-bold">James L.</div>
+                  <div class="text-secondary small">Casual diner</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="testimonial-card">
+              <div class="testimonial-stars mb-3">★★★★★</div>
+              <p class="testimonial-text">"The community reviews are so helpful. I've discovered so many great restaurants I would have never found on my own."</p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">AK</div>
+                <div>
+                  <div class="fw-bold">Amy K.</div>
+                  <div class="text-secondary small">Adventurous eater</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="section-cta py-5 py-lg-6">
+      <div class="container text-center">
+        <h2 class="cta-title mb-3">Ready to discover<br>your next <span class="text-gold">favorite bite</span>?</h2>
+        <p class="cta-subtitle mb-4">Join the community and start exploring the best food near you.</p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a class="btn btn-gold btn-lg rounded-pill px-5" href="signup.html">Get started free</a>
+          <a class="btn btn-outline-light btn-lg rounded-pill px-5" href="browse.html">Browse places</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

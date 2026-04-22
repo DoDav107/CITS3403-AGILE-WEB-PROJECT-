@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiteScout | Recommendations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="recommendations">
+  <div id="site-header"></div>
+  <main>
+
+    <section class="py-5 page-banner border-bottom">
+      <div class="container">
+        <p class="eyebrow mb-2">Smart discovery</p>
+        <h1 class="fw-bold mb-3">Recommendations near you</h1>
+        <p class="text-secondary mb-0">
+          Use your current location or type any suburb, postcode, or address to fetch nearby restaurants and cafes.
+        </p>
+      </div>
+    </section>
+
+    <section class="py-4">
+      <div class="container">
+        <div class="glass-card p-4 mb-4">
+          <div class="row g-3 align-items-end">
+            <div class="col-lg-7">
+              <label for="manualLocationInput" class="form-label">Search another location</label>
+              <input
+                id="manualLocationInput"
+                type="text"
+                class="form-control"
+                placeholder="e.g. Bennett Springs WA, Victoria Park, 6063, 45 Rainbow Crescent Bennett Springs"
+              />
+            </div>
+            <div class="col-lg-5 d-grid d-md-flex gap-2">
+              <button id="searchLocationBtn" class="btn btn-outline-dark">Search this location</button>
+              <button id="detectLocationBtn" class="btn btn-primary">Use my location</button>
+              <button id="resetRecommendationsBtn" class="btn btn-outline-dark">Clear results</button>
+            </div>
+          </div>
+
+          <div class="row g-3 mt-2">
+            <div class="col-md-4">
+              <label for="recommendationRadius" class="form-label">Search radius</label>
+              <select id="recommendationRadius" class="form-select">
+                <option value="3000">3 km</option>
+                <option value="5000">5 km</option>
+                <option value="8000" selected>8 km</option>
+                <option value="12000">12 km</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="recommendationType" class="form-label">Type</label>
+              <select id="recommendationType" class="form-select">
+                <option value="restaurant,cafe" selected>Restaurants + cafes</option>
+                <option value="restaurant">Restaurants only</option>
+                <option value="cafe">Cafes only</option>
+              </select>
+            </div>
+
+            <div class="col-md-4">
+              <label for="minGoogleRating" class="form-label">Minimum rating</label>
+              <select id="minGoogleRating" class="form-select">
+                <option value="0">Any</option>
+                <option value="3">3+</option>
+                <option value="3.5">3.5+</option>
+                <option value="4">4+</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="recommendationStatus" class="mt-3 small text-secondary"></div>
+        </div>
+
+        <div class="row g-4" id="recommendationsGrid"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+instance/app.db
+__pycache__/
+*.pyc

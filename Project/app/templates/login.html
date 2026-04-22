@@ -1,0 +1,28 @@
+{% extends "base_auth.html" %}
+{% block title %}Login | Fork & Frame{% endblock %}
+{% block content %}
+  <section class="card">
+    <h1>Log In</h1>
+    <form class="stack" method="post" action="{{ url_for('auth.login') }}">
+      {{ form.hidden_tag() }}
+      <input type="hidden" name="next" value="{{ next_url }}" />
+
+      <div>
+        {{ form.email.label }}
+        {{ form.email() }}
+        {% for error in form.email.errors %}<p class="err">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div>
+        {{ form.password.label }}
+        {{ form.password() }}
+        {% for error in form.password.errors %}<p class="err">{{ error }}</p>{% endfor %}
+      </div>
+
+      <div class="row">
+        {{ form.submit() }}
+        <a href="{{ url_for('auth.register_page') }}">Create account</a>
+      </div>
+    </form>
+  </section>
+{% endblock %}
