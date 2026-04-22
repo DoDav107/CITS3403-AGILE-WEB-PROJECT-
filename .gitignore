@@ -7,3 +7,4 @@ __pycache__/
 Project/.venv/
 bitescout_backend/instance/
 run_bitescout_demo.sh
+.env

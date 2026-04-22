@@ -34,3 +34,4 @@ http://127.0.0.1:5000/
 http://127.0.0.1:5000/login.html
 http://127.0.0.1:5000/signup.html
 http://127.0.0.1:5000/browse.html
+http://127.0.0.1:5000/recommendations.html
