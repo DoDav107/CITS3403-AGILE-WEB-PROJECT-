@@ -22,6 +22,51 @@ body {
   background: var(--white);
 }
 
+/* ── Navbar ── */
+.navbar {
+  background: var(--charcoal-950) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+
+.navbar-brand {
+  color: var(--white) !important;
+}
+
+.navbar-brand strong {
+  letter-spacing: -0.03em;
+}
+
+.navbar-nav .nav-link {
+  color: rgba(255,255,255,0.8) !important;
+  transition: color 0.2s;
+}
+
+.navbar-nav .nav-link:hover {
+  color: var(--gold-500) !important;
+}
+
+.navbar .btn-outline-primary {
+  color: var(--white) !important;
+  border-color: rgba(255,255,255,0.3) !important;
+}
+
+.navbar .btn-outline-primary:hover {
+  background: rgba(255,255,255,0.1) !important;
+  border-color: var(--white) !important;
+  color: var(--white) !important;
+}
+
+.navbar .btn-primary {
+  background: var(--gold-500) !important;
+  border-color: var(--gold-500) !important;
+  color: var(--charcoal-950) !important;
+}
+
+.navbar .btn-primary:hover {
+  background: var(--gold-400) !important;
+  border-color: var(--gold-400) !important;
+}
+
 main {
   min-height: calc(100vh - 160px);
 }
@@ -29,10 +74,6 @@ main {
 /* ── Typography ── */
 h1, h2, .section-title, .hero-title, .cta-title {
   font-family: 'Playfair Display', serif;
-}
-
-.navbar-brand strong {
-  letter-spacing: -0.03em;
 }
 
 .text-gold {
@@ -227,10 +268,14 @@ h1, h2, .section-title, .hero-title, .cta-title {
 
 /* ── Top Rated Section ── */
 .section-top-rated {
-  background: var(--off-white);
+  background: var(--charcoal-950);
+  color: var(--white);
 }
 
-/* ── Restaurant / Dish Cards (shared) ── */
+.section-top-rated .section-title {
+  color: var(--white);
+}
+
 .restaurant-card,
 .dish-card,
 .review-card,
