@@ -4,6 +4,8 @@ from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
+from .google_places import search_nearby_places, geocode_address
+
 
 bp = Blueprint('main', __name__)
 
@@ -314,3 +316,63 @@ def remove_favourite_dish(dish_id):
     db.session.delete(item)
     db.session.commit()
     return jsonify({'message': 'Dish removed'})
+
+# Google Places nearby search API
+@bp.post('/api/google/nearby')
+def google_nearby():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+
+    lat = payload.get('lat')
+    lng = payload.get('lng')
+    radius = payload.get('radius', 8000)
+    included_types = payload.get('includedTypes', ['restaurant', 'cafe'])
+    max_result_count = payload.get('maxResultCount', 12)
+
+    if lat is None or lng is None:
+        return jsonify({'error': 'lat and lng are required'}), 400
+
+    if isinstance(included_types, str):
+        included_types = [t.strip() for t in included_types.split(',') if t.strip()]
+
+    try:
+        results = search_nearby_places(
+            lat=float(lat),
+            lng=float(lng),
+            radius=float(radius),
+            included_types=included_types,
+            max_result_count=int(max_result_count),
+        )
+        return jsonify({'results': results}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@bp.post('/api/google/search-location')
+def google_search_location():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+
+    address = payload.get('address')
+    radius = payload.get('radius', 8000)
+    included_types = payload.get('includedTypes', ['restaurant', 'cafe'])
+    max_result_count = payload.get('maxResultCount', 12)
+
+    if not address:
+        return jsonify({'error': 'address is required'}), 400
+
+    if isinstance(included_types, str):
+        included_types = [t.strip() for t in included_types.split(',') if t.strip()]
+
+    try:
+        coords = geocode_address(address)
+        results = search_nearby_places(
+            lat=coords['lat'],
+            lng=coords['lng'],
+            radius=float(radius),
+            included_types=included_types,
+            max_result_count=int(max_result_count),
+        )
+        return jsonify({
+            'searchLocation': coords,
+            'results': results
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
