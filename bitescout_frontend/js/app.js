@@ -1,10 +1,76 @@
 (function () {
+  const root = typeof window !== 'undefined' ? window : globalThis;
+  const LOCAL_LOCATION_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1']);
+
+  function isLocalLocationHostname(hostname = '') {
+    return LOCAL_LOCATION_HOSTNAMES.has(String(hostname).toLowerCase());
+  }
+
+  function isGeolocationOriginAllowed(env = {}) {
+    const hostname = String(env.hostname || '').toLowerCase();
+    return Boolean(env.isSecureContext) || isLocalLocationHostname(hostname);
+  }
+
+  function buildLocationErrorMessage(error = {}, env = {}) {
+    if (!isGeolocationOriginAllowed(env)) {
+      return 'Location access requires HTTPS. Open this site on localhost, 127.0.0.1, or HTTPS and try again.';
+    }
+
+    switch (error.code) {
+      case 1:
+        return 'Location permission was denied. Allow location access for this site in your browser settings, then try again.';
+      case 2:
+        return 'Your device could not determine a location. Check Location Services, then try again or search manually.';
+      case 3:
+        return 'Location request timed out. Try again, or search for a suburb or postcode manually.';
+      default:
+        return 'Your current location is unavailable right now. Check browser permissions or Location Services, then try again.';
+    }
+  }
+
+  const LOCATION_STORAGE_MAX_AGE_MS = 1000 * 60 * 60 * 6;
+
+  function normalizeStoredUserLocation(value, now = Date.now()) {
+    if (!value || typeof value !== 'object') return null;
+
+    const lat = Number(value.lat);
+    const lng = Number(value.lng);
+    const savedAt = Number(value.savedAt);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (!Number.isFinite(savedAt)) return null;
+    if (now - savedAt > LOCATION_STORAGE_MAX_AGE_MS) return null;
+
+    return { lat, lng };
+  }
+
+  function createStoredUserLocation(coords, now = Date.now()) {
+    return {
+      lat: Number(coords.lat),
+      lng: Number(coords.lng),
+      savedAt: now
+    };
+  }
+
+  function escapeHtml(value = '') {
+    return String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#39;');
+  }
+
+  function encodeRouteValue(value = '') {
+    return encodeURIComponent(String(value));
+  }
+
   const STORAGE_KEYS = {
     userLocation: 'bitescout_user_location'
   };
 
 
-  const data = window.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
+  const data = root.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
 
   const App = {
     state: {
@@ -253,6 +319,7 @@
       const user = this.getCurrentUser();
       const header = document.getElementById('site-header');
       const footer = document.getElementById('site-footer');
+      const firstName = user ? escapeHtml((user.name || 'User').split(' ')[0]) : '';
       if (header) {
         header.innerHTML = `
           <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
@@ -272,7 +339,7 @@
                   ${this.navLink('about.html', 'About')}
                 </ul>
                 <div class="d-flex align-items-center gap-2">
-                  ${user ? `<a class="btn btn-outline-dark btn-sm" href="profile.html">${user.name.split(' ')[0]}'s profile</a><a class="btn btn-primary btn-sm" href="logout.html">Log out</a>` : `<a class="btn btn-outline-dark btn-sm" href="login.html">Log in</a><a class="btn btn-primary btn-sm" href="signup.html">Sign up</a>`}
+                  ${user ? `<a class="btn btn-outline-dark btn-sm" href="profile.html">${firstName}'s profile</a><a class="btn btn-primary btn-sm" href="logout.html">Log out</a>` : `<a class="btn btn-outline-dark btn-sm" href="login.html">Log in</a><a class="btn btn-primary btn-sm" href="signup.html">Sign up</a>`}
                 </div>
               </div>
             </div>
@@ -328,12 +395,26 @@
       return [...this.state.reviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     },
 
+    getStoredUserLocationRecord() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEYS.userLocation) || 'null');
+      } catch (error) {
+        return null;
+      }
+    },
+
     getUserLocation() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.userLocation) || 'null');
+      const location = normalizeStoredUserLocation(this.getStoredUserLocationRecord());
+      if (!location) this.clearUserLocation();
+      return location;
     },
 
     setUserLocation(coords) {
-      localStorage.setItem(STORAGE_KEYS.userLocation, JSON.stringify(coords));
+      localStorage.setItem(STORAGE_KEYS.userLocation, JSON.stringify(createStoredUserLocation(coords)));
+    },
+
+    clearUserLocation() {
+      localStorage.removeItem(STORAGE_KEYS.userLocation);
     },
 
     formatDate(dateStr) {
@@ -371,24 +452,25 @@
       };
       const imageUrl = restaurantImages[restaurant.name] || '';
       const imageHtml = imageUrl
-        ? `<img src="${imageUrl}" alt="${restaurant.name}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" />`
-        : `<div class="restaurant-image mb-3">${restaurant.name}</div>`;
+        ? `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" />`
+        : `<div class="restaurant-image mb-3">${this.escapeHtml(restaurant.name)}</div>`;
+      const restaurantId = encodeRouteValue(restaurant.id);
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3">
             <div class="restaurant-image mb-3 position-relative overflow-hidden">${imageHtml}</div>
             <div class="d-flex flex-wrap mb-2">
               <span class="rating-pill">⭐ ${restaurant.rating}</span>
-              <span class="price-pill">${restaurant.price}</span>
-              <span class="cuisine-pill">${restaurant.cuisine}</span>
+              <span class="price-pill">${escapeHtml(restaurant.price)}</span>
+              <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               ${distanceHtml}
             </div>
-            <h3 class="h5 fw-bold">${restaurant.name}</h3>
-            <p class="text-secondary mb-2">${restaurant.suburb} • ${restaurant.address}</p>
-            <p class="text-secondary">${restaurant.blurb}</p>
+            <h3 class="h5 fw-bold">${escapeHtml(restaurant.name)}</h3>
+            <p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.address)}</p>
+            <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
             <div class="d-flex gap-2">
-              <a class="btn btn-primary btn-sm" href="restaurant.html?id=${restaurant.id}">View details</a>
-              <button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurant.id}">Save</button>
+              <a class="btn btn-primary btn-sm" href="restaurant.html?id=${restaurantId}">View details</a>
+              <button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurantId}">Save</button>
             </div>
           </div>
         </div>
@@ -396,18 +478,20 @@
     },
 
     renderDishCard(restaurant, dish) {
+      const restaurantId = encodeRouteValue(restaurant.id);
+      const dishId = encodeRouteValue(dish.id);
       return `
         <div class="col-md-6">
           <div class="dish-card p-3">
-            <h3 class="h5 fw-bold mb-2">${dish.name}</h3>
+            <h3 class="h5 fw-bold mb-2">${escapeHtml(dish.name)}</h3>
             <div class="d-flex flex-wrap mb-2">
               <span class="rating-pill">⭐ ${dish.rating}</span>
               <span class="price-pill">$${dish.price}</span>
             </div>
-            <p class="text-secondary">${dish.description}</p>
+            <p class="text-secondary">${escapeHtml(dish.description)}</p>
             <div class="d-flex gap-2">
-              <a class="btn btn-primary btn-sm" href="dish.html?restaurant=${restaurant.id}&dish=${dish.id}">View dish</a>
-              <button class="btn btn-outline-dark btn-sm save-dish-trigger" data-id="${dish.id}" data-restaurant="${restaurant.id}">Save</button>
+              <a class="btn btn-primary btn-sm" href="dish.html?restaurant=${restaurantId}&dish=${dishId}">View dish</a>
+              <button class="btn btn-outline-dark btn-sm save-dish-trigger" data-id="${dishId}" data-restaurant="${restaurantId}">Save</button>
             </div>
           </div>
         </div>
@@ -419,31 +503,32 @@
       const restaurant = this.getRestaurantById(review.restaurantId);
       const dish = review.dishId ? this.getDish(review.restaurantId, review.dishId) : null;
       const editable = own && !String(review.id).startsWith('sr');
-      const manageButton = editable ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${review.id}">Edit</a>` : '';
+      const manageButton = editable ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${encodeRouteValue(review.id)}">Edit</a>` : '';
+      const reviewMeta = [
+        `By <a href="user.html?id=${encodeRouteValue(user.id)}">${escapeHtml(user.name)}</a>`,
+        escapeHtml(this.formatDate(review.createdAt))
+      ];
+      if (restaurant) reviewMeta.push(escapeHtml(restaurant.name));
+      if (dish) reviewMeta.push(escapeHtml(dish.name));
       return `
         <div class="review-card p-3 mb-3">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
             <div>
-              <h3 class="h5 fw-bold mb-1">${review.title}</h3>
-              <div class="review-meta">By <a href="user.html?id=${user.id}">${user.name}</a> • ${this.formatDate(review.createdAt)} • ${restaurant ? restaurant.name : ''}${dish ? ' • ' + dish.name : ''}</div>
+              <h3 class="h5 fw-bold mb-1">${escapeHtml(review.title)}</h3>
+              <div class="review-meta">${reviewMeta.join(' • ')}</div>
             </div>
             <div class="text-end">
               <span class="rating-pill">⭐ ${review.rating}</span>
               ${manageButton}
             </div>
           </div>
-          <p class="mb-0 text-secondary">${review.content}</p>
+          <p class="mb-0 text-secondary">${escapeHtml(review.content)}</p>
         </div>
       `;
     },
 
     escapeHtml(value = '') {
-      return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#39;');
+      return escapeHtml(value);
     },
 
     formatPlaceType(type = '') {
@@ -475,19 +560,19 @@
       const tagHtml = (place.types || [])
         .filter(type => !['point_of_interest', 'establishment', 'food', 'store'].includes(type))
         .slice(0, 3)
-        .map(type => `<span class="badge badge-soft">${this.escapeHtml(this.formatPlaceType(type))}</span>`)
+        .map(type => `<span class="badge badge-soft">${escapeHtml(this.formatPlaceType(type))}</span>`)
         .join('');
 
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3 h-100">
-            <div class="restaurant-image mb-3">${this.escapeHtml(place.name || 'Nearby place')}</div>
+            <div class="restaurant-image mb-3">${escapeHtml(place.name || 'Nearby place')}</div>
             <div class="d-flex flex-wrap mb-2">
               <span class="rating-pill">⭐ ${place.rating ?? 'N/A'}</span>
-              <span class="cuisine-pill">${this.escapeHtml(this.formatPlaceType(place.primaryType || 'place'))}</span>
+              <span class="cuisine-pill">${escapeHtml(this.formatPlaceType(place.primaryType || 'place'))}</span>
             </div>
-            <h3 class="h5 fw-bold">${this.escapeHtml(place.name || 'Unnamed place')}</h3>
-            <p class="text-secondary mb-2">${this.escapeHtml(place.address || 'Address unavailable')}</p>
+            <h3 class="h5 fw-bold">${escapeHtml(place.name || 'Unnamed place')}</h3>
+            <p class="text-secondary mb-2">${escapeHtml(place.address || 'Address unavailable')}</p>
             <div class="d-flex flex-wrap gap-2 mb-3">${tagHtml}</div>
             <div class="d-flex gap-2">
               <a class="btn btn-primary btn-sm" href="${this.googleMapsUrl(place)}" target="_blank" rel="noopener noreferrer">Open map</a>
@@ -532,7 +617,7 @@
     },
 
     emptyState(message) {
-      return `<div class="empty-state">${message}</div>`;
+      return `<div class="empty-state">${escapeHtml(message)}</div>`;
     },
 
     showMessage(targetId, message, type = 'info') {
@@ -617,11 +702,14 @@
 
     initBrowse() {
       const cuisineSelect = document.getElementById('cuisineFilter');
+      const manualLocationInput = document.getElementById('browseManualLocationInput');
+      const manualLocationBtn = document.getElementById('browseSearchLocationBtn');
+      const clearLocationBtn = document.getElementById('browseClearLocationBtn');
       const cuisines = [...new Set(this.state.restaurants.map(restaurant => restaurant.cuisine))];
-      cuisineSelect.innerHTML = `<option value="">Any</option>${cuisines.map(cuisine => `<option value="${cuisine}">${cuisine}</option>`).join('')}`;
       const searchInput = document.getElementById('searchInput');
       const urlSearch = new URLSearchParams(window.location.search).get('search');
       if (urlSearch && searchInput) searchInput.value = urlSearch;
+      cuisineSelect.innerHTML = `<option value="">Any</option>${cuisines.map(cuisine => `<option value="${escapeHtml(cuisine)}">${escapeHtml(cuisine)}</option>`).join('')}`;
       const render = () => {
         const search = searchInput.value.trim().toLowerCase();
         const cuisine = cuisineSelect.value;
@@ -647,7 +735,56 @@
           render();
         });
       });
-      if (this.getUserLocation()) this.showMessage('browseLocationMessage', 'Using your saved location to sort results by distance.', 'info');
+
+      const searchBrowseLocation = async () => {
+        const address = manualLocationInput?.value.trim();
+        if (!address) {
+          this.showMessage('browseLocationMessage', 'Enter a suburb, postcode, or address to sort results by distance.', 'error');
+          return;
+        }
+
+        this.showMessage('browseLocationMessage', `Looking up ${address}...`, 'info');
+
+        try {
+          const payload = await this.searchGooglePlacesByAddress(address, 3000, ['restaurant', 'cafe'], 1);
+          const coords = {
+            lat: payload.searchLocation.lat,
+            lng: payload.searchLocation.lng
+          };
+
+          this.setUserLocation(coords);
+          this.showMessage(
+            'browseLocationMessage',
+            `Using ${payload.searchLocation.formattedAddress || address} to sort results by distance.`,
+            'success'
+          );
+          render();
+        } catch (error) {
+          this.showMessage('browseLocationMessage', error.message, 'error');
+        }
+      };
+
+      manualLocationBtn?.addEventListener('click', async () => {
+        await searchBrowseLocation();
+      });
+
+      manualLocationInput?.addEventListener('keydown', async event => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          await searchBrowseLocation();
+        }
+      });
+
+      clearLocationBtn?.addEventListener('click', () => {
+        this.clearUserLocation();
+        if (manualLocationInput) manualLocationInput.value = '';
+        this.showMessage('browseLocationMessage', 'Cleared saved location. Results are no longer sorted by distance.', 'info');
+        render();
+      });
+
+      if (this.getUserLocation()) {
+        this.showMessage('browseLocationMessage', 'Using your saved location to sort results by distance.', 'info');
+      }
       render();
     },
 
@@ -661,32 +798,33 @@
         ]);
         this.upsertRestaurant(restaurant);
         const average = reviews.length ? (reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length).toFixed(1) : restaurant.rating.toFixed(1);
+        const safeTags = (restaurant.tags || []).map(tag => escapeHtml(tag)).join(', ');
         document.getElementById('restaurantHero').innerHTML = `
           <p class="eyebrow mb-2">Restaurant details</p>
           <div class="row g-4 align-items-center">
             <div class="col-lg-8">
-              <h1 class="fw-bold mb-3">${restaurant.name}</h1>
-              <p class="text-secondary mb-3">${restaurant.suburb} • ${restaurant.address}</p>
+              <h1 class="fw-bold mb-3">${escapeHtml(restaurant.name)}</h1>
+              <p class="text-secondary mb-3">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.address)}</p>
               <div class="d-flex flex-wrap">
                 <span class="rating-pill">⭐ ${average}</span>
-                <span class="price-pill">${restaurant.price}</span>
-                <span class="cuisine-pill">${restaurant.cuisine}</span>
+                <span class="price-pill">${escapeHtml(restaurant.price)}</span>
+                <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image">${restaurant.name}</div></div>
+            <div class="col-lg-4"><div class="detail-image">${escapeHtml(restaurant.name)}</div></div>
           </div>
         `;
         document.getElementById('restaurantAbout').innerHTML = `
           <h2 class="h4 fw-bold mb-3">About this place</h2>
-          <p class="text-secondary">${restaurant.blurb}</p>
-          <p class="mb-0 text-secondary"><strong>Popular tags:</strong> ${(restaurant.tags || []).join(', ')}</p>
+          <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
+          <p class="mb-0 text-secondary"><strong>Popular tags:</strong> ${safeTags}</p>
         `;
         document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('');
         document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
         document.getElementById('restaurantSidebar').innerHTML = `
           <h3 class="h5 fw-bold mb-3">Quick facts</h3>
-          <p class="mb-2"><strong>Cuisine:</strong> ${restaurant.cuisine}</p>
-          <p class="mb-2"><strong>Price range:</strong> ${restaurant.price}</p>
+          <p class="mb-2"><strong>Cuisine:</strong> ${escapeHtml(restaurant.cuisine)}</p>
+          <p class="mb-2"><strong>Price range:</strong> ${escapeHtml(restaurant.price)}</p>
           <p class="mb-2"><strong>Average rating:</strong> ${average}</p>
           <p class="mb-0"><strong>Dishes listed:</strong> ${(restaurant.dishes || []).length}</p>
         `;
@@ -716,24 +854,24 @@
           <p class="eyebrow mb-2">Dish details</p>
           <div class="row g-4 align-items-center">
             <div class="col-lg-8">
-              <h1 class="fw-bold mb-3">${dish.name}</h1>
-              <p class="text-secondary mb-3">From <a href="restaurant.html?id=${restaurant.id}">${restaurant.name}</a></p>
+              <h1 class="fw-bold mb-3">${escapeHtml(dish.name)}</h1>
+              <p class="text-secondary mb-3">From <a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">${escapeHtml(restaurant.name)}</a></p>
               <div class="d-flex flex-wrap">
                 <span class="rating-pill">⭐ ${dish.rating}</span>
                 <span class="price-pill">$${dish.price}</span>
-                <span class="cuisine-pill">${restaurant.cuisine}</span>
+                <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image">${dish.name}</div></div>
+            <div class="col-lg-4"><div class="detail-image">${escapeHtml(dish.name)}</div></div>
           </div>
         `;
         document.getElementById('dishDetails').innerHTML = `
           <h2 class="h4 fw-bold mb-3">About this dish</h2>
-          <p class="text-secondary">${dish.description}</p>
-          <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${restaurant.name} • ${restaurant.suburb}</p>
+          <p class="text-secondary">${escapeHtml(dish.description)}</p>
+          <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${escapeHtml(restaurant.name)} • ${escapeHtml(restaurant.suburb)}</p>
         `;
         document.getElementById('dishReviews').innerHTML = dishReviews.length ? dishReviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No dish reviews yet.');
-        document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${restaurant.id}`;
+        document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${encodeRouteValue(restaurant.id)}`;
         document.getElementById('saveDishBtn').addEventListener('click', async () => {
           await this.saveDish(restaurantId, dishId, 'saveDishMessage');
         });
@@ -750,11 +888,11 @@
       }
       const restaurantSelect = document.getElementById('reviewRestaurantSelect');
       const dishSelect = document.getElementById('reviewDishSelect');
-      restaurantSelect.innerHTML = this.state.restaurants.map(restaurant => `<option value="${restaurant.id}">${restaurant.name}</option>`).join('');
+      restaurantSelect.innerHTML = this.state.restaurants.map(restaurant => `<option value="${escapeHtml(restaurant.id)}">${escapeHtml(restaurant.name)}</option>`).join('');
       const fillDishes = restaurantId => {
         const restaurant = this.getRestaurantById(restaurantId);
         const dishes = restaurant && restaurant.dishes ? restaurant.dishes : [];
-        dishSelect.innerHTML = `<option value="">Restaurant review only</option>${dishes.map(dish => `<option value="${dish.id}">${dish.name}</option>`).join('')}`;
+        dishSelect.innerHTML = `<option value="">Restaurant review only</option>${dishes.map(dish => `<option value="${escapeHtml(dish.id)}">${escapeHtml(dish.name)}</option>`).join('')}`;
       };
       restaurantSelect.addEventListener('change', async () => {
         if (!this.getRestaurantById(restaurantSelect.value)?.dishes) {
@@ -845,20 +983,20 @@
       const favouriteDishes = this.state.favourites.dishes;
       document.getElementById('profileHeader').innerHTML = `
         <p class="eyebrow mb-2">My profile</p>
-        <h1 class="fw-bold mb-3">${currentUser.name}</h1>
-        <p class="text-secondary mb-0">@${currentUser.username} • Preferred cuisine: ${currentUser.preferredCuisine || 'Not set'}</p>
+        <h1 class="fw-bold mb-3">${escapeHtml(currentUser.name)}</h1>
+        <p class="text-secondary mb-0">@${escapeHtml(currentUser.username)} • Preferred cuisine: ${escapeHtml(currentUser.preferredCuisine || 'Not set')}</p>
       `;
       document.getElementById('profileSummary').innerHTML = `
         <h2 class="h4 fw-bold mb-3">Account summary</h2>
-        <p class="text-secondary">${currentUser.bio || 'No bio yet.'}</p>
-        <p class="mb-2"><strong>Email:</strong> ${currentUser.email}</p>
+        <p class="text-secondary">${escapeHtml(currentUser.bio || 'No bio yet.')}</p>
+        <p class="mb-2"><strong>Email:</strong> ${escapeHtml(currentUser.email)}</p>
         <p class="mb-2"><strong>Reviews:</strong> ${myReviews.length}</p>
         <p class="mb-0"><strong>Favourites:</strong> ${favouriteRestaurants.length + favouriteDishes.length}</p>
       `;
       document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(review => this.renderReviewCard(review, true)).join('') : this.emptyState('You have not written any reviews yet.');
       const favouriteHtml = [
-        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${restaurant.name}</h3><p class="text-secondary mb-2">${restaurant.suburb} • ${restaurant.cuisine}</p><a href="restaurant.html?id=${restaurant.id}" class="btn btn-sm btn-primary">Open</a></div>`),
-        ...favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${item.dish.name}</h3><p class="text-secondary mb-2">${item.restaurant.name}</p><a href="dish.html?restaurant=${item.restaurant.id}&dish=${item.dish.id}" class="btn btn-sm btn-primary">Open</a></div>`)
+        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`),
+        ...favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}" class="btn btn-sm btn-primary">Open</a></div>`)
       ].join('');
       document.getElementById('profileFavourites').innerHTML = favouriteHtml || this.emptyState('Nothing saved yet.');
     },
@@ -870,103 +1008,17 @@
         const user = await this.api(`/api/users/${userId}`);
         document.getElementById('otherUserHeader').innerHTML = `
           <p class="eyebrow mb-2">Community member</p>
-          <h1 class="fw-bold mb-3">${user.name}</h1>
-          <p class="text-secondary mb-0">@${user.username || 'member'}</p>
+          <h1 class="fw-bold mb-3">${escapeHtml(user.name)}</h1>
+          <p class="text-secondary mb-0">@${escapeHtml(user.username || 'member')}</p>
         `;
         document.getElementById('otherUserSummary').innerHTML = `
           <h2 class="h4 fw-bold mb-3">Profile summary</h2>
-          <p class="text-secondary mb-0">${user.bio || 'This user has not added a bio yet.'}</p>
+          <p class="text-secondary mb-0">${escapeHtml(user.bio || 'This user has not added a bio yet.')}</p>
         `;
         document.getElementById('otherUserReviews').innerHTML = user.reviews.length ? user.reviews.map(review => this.renderReviewCard(review)).join('') : this.emptyState('This user has no reviews yet.');
       } catch (error) {
         this.showFullPageNotice(error.message, 'browse.html');
       }
-    },
-
-    ommendations() {
-      const target = document.getElementById('recommendationsGrid');
-      const detectBtn = document.getElementById('detectLocationBtn');
-      const resetBtn = document.getElementById('resetRecommendationsBtn');
-      const radiusSelect = document.getElementById('recommendationRadius');
-      const typeSinitRecelect = document.getElementById('recommendationType');
-      const minRatingSelect = document.getElementById('minGoogleRating');
-
-      if (!target || !detectBtn || !resetBtn) return;
-
-      let lastCoords = null;
-      let lastResults = [];
-
-      const renderPlaces = (places) => {
-        target.innerHTML = places.length
-          ? places.map(place => this.renderGooglePlaceCard(place)).join('')
-          : this.emptyState('No nearby places matched the selected filters.');
-      };
-
-      const reRenderFromCurrentResults = () => {
-        const minRating = parseFloat(minRatingSelect?.value || '0');
-        const filtered = this.filterGooglePlaces(lastResults, minRating);
-        renderPlaces(filtered);
-        if (lastResults.length) {
-          this.showMessage('recommendationStatus', `Showing ${filtered.length} nearby place${filtered.length === 1 ? '' : 's'}.`, 'info');
-        }
-      };
-
-      const loadNearbyPlaces = async (coords) => {
-        const radius = parseInt(radiusSelect?.value || '8000', 10);
-        const includedTypes = (typeSelect?.value || 'restaurant,cafe')
-          .split(',')
-          .map(value => value.trim())
-          .filter(Boolean);
-
-        this.showMessage('recommendationStatus', 'Loading nearby places...', 'info');
-
-        try {
-          const results = await this.fetchNearbyGooglePlaces(coords, radius, includedTypes, 12);
-          lastCoords = coords;
-          lastResults = results;
-          this.setUserLocation(coords);
-          reRenderFromCurrentResults();
-          const visibleCount = this.filterGooglePlaces(results, parseFloat(minRatingSelect?.value || '0')).length;
-          this.showMessage('recommendationStatus', `Loaded ${visibleCount} nearby place${visibleCount === 1 ? '' : 's'} from Google Places.`, 'success');
-        } catch (error) {
-          this.showMessage('recommendationStatus', error.message, 'error');
-          target.innerHTML = this.emptyState('Unable to load nearby places right now.');
-        }
-      };
-
-      detectBtn.addEventListener('click', () => {
-        this.requestLocation('recommendationStatus', async coords => {
-          await loadNearbyPlaces(coords);
-        });
-      });
-
-      resetBtn.addEventListener('click', () => {
-        lastCoords = null;
-        lastResults = [];
-        target.innerHTML = this.emptyState('Click “Use my location” to load live nearby recommendations.');
-        this.showMessage('recommendationStatus', 'Cleared nearby results.', 'info');
-      });
-
-      minRatingSelect?.addEventListener('change', () => {
-        if (lastResults.length) reRenderFromCurrentResults();
-      });
-
-      radiusSelect?.addEventListener('change', async () => {
-        if (lastCoords) await loadNearbyPlaces(lastCoords);
-      });
-
-      typeSelect?.addEventListener('change', async () => {
-        if (lastCoords) await loadNearbyPlaces(lastCoords);
-      });
-
-      const saved = this.getUserLocation();
-      if (saved) {
-        this.showMessage('recommendationStatus', 'Saved location found. Click “Use my location” to refresh live nearby places.', 'info');
-      } else {
-        this.showMessage('recommendationStatus', 'Click “Use my location” to fetch live nearby recommendations.', 'info');
-      }
-
-      target.innerHTML = this.emptyState('Click “Use my location” to load live nearby recommendations.');
     },
 
     async initFavourites() {
@@ -980,8 +1032,8 @@
         await this.loadFavourites(true);
         const favouriteRestaurants = this.state.favourites.restaurants;
         const favouriteDishes = this.state.favourites.dishes;
-        restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${restaurant.name}</h3><p class="text-secondary mb-2">${restaurant.suburb} • ${restaurant.cuisine}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${restaurant.id}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
-        dishContainer.innerHTML = favouriteDishes.length ? favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${item.dish.name}</h3><p class="text-secondary mb-2">${item.restaurant.name}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${item.restaurant.id}&dish=${item.dish.id}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
+        restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
+        dishContainer.innerHTML = favouriteDishes.length ? favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
       } catch (error) {
         restaurantContainer.innerHTML = this.emptyState(error.message);
         dishContainer.innerHTML = this.emptyState(error.message);
@@ -1004,15 +1056,39 @@
     },
 
     requestLocation(messageTarget, onSuccess) {
-      if (!navigator.geolocation) {
+      const locationEnv = {
+        hostname: root.location?.hostname || '',
+        isSecureContext: root.isSecureContext
+      };
+
+      if (!isGeolocationOriginAllowed(locationEnv)) {
+        this.showMessage(
+          messageTarget,
+          buildLocationErrorMessage({ code: 1 }, locationEnv),
+          'error'
+        );
+        return;
+      }
+
+      if (!root.navigator?.geolocation) {
         this.showMessage(messageTarget, 'Geolocation is not supported in this browser.', 'error');
         return;
       }
-      navigator.geolocation.getCurrentPosition(
+
+      root.navigator.geolocation.getCurrentPosition(
         position => {
           onSuccess({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
-        () => this.showMessage(messageTarget, 'Location access was denied or unavailable. Try localhost or HTTPS.', 'error')
+        error => this.showMessage(
+          messageTarget,
+          buildLocationErrorMessage(error, locationEnv),
+          'error'
+        ),
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 300000
+        }
       );
     },
 
@@ -1066,8 +1142,8 @@
           <div class="container">
             <div class="glass-card p-5 text-center">
               <h1 class="h2 fw-bold mb-3">Action required</h1>
-              <p class="text-secondary mb-4">${message}</p>
-              <a href="${actionHref}" class="btn btn-primary">Continue</a>
+              <p class="text-secondary mb-4">${escapeHtml(message)}</p>
+              <a href="${escapeHtml(actionHref)}" class="btn btn-primary">Continue</a>
             </div>
           </div>
         </section>
@@ -1084,9 +1160,23 @@
     }
   };
 
-  window.addEventListener('DOMContentLoaded', () => {
-    App.init().catch(error => {
-      console.error(error);
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      App,
+      LOCATION_STORAGE_MAX_AGE_MS,
+      buildLocationErrorMessage,
+      escapeHtml,
+      normalizeStoredUserLocation,
+      isGeolocationOriginAllowed,
+      isLocalLocationHostname
+    };
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('DOMContentLoaded', () => {
+      App.init().catch(error => {
+        console.error(error);
+      });
     });
-  });
+  }
 })();

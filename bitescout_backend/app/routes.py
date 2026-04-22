@@ -3,6 +3,7 @@ from functools import wraps
 from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
+from . import google_places
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
 from .google_places import search_nearby_places, geocode_address
 
@@ -12,7 +13,7 @@ bp = Blueprint('main', __name__)
 
 def current_user():
     user_id = session.get('user_id')
-    return User.query.get(user_id) if user_id else None
+    return db.session.get(User, user_id) if user_id else None
 
 
 def login_required(fn):
@@ -80,6 +81,31 @@ def review_to_dict(review):
         'updatedAt': review.updated_at.isoformat(),
         'user': {'id': review.user.id, 'name': review.user.name, 'username': review.user.username},
     }
+
+
+def google_maps_api_key():
+    return (current_app.config.get("GOOGLE_MAPS_API_KEY") or "").strip()
+
+
+def parse_review_rating(raw_value):
+    try:
+        rating = int(raw_value)
+    except (TypeError, ValueError):
+        return None
+    return rating if 1 <= rating <= 5 else None
+
+
+def sync_restaurant_rating(restaurant_id):
+    restaurant = db.session.get(Restaurant, restaurant_id)
+    if not restaurant:
+        return
+
+    reviews = Review.query.filter_by(restaurant_id=restaurant_id).all()
+    if not reviews:
+        restaurant.rating = 0.0
+        return
+
+    restaurant.rating = round(sum(review.rating for review in reviews) / len(reviews), 1)
 
 
 @bp.get('/')
@@ -198,6 +224,64 @@ def list_reviews():
     return jsonify([review_to_dict(r) for r in reviews])
 
 
+@bp.post('/api/google/nearby')
+def google_nearby():
+    payload = request.get_json(silent=True) or {}
+    api_key = google_maps_api_key()
+    if not api_key:
+        return jsonify({'error': 'Google Maps API key is not configured on the server.'}), 500
+
+    try:
+        lat = float(payload.get('lat'))
+        lng = float(payload.get('lng'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Latitude and longitude are required.'}), 400
+
+    radius = payload.get('radius', 8000)
+    included_types = payload.get('includedTypes') or ['restaurant', 'cafe']
+    max_result_count = payload.get('maxResultCount', 12)
+
+    try:
+        results = google_places.search_nearby_places(
+            api_key, lat, lng, radius, included_types, max_result_count
+        )
+    except google_places.GooglePlacesError as error:
+        return jsonify({'error': str(error)}), error.status_code
+
+    return jsonify({'results': results})
+
+
+@bp.post('/api/google/search-location')
+def google_search_location():
+    payload = request.get_json(silent=True) or {}
+    api_key = google_maps_api_key()
+    if not api_key:
+        return jsonify({'error': 'Google Maps API key is not configured on the server.'}), 500
+
+    address = (payload.get('address') or '').strip()
+    if not address:
+        return jsonify({'error': 'Please enter a suburb, postcode, or address.'}), 400
+
+    radius = payload.get('radius', 8000)
+    included_types = payload.get('includedTypes') or ['restaurant', 'cafe']
+    max_result_count = payload.get('maxResultCount', 12)
+
+    try:
+        search_location = google_places.geocode_address(api_key, address)
+        results = google_places.search_nearby_places(
+            api_key,
+            search_location['lat'],
+            search_location['lng'],
+            radius,
+            included_types,
+            max_result_count,
+        )
+    except google_places.GooglePlacesError as error:
+        return jsonify({'error': str(error)}), error.status_code
+
+    return jsonify({'searchLocation': search_location, 'results': results})
+
+
 @bp.post('/api/reviews')
 @login_required
 def create_review():
@@ -207,23 +291,29 @@ def create_review():
     if missing:
         return jsonify({'error': f"Missing fields: {', '.join(missing)}"}), 400
 
-    if not Restaurant.query.get(payload['restaurantId']):
+    restaurant = db.session.get(Restaurant, payload['restaurantId'])
+    if not restaurant:
         return jsonify({'error': 'Restaurant not found'}), 404
     dish_id = payload.get('dishId') or None
     if dish_id and not Dish.query.filter_by(id=dish_id, restaurant_id=payload['restaurantId']).first():
         return jsonify({'error': 'Dish not found for restaurant'}), 404
+    rating = parse_review_rating(payload.get('rating'))
+    if rating is None:
+        return jsonify({'error': 'Rating must be an integer between 1 and 5.'}), 400
 
     review = Review(
         user_id=current_user().id,
         restaurant_id=payload['restaurantId'],
         dish_id=dish_id,
-        rating=int(payload['rating']),
+        rating=rating,
         title=payload['title'],
         content=payload['content'],
         created_at=datetime.utcnow(),
         updated_at=datetime.utcnow(),
     )
     db.session.add(review)
+    db.session.flush()
+    sync_restaurant_rating(review.restaurant_id)
     db.session.commit()
     return jsonify({'message': 'Review created', 'review': review_to_dict(review)}), 201
 
@@ -235,10 +325,16 @@ def update_review(review_id):
     if review.user_id != current_user().id:
         return jsonify({'error': 'Forbidden'}), 403
     payload = request.get_json(silent=True) or request.form.to_dict()
-    review.rating = int(payload.get('rating', review.rating))
+    if 'rating' in payload:
+        rating = parse_review_rating(payload.get('rating'))
+        if rating is None:
+            return jsonify({'error': 'Rating must be an integer between 1 and 5.'}), 400
+        review.rating = rating
     review.title = payload.get('title', review.title)
     review.content = payload.get('content', review.content)
     review.updated_at = datetime.utcnow()
+    db.session.flush()
+    sync_restaurant_rating(review.restaurant_id)
     db.session.commit()
     return jsonify({'message': 'Review updated', 'review': review_to_dict(review)})
 
@@ -249,7 +345,10 @@ def delete_review(review_id):
     review = Review.query.get_or_404(review_id)
     if review.user_id != current_user().id:
         return jsonify({'error': 'Forbidden'}), 403
+    restaurant_id = review.restaurant_id
     db.session.delete(review)
+    db.session.flush()
+    sync_restaurant_rating(restaurant_id)
     db.session.commit()
     return jsonify({'message': 'Review deleted'})
 
@@ -272,7 +371,7 @@ def favourites():
 @bp.post('/api/favourites/restaurants/<restaurant_id>')
 @login_required
 def save_favourite_restaurant(restaurant_id):
-    if not Restaurant.query.get(restaurant_id):
+    if not db.session.get(Restaurant, restaurant_id):
         return jsonify({'error': 'Restaurant not found'}), 404
     user = current_user()
     existing = FavouriteRestaurant.query.filter_by(user_id=user.id, restaurant_id=restaurant_id).first()
@@ -297,7 +396,7 @@ def remove_favourite_restaurant(restaurant_id):
 def save_favourite_dish():
     payload = request.get_json(silent=True) or request.form.to_dict()
     dish_id = payload.get('dishId')
-    dish = Dish.query.get(dish_id)
+    dish = db.session.get(Dish, dish_id)
     if not dish:
         return jsonify({'error': 'Dish not found'}), 404
     user = current_user()
