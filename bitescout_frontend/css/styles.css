@@ -970,6 +970,12 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ── Scroll-Linked Opacity Fade ── */
+.scroll-fade-section {
+  transition: opacity 0.15s linear, filter 0.15s linear;
+  will-change: opacity, filter;
+}
+
 /* Links */
 a {
   color: var(--gold-500);
