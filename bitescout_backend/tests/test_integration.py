@@ -31,13 +31,19 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"BiteScout", response.data)
-        self.assertIn(b"Find your next meal", response.data)
+        self.assertIn(b"Find your next favorite bite", response.data)
 
     def test_browse_page_is_served(self):
         response = self.client.get("/browse.html")
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Find restaurants and drinks spots", response.data)
+
+    def test_frontend_app_script_is_served(self):
+        response = self.client.get("/js/app.js")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"navigator.geolocation.getCurrentPosition", response.data)
 
     def test_login_round_trip_sets_session(self):
         response = self.login_demo_user()
