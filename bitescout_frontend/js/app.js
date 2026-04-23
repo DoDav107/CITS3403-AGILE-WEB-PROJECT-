@@ -1177,6 +1177,50 @@
       App.init().catch(error => {
         console.error(error);
       });
+
+      // Navbar scroll effect
+      const navbar = document.querySelector('.navbar');
+      if (navbar) {
+        window.addEventListener('scroll', () => {
+          if (window.scrollY > 20) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+        });
+      }
+
+      // Intersection Observer for scroll reveal
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.section-top-rated, .section-how, .section-testimonials, .section-cta').forEach(section => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(30px)';
+        section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+        revealObserver.observe(section);
+      });
+
+      // Add revealed class styles dynamically
+      const style = document.createElement('style');
+      style.textContent = `
+        .revealed {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+        }
+      `;
+      document.head.appendChild(style);
     });
   }
 })();
