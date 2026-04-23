@@ -18,8 +18,19 @@
 
 body {
   font-family: 'Inter', sans-serif;
-  color: var(--ink);
-  background: var(--white);
+  color: rgba(255,255,255,0.85);
+  background: var(--charcoal-950);
+}
+
+/* subtle noise texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* ── Navbar ── */
@@ -69,6 +80,8 @@ body {
 
 main {
   min-height: calc(100vh - 160px);
+  position: relative;
+  z-index: 1;
 }
 
 /* ── Typography ── */
@@ -258,7 +271,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
 .section-title {
   font-size: 2rem;
   font-weight: 700;
-  color: var(--charcoal-950);
+  color: var(--white);
 }
 
 .py-lg-6 {
@@ -280,24 +293,26 @@ h1, h2, .section-title, .hero-title, .cta-title {
 .dish-card,
 .review-card,
 .favorite-card {
-  border: 1px solid rgba(26,26,46,0.06);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 1rem;
-  background: var(--white);
-  box-shadow: 0 8px 30px rgba(26,26,46,0.06);
+  background: var(--charcoal-900);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
   height: 100%;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
 }
 
 .restaurant-card:hover,
 .dish-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 16px 40px rgba(26,26,46,0.1);
+  box-shadow: 0 16px 40px rgba(0,0,0,0.4);
+  border-color: rgba(212,175,55,0.3);
 }
 
 .restaurant-image,
 .detail-image {
   background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-950));
   min-height: 180px;
+  height: 260px;
   border-radius: 1rem;
   display: grid;
   place-items: center;
@@ -343,13 +358,13 @@ h1, h2, .section-title, .hero-title, .cta-title {
 }
 
 .price-pill {
-  background: #eef0f5;
-  color: #3a3a5c;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
 }
 
 .distance-pill {
-  background: #edf7ff;
-  color: #14557a;
+  background: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.7);
 }
 
 .cuisine-pill {
@@ -374,21 +389,23 @@ h1, h2, .section-title, .hero-title, .cta-title {
 
 /* ── How It Works ── */
 .section-how {
-  background: var(--white);
+  background: var(--charcoal-900);
+  color: var(--white);
 }
 
 .how-card {
   padding: 2.5rem 1.5rem;
   border-radius: 1.25rem;
-  border: 1px solid rgba(26,26,46,0.06);
-  background: var(--off-white);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--charcoal-950);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
   height: 100%;
 }
 
 .how-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 36px rgba(26,26,46,0.08);
+  box-shadow: 0 12px 36px rgba(0,0,0,0.4);
+  border-color: rgba(212,175,55,0.3);
 }
 
 .how-icon {
@@ -482,10 +499,10 @@ h1, h2, .section-title, .hero-title, .cta-title {
 
 /* ── Glass Card (other pages) ── */
 .glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  border: 1px solid rgba(26, 26, 46, 0.08);
+  background: var(--charcoal-900);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 1.25rem;
-  box-shadow: 0 18px 45px rgba(26, 26, 46, 0.06);
+  box-shadow: 0 18px 45px rgba(0,0,0,0.3);
 }
 
 .mini-feature {
@@ -501,39 +518,226 @@ h1, h2, .section-title, .hero-title, .cta-title {
 /* ── Other pages hero/banner ── */
 .hero-section,
 .page-banner {
-  background: var(--bg-gradient);
+  background: var(--charcoal-900);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 
 /* ── Misc ── */
 .footer-note {
-  color: var(--muted);
+  color: rgba(255,255,255,0.4);
   font-size: 0.95rem;
 }
 
 .empty-state {
   padding: 1.5rem;
-  border: 1px dashed rgba(26, 26, 46, 0.16);
+  border: 1px dashed rgba(255,255,255,0.15);
   border-radius: 1rem;
-  color: var(--muted);
-  background: var(--white);
+  color: rgba(255,255,255,0.5);
+  background: var(--charcoal-900);
 }
 
 .review-meta {
-  color: var(--muted);
+  color: rgba(255,255,255,0.5);
   font-size: 0.92rem;
 }
 
+.review-meta a {
+  color: var(--gold-500);
+}
+
 .auth-shell {
-  background: var(--bg-gradient);
+  background: var(--charcoal-950);
 }
 
 .site-footer {
-  border-top: 1px solid rgba(26, 26, 46, 0.08);
-  background: var(--white);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  background: var(--charcoal-950);
 }
 
 .nav-link.active {
   font-weight: 700;
+}
+
+/* ── Bootstrap Dark Theme Overrides ── */
+.text-secondary {
+  color: rgba(255,255,255,0.5) !important;
+}
+
+.text-dark {
+  color: var(--white) !important;
+}
+
+.text-muted {
+  color: rgba(255,255,255,0.4) !important;
+}
+
+.bg-white {
+  background-color: var(--charcoal-900) !important;
+}
+
+.bg-light {
+  background-color: var(--charcoal-900) !important;
+}
+
+.border {
+  border-color: rgba(255,255,255,0.1) !important;
+}
+
+.border-bottom {
+  border-bottom-color: rgba(255,255,255,0.1) !important;
+}
+
+/* Form controls */
+.form-control,
+.form-select {
+  background-color: var(--charcoal-800);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--white);
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: var(--charcoal-800);
+  border-color: var(--gold-500);
+  color: var(--white);
+  box-shadow: 0 0 0 3px var(--gold-glow);
+}
+
+.form-control::placeholder {
+  color: rgba(255,255,255,0.35);
+}
+
+.form-label {
+  color: rgba(255,255,255,0.7);
+}
+
+/* Card override */
+.card {
+  background-color: var(--charcoal-900);
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+}
+
+/* List group */
+.list-group-item {
+  background-color: var(--charcoal-900);
+  border-color: rgba(255,255,255,0.08);
+  color: rgba(255,255,255,0.85);
+}
+
+/* Table */
+.table {
+  color: rgba(255,255,255,0.85);
+}
+
+.table th {
+  color: rgba(255,255,255,0.7);
+}
+
+/* Alert */
+.alert-info {
+  background: rgba(212,175,55,0.1);
+  border-color: rgba(212,175,55,0.2);
+  color: var(--gold-400);
+}
+
+.alert-danger {
+  background: rgba(220,53,69,0.15);
+  border-color: rgba(220,53,69,0.25);
+  color: #ff6b7a;
+}
+
+.alert-success {
+  background: rgba(40,167,69,0.15);
+  border-color: rgba(40,167,69,0.25);
+  color: #5ddb82;
+}
+
+/* Close button */
+.btn-close {
+  filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+/* Modal */
+.modal-content {
+  background-color: var(--charcoal-900);
+  border-color: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.85);
+}
+
+/* Dropdown */
+.dropdown-menu {
+  background-color: var(--charcoal-900);
+  border-color: rgba(255,255,255,0.1);
+}
+
+.dropdown-item {
+  color: rgba(255,255,255,0.8);
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255,255,255,0.08);
+  color: var(--gold-500);
+}
+
+/* Pagination */
+.page-link {
+  background-color: var(--charcoal-900);
+  border-color: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+}
+
+.page-link:hover {
+  background-color: rgba(255,255,255,0.08);
+  color: var(--gold-500);
+}
+
+/* Outline dark button override */
+.btn-outline-dark {
+  color: rgba(255,255,255,0.7);
+  border-color: rgba(255,255,255,0.2);
+}
+
+.btn-outline-dark:hover {
+  background-color: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.3);
+  color: var(--white);
+}
+
+/* hr */
+hr {
+  border-color: rgba(255,255,255,0.08);
+}
+
+/* Links */
+a {
+  color: var(--gold-500);
+}
+
+a:hover {
+  color: var(--gold-400);
+}
+
+/* Headings default to white */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--white);
+}
+
+/* Strong/bold */
+.fw-bold, strong, b {
+  color: var(--white);
+}
+
+/* Small text */
+small, .small {
+  color: rgba(255,255,255,0.5);
+}
+
+/* Input group */
+.input-group-text {
+  background-color: var(--charcoal-800);
+  border-color: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.7);
 }
 
 /* ── Responsive ── */

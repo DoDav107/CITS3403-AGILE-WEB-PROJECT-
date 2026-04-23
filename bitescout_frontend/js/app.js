@@ -364,10 +364,19 @@
 
     renderRestaurantCard(restaurant) {
       const distanceHtml = restaurant.distanceKm != null ? `<span class="distance-pill">📍 ${restaurant.distanceKm.toFixed(1)} km</span>` : '';
+      const restaurantImages = {
+        'Harbour Roast': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=1000',
+        'Saigon Alley': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=1000',
+        'Sora Sushi Bar': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=1000'
+      };
+      const imageUrl = restaurantImages[restaurant.name] || '';
+      const imageHtml = imageUrl
+        ? `<img src="${imageUrl}" alt="${restaurant.name}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" />`
+        : `<div class="restaurant-image mb-3">${restaurant.name}</div>`;
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3">
-            <div class="restaurant-image mb-3">${restaurant.name}</div>
+            <div class="restaurant-image mb-3 position-relative overflow-hidden">${imageHtml}</div>
             <div class="d-flex flex-wrap mb-2">
               <span class="rating-pill">⭐ ${restaurant.rating}</span>
               <span class="price-pill">${restaurant.price}</span>
