@@ -11,29 +11,35 @@ PLACES_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 
 
-def get_api_key():
-    api_key = os.getenv("GOOGLE_MAPS_API_KEY")
+class GooglePlacesError(Exception):
+    def __init__(self, message, status_code=500):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+def get_api_key(explicit_api_key=None):
+    api_key = explicit_api_key or os.getenv("GOOGLE_MAPS_API_KEY")
     if not api_key:
-        raise RuntimeError("GOOGLE_MAPS_API_KEY is not set in your environment or .env file")
-    return api_key
+        raise GooglePlacesError("GOOGLE_MAPS_API_KEY is not set in your environment or .env file", 500)
+    return str(api_key).strip()
 
 
-def geocode_address(address):
-    api_key = get_api_key()
+def geocode_address(api_key, address):
+    api_key = get_api_key(api_key)
 
     if not address or not str(address).strip():
-        raise RuntimeError("Address is required")
+        raise GooglePlacesError("Address is required", 400)
 
     url = f"{GEOCODE_URL}?address={quote_plus(address.strip())}&key={api_key}"
     response = requests.get(url, timeout=15)
 
     if not response.ok:
-        raise RuntimeError(f"Google Geocoding error {response.status_code}: {response.text}")
+        raise GooglePlacesError(f"Google Geocoding error {response.status_code}: {response.text}", response.status_code)
 
     data = response.json()
 
     if data.get("status") != "OK" or not data.get("results"):
-        raise RuntimeError(f"Unable to geocode address: {data.get('status', 'UNKNOWN_ERROR')}")
+        raise GooglePlacesError(f"Unable to geocode address: {data.get('status', 'UNKNOWN_ERROR')}", 400)
 
     first = data["results"][0]
     location = first["geometry"]["location"]
@@ -45,8 +51,8 @@ def geocode_address(address):
     }
 
 
-def search_nearby_places(lat, lng, radius=8000, included_types=None, max_result_count=12):
-    api_key = get_api_key()
+def search_nearby_places(api_key, lat, lng, radius=8000, included_types=None, max_result_count=12):
+    api_key = get_api_key(api_key)
 
     if included_types is None or len(included_types) == 0:
         included_types = ["restaurant", "cafe"]
@@ -88,7 +94,7 @@ def search_nearby_places(lat, lng, radius=8000, included_types=None, max_result_
     )
 
     if not response.ok:
-        raise RuntimeError(f"Google Places error {response.status_code}: {response.text}")
+        raise GooglePlacesError(f"Google Places error {response.status_code}: {response.text}", response.status_code)
 
     data = response.json()
     places = data.get("places", [])

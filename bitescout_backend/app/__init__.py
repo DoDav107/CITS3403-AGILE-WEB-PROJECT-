@@ -1,12 +1,17 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 
 db = SQLAlchemy()
 
 
 def create_app(test_config=None):
+    backend_dir = Path(__file__).resolve().parents[1]
+    load_dotenv(backend_dir / ".env")
+
     frontend_dir = Path(__file__).resolve().parents[2] / "bitescout_frontend"
     app = Flask(__name__, static_folder=str(frontend_dir), static_url_path="")
     app.config.update(
@@ -14,6 +19,7 @@ def create_app(test_config=None):
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{Path(app.instance_path) / 'bitescout.db'}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JSON_SORT_KEYS=False,
+        GOOGLE_MAPS_API_KEY=(os.getenv("GOOGLE_MAPS_API_KEY") or "").strip(),
     )
 
     if test_config:

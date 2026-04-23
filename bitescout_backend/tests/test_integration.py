@@ -1,6 +1,7 @@
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 from app import create_app
 
@@ -18,6 +19,22 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             )
 
             self.assertTrue(app.testing)
+        finally:
+            temp_dir.cleanup()
+
+    def test_google_maps_api_key_is_loaded_from_environment(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        try:
+            with patch.dict("os.environ", {"GOOGLE_MAPS_API_KEY": "test-google-key"}):
+                app = create_app(
+                    {
+                        "TESTING": True,
+                        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(temp_dir.name) / 'test.db'}",
+                        "SECRET_KEY": "test-secret",
+                    }
+                )
+
+            self.assertEqual(app.config["GOOGLE_MAPS_API_KEY"], "test-google-key")
         finally:
             temp_dir.cleanup()
 
@@ -165,6 +182,34 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(delete_response.status_code, 200)
         restaurant_after_delete = self.client.get("/api/restaurants/r1").get_json()
         self.assertEqual(restaurant_after_delete["rating"], 5.0)
+
+    def test_google_nearby_returns_results(self):
+        self.app.config["GOOGLE_MAPS_API_KEY"] = "test-google-key"
+        google_response = Mock()
+        google_response.ok = True
+        google_response.json.return_value = {
+            "places": [
+                {
+                    "id": "place-1",
+                    "displayName": {"text": "Test Cafe"},
+                    "formattedAddress": "123 Test St",
+                    "location": {"latitude": -31.95, "longitude": 115.86},
+                    "rating": 4.5,
+                    "primaryType": "cafe",
+                    "types": ["cafe", "food"],
+                }
+            ]
+        }
+
+        with patch("app.google_places.requests.post", return_value=google_response):
+            response = self.client.post(
+                "/api/google/nearby",
+                json={"lat": -31.95, "lng": 115.86, "radius": 8000, "includedTypes": ["cafe"]},
+            )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(payload["results"][0]["name"], "Test Cafe")
 
 
 if __name__ == "__main__":
