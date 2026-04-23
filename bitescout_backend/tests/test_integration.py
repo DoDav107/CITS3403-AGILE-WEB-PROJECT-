@@ -6,6 +6,21 @@ from app import create_app
 
 
 class BiteScoutIntegrationTests(unittest.TestCase):
+    def test_app_can_be_created(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        try:
+            app = create_app(
+                {
+                    "TESTING": True,
+                    "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(temp_dir.name) / 'test.db'}",
+                    "SECRET_KEY": "test-secret",
+                }
+            )
+
+            self.assertTrue(app.testing)
+        finally:
+            temp_dir.cleanup()
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.app = create_app(
