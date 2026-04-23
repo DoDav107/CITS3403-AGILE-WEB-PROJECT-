@@ -457,7 +457,7 @@
       const restaurantId = encodeRouteValue(restaurant.id);
       return `
         <div class="col-md-6 col-xl-4">
-          <div class="restaurant-card p-3">
+          <div class="restaurant-card p-3 d-flex flex-column">
             <div class="restaurant-image mb-3 position-relative overflow-hidden">${imageHtml}</div>
             <div class="d-flex flex-wrap mb-2">
               <span class="rating-pill">⭐ ${restaurant.rating}</span>
@@ -468,7 +468,7 @@
             <h3 class="h5 fw-bold">${escapeHtml(restaurant.name)}</h3>
             <p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.address)}</p>
             <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 mt-auto pt-2">
               <a class="btn btn-primary btn-sm" href="restaurant.html?id=${restaurantId}">View details</a>
               <button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurantId}">Save</button>
             </div>

@@ -725,6 +725,8 @@ h1, h2, .section-title, .hero-title, .cta-title {
   height: 200%;
   background: radial-gradient(ellipse at center, rgba(212, 175, 55, 0.08) 0%, transparent 70%);
   animation: pulse 4s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 0;
 }
 
 @keyframes pulse {
