@@ -457,7 +457,7 @@
       const restaurantId = encodeRouteValue(restaurant.id);
       return `
         <div class="col-md-6 col-xl-4">
-          <div class="restaurant-card p-3">
+          <div class="restaurant-card p-3 d-flex flex-column">
             <div class="restaurant-image mb-3 position-relative overflow-hidden">${imageHtml}</div>
             <div class="d-flex flex-wrap mb-2">
               <span class="rating-pill">⭐ ${restaurant.rating}</span>
@@ -468,7 +468,7 @@
             <h3 class="h5 fw-bold">${escapeHtml(restaurant.name)}</h3>
             <p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.address)}</p>
             <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 mt-auto pt-2">
               <a class="btn btn-primary btn-sm" href="restaurant.html?id=${restaurantId}">View details</a>
               <button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurantId}">Save</button>
             </div>
@@ -1177,6 +1177,94 @@
       App.init().catch(error => {
         console.error(error);
       });
+
+      // Navbar scroll effect
+      const navbar = document.querySelector('.navbar');
+      if (navbar) {
+        window.addEventListener('scroll', () => {
+          if (window.scrollY > 20) {
+            navbar.classList.add('scrolled');
+          } else {
+            navbar.classList.remove('scrolled');
+          }
+        });
+      }
+
+      // Intersection Observer for scroll reveal
+      const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      };
+
+      const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('revealed');
+            revealObserver.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+
+      document.querySelectorAll('.section-top-rated, .section-how, .section-testimonials, .section-cta').forEach(section => {
+        section.style.opacity = '0';
+        section.style.transform = 'translateY(30px)';
+        section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
+        revealObserver.observe(section);
+      });
+
+      // Add revealed class styles dynamically
+      const style = document.createElement('style');
+      style.textContent = `
+        .revealed {
+          opacity: 1 !important;
+          transform: translateY(0) !important;
+        }
+      `;
+      document.head.appendChild(style);
+
+      // Scroll-Linked Opacity Fade: content above viewport fades out
+      const fadeSections = document.querySelectorAll('.scroll-fade-section');
+
+      function updateScrollFade() {
+        const viewportHeight = window.innerHeight;
+
+        fadeSections.forEach(section => {
+          const rect = section.getBoundingClientRect();
+          const sectionBottom = rect.bottom;
+          const sectionHeight = rect.height;
+
+          // Calculate how much of the section has scrolled out of the top of viewport
+          // When section bottom reaches viewport top: fully faded
+          const visibleHeight = Math.max(0, sectionBottom);
+          const visibilityRatio = Math.min(1, visibleHeight / (sectionHeight * 0.4));
+
+          if (visibilityRatio < 1) {
+            // Section is leaving viewport from top - fade and darken
+            const opacity = 0.15 + (visibilityRatio * 0.85);
+            const brightness = 0.35 + (visibilityRatio * 0.65);
+            section.style.opacity = opacity;
+            section.style.filter = `brightness(${brightness})`;
+          } else {
+            // Section is fully or mostly visible
+            section.style.opacity = 1;
+            section.style.filter = 'brightness(1)';
+          }
+        });
+      }
+
+      let fadeTicking = false;
+      window.addEventListener('scroll', () => {
+        if (!fadeTicking) {
+          requestAnimationFrame(() => {
+            updateScrollFade();
+            fadeTicking = false;
+          });
+          fadeTicking = true;
+        }
+      }, { passive: true });
+
+      // Initial call
+      updateScrollFade();
     });
   }
 })();
