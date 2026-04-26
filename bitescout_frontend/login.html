@@ -18,22 +18,49 @@
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-6 col-xl-5">
-        <div class="glass-card p-4 p-md-5">
+        <div class="glass-card auth-card p-4 p-md-5">
           <p class="eyebrow mb-2">Welcome back</p>
           <h1 class="h2 fw-bold mb-3">Log in</h1>
           <p class="text-secondary mb-4">Access your profile, reviews, and favourites.</p>
-          <form id="loginForm">
-            <div class="mb-3">
-              <label class="form-label">Email</label>
-              <input type="email" class="form-control" name="email" required>
+          <form id="loginForm" class="auth-form" novalidate>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="loginEmail">Email</label>
+              <input
+                id="loginEmail"
+                type="email"
+                class="form-control"
+                name="email"
+                placeholder="avery@example.com"
+                autocomplete="email"
+                maxlength="255"
+                aria-describedby="loginEmailHint loginEmailError"
+                aria-invalid="false"
+                required
+              >
+              <p id="loginEmailHint" class="field-hint">Use the email address linked to your BiteScout account.</p>
+              <p id="loginEmailError" class="field-error" role="alert" aria-live="polite"></p>
             </div>
-            <div class="mb-3">
-              <label class="form-label">Password</label>
-              <input type="password" class="form-control" name="password" required>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="loginPassword">Password</label>
+              <input
+                id="loginPassword"
+                type="password"
+                class="form-control"
+                name="password"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                minlength="8"
+                maxlength="72"
+                aria-describedby="loginPasswordHint loginPasswordError"
+                aria-invalid="false"
+                required
+              >
+              <p id="loginPasswordHint" class="field-hint">Enter the 8-72 character password for your account.</p>
+              <p id="loginPasswordError" class="field-error" role="alert" aria-live="polite"></p>
             </div>
             <button class="btn btn-primary w-100" type="submit">Log in</button>
           </form>
-          <div id="loginMessage" class="mt-3"></div>
+          <div id="loginMessage" class="auth-message mt-3" aria-live="polite"></div>
           <p class="small text-secondary mt-3 mb-0">Need an account? <a href="signup.html">Sign up</a></p>
         </div>
       </div>

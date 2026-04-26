@@ -628,8 +628,167 @@
         success: 'text-success',
         error: 'text-danger'
       };
-      element.className = classes[type] || 'text-secondary';
+      const messageClass = classes[type] || 'text-secondary';
+      element.className = element.classList.contains('auth-message') ? `auth-message ${messageClass}` : messageClass;
       element.textContent = message;
+    },
+
+    getPasswordChecks(value) {
+      return {
+        length: value.length >= 8 && value.length <= 72,
+        lowercase: /[a-z]/.test(value),
+        uppercase: /[A-Z]/.test(value),
+        number: /\d/.test(value)
+      };
+    },
+
+    updatePasswordRules(input) {
+      const rules = document.getElementById('signupPasswordRules');
+      if (!rules || !input) return;
+      const checks = this.getPasswordChecks(input.value);
+      rules.querySelectorAll('[data-rule]').forEach(item => {
+        item.classList.toggle('is-met', Boolean(checks[item.dataset.rule]));
+      });
+    },
+
+    validateAuthField(input, mode) {
+      const value = input.value.trim();
+      if (input.name === 'name' && mode === 'signup') {
+        if (!value) return 'Enter your full name.';
+        if (value.length < 2 || value.length > 60) return 'Full name must be 2-60 characters.';
+        if (!/^[A-Za-z][A-Za-z' -]*[A-Za-z]$/.test(value)) {
+          return 'Use letters only. Spaces, hyphens, and apostrophes are allowed.';
+        }
+      }
+
+      if (input.name === 'username' && mode === 'signup') {
+        if (!value) return 'Choose a username.';
+        if (value.length < 3 || value.length > 24) return 'Username must be 3-24 characters.';
+        if (!/^[A-Za-z][A-Za-z0-9_]*$/.test(value)) {
+          return 'Start with a letter and use only letters, numbers, or underscores.';
+        }
+      }
+
+      if (input.name === 'email') {
+        if (!value) return 'Enter your email address.';
+        if (value.length > 255) return 'Email must be 255 characters or fewer.';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value)) {
+          return 'Enter a valid email address, such as avery@example.com.';
+        }
+      }
+
+      if (input.name === 'password') {
+        const password = input.value;
+        const checks = this.getPasswordChecks(password);
+        if (!password) return mode === 'signup' ? 'Create a password.' : 'Enter your password.';
+        if (!checks.length) return 'Password must be 8-72 characters.';
+        if (mode === 'signup' && (!checks.lowercase || !checks.uppercase || !checks.number)) {
+          return 'Password needs uppercase, lowercase, and a number.';
+        }
+      }
+
+      if (input.name === 'preferredCuisine' && mode === 'signup' && value) {
+        const allowedValues = Array.from(input.options).map(option => option.value || option.textContent.trim());
+        if (!allowedValues.includes(value)) return 'Choose a cuisine from the list.';
+      }
+
+      return '';
+    },
+
+    setAuthFieldState(input, message, shake = false) {
+      const field = input.closest('.auth-field');
+      const error = field ? field.querySelector('.field-error') : null;
+      const hasError = Boolean(message);
+      input.classList.toggle('is-invalid', hasError);
+      input.setAttribute('aria-invalid', hasError ? 'true' : 'false');
+      if (field) field.classList.toggle('has-error', hasError);
+      if (error) error.textContent = message;
+
+      if (hasError && shake && field) {
+        field.classList.remove('is-shaking');
+        void field.offsetWidth;
+        field.classList.add('is-shaking');
+        window.setTimeout(() => field.classList.remove('is-shaking'), 320);
+      }
+    },
+
+    flashAuthCard(form) {
+      const card = form.closest('.auth-card');
+      if (!card) return;
+      card.classList.remove('flash-error');
+      void card.offsetWidth;
+      card.classList.add('flash-error');
+      window.setTimeout(() => card.classList.remove('flash-error'), 560);
+    },
+
+    validateAuthForm(form, mode, shake = false) {
+      const fields = Array.from(form.querySelectorAll('input[name], select[name]'));
+      let firstInvalid = null;
+      fields.forEach(input => {
+        if (input.name === 'password') this.updatePasswordRules(input);
+        const message = this.validateAuthField(input, mode);
+        this.setAuthFieldState(input, message, shake);
+        if (message && !firstInvalid) firstInvalid = input;
+      });
+
+      if (firstInvalid) {
+        if (shake) this.flashAuthCard(form);
+        firstInvalid.focus();
+        return false;
+      }
+
+      return true;
+    },
+
+    bindAuthValidation(form, mode) {
+      const fields = Array.from(form.querySelectorAll('input[name], select[name]'));
+      fields.forEach(input => {
+        input.addEventListener('blur', () => {
+          if (input.name === 'password') this.updatePasswordRules(input);
+          this.setAuthFieldState(input, this.validateAuthField(input, mode), true);
+        });
+
+        input.addEventListener('input', () => {
+          if (input.name === 'password') this.updatePasswordRules(input);
+          if (input.classList.contains('is-invalid')) {
+            this.setAuthFieldState(input, this.validateAuthField(input, mode));
+          }
+        });
+
+        input.addEventListener('change', () => {
+          if (input.classList.contains('is-invalid')) {
+            this.setAuthFieldState(input, this.validateAuthField(input, mode));
+          }
+        });
+      });
+      this.updatePasswordRules(form.querySelector('input[name="password"]'));
+    },
+
+    getAuthPayload(form) {
+      const payload = Object.fromEntries(new FormData(form).entries());
+      ['name', 'username', 'email', 'preferredCuisine'].forEach(key => {
+        if (payload[key]) payload[key] = payload[key].trim();
+      });
+      return payload;
+    },
+
+    applyAuthServerError(form, mode, message) {
+      this.flashAuthCard(form);
+      if (mode === 'login') {
+        ['email', 'password'].forEach(name => {
+          const input = form.elements[name];
+          if (input) this.setAuthFieldState(input, 'Check your email and password, then try again.', true);
+        });
+        form.elements.email?.focus();
+      }
+
+      if (mode === 'signup' && /email|username|exists/i.test(message)) {
+        ['email', 'username'].forEach(name => {
+          const input = form.elements[name];
+          if (input) this.setAuthFieldState(input, 'This username or email may already be in use.', true);
+        });
+        form.elements.username?.focus();
+      }
     },
 
     async initHome() {
@@ -661,10 +820,14 @@
     initSignup() {
       const form = document.getElementById('signupForm');
       if (!form) return;
+      this.bindAuthValidation(form, 'signup');
       form.addEventListener('submit', async event => {
         event.preventDefault();
-        const formData = new FormData(form);
-        const payload = Object.fromEntries(formData.entries());
+        if (!this.validateAuthForm(form, 'signup', true)) {
+          this.showMessage('signupMessage', 'Please fix the highlighted fields before creating your account.', 'error');
+          return;
+        }
+        const payload = this.getAuthPayload(form);
         try {
           await this.api('/api/auth/signup', { method: 'POST', body: payload });
           await this.loadCurrentUser();
@@ -675,6 +838,7 @@
           }, 900);
         } catch (error) {
           this.showMessage('signupMessage', error.message, 'error');
+          this.applyAuthServerError(form, 'signup', error.message);
         }
       });
     },
@@ -682,10 +846,14 @@
     initLogin() {
       const form = document.getElementById('loginForm');
       if (!form) return;
+      this.bindAuthValidation(form, 'login');
       form.addEventListener('submit', async event => {
         event.preventDefault();
-        const formData = new FormData(form);
-        const payload = Object.fromEntries(formData.entries());
+        if (!this.validateAuthForm(form, 'login', true)) {
+          this.showMessage('loginMessage', 'Please fix the highlighted fields before logging in.', 'error');
+          return;
+        }
+        const payload = this.getAuthPayload(form);
         try {
           await this.api('/api/auth/login', { method: 'POST', body: payload });
           await this.loadCurrentUser();
@@ -696,6 +864,7 @@
           }, 900);
         } catch (error) {
           this.showMessage('loginMessage', error.message, 'error');
+          this.applyAuthServerError(form, 'login', error.message);
         }
       });
     },
