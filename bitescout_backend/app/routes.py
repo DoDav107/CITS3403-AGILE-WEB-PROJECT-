@@ -472,7 +472,7 @@ def chat():
         formatted_history.append({"role": role, "parts": [msg.get("content")]})
     
     model = genai.GenerativeModel(
-        model_name="gemini-1.5-flash",
+        model_name="gemini-3-flash-preview",
         system_instruction=system_prompt
     )
     
