@@ -1,5 +1,7 @@
 from datetime import datetime
+import os
 from functools import wraps
+import google.generativeai as genai
 from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
@@ -414,3 +416,70 @@ def remove_favourite_dish(dish_id):
     db.session.delete(item)
     db.session.commit()
     return jsonify({'message': 'Dish removed'})
+
+
+@bp.post('/api/chat')
+def chat():
+    payload = request.get_json(silent=True) or {}
+    user_message = payload.get('message')
+    chat_history = payload.get('history', [])
+    
+    if not user_message:
+        return jsonify({'error': 'Message is required'}), 400
+        
+    api_key = os.environ.get('GEMINI_API_KEY')
+    if not api_key:
+        return jsonify({'error': 'GEMINI_API_KEY is not configured on the server.'}), 500
+        
+    genai.configure(api_key=api_key)
+    
+    # Retrieve context
+    user = current_user()
+    restaurants = Restaurant.query.all()
+    
+    restaurant_context = []
+    for r in restaurants:
+        dish_list = ", ".join([d.name for d in r.dishes])
+        restaurant_context.append(
+            f"ID: {r.id}, Name: {r.name}, Suburb: {r.suburb}, Cuisine: {r.cuisine}, "
+            f"Price: {r.price}, Rating: {r.rating}, Dishes: {dish_list}, "
+            f"Tags: {r.tags}, Blurb: {r.blurb}"
+        )
+    
+    context_str = "\n".join(restaurant_context)
+    
+    user_pref_str = ""
+    if user:
+        user_pref_str = f"The user's name is {user.name}. Their preferred cuisine is {user.preferred_cuisine}."
+        
+    system_prompt = (
+        "You are the BiteScout Assistant, a friendly and helpful restaurant recommendation bot. "
+        "Your goal is to help the user find the best places to eat based on the available BiteScout database. "
+        f"{user_pref_str}\n\n"
+        "Here is the database of available restaurants on BiteScout:\n"
+        f"{context_str}\n\n"
+        "Instructions:\n"
+        "1. Only recommend restaurants that are present in the provided database.\n"
+        "2. Keep your answers concise and conversational.\n"
+        "3. When you mention a restaurant, format it as an HTML link to its page, like this: <a href=\"restaurant.html?id=[ID]\">[Name]</a>.\n"
+        "4. If the user asks for something not in the database, politely let them know you can't find it on BiteScout yet."
+    )
+    
+    # Format history for Gemini
+    formatted_history = []
+    for msg in chat_history:
+        role = "user" if msg.get("role") == "user" else "model"
+        formatted_history.append({"role": role, "parts": [msg.get("content")]})
+    
+    model = genai.GenerativeModel(
+        model_name="gemini-1.5-flash",
+        system_instruction=system_prompt
+    )
+    
+    chat_session = model.start_chat(history=formatted_history)
+    
+    try:
+        response = chat_session.send_message(user_message)
+        return jsonify({'response': response.text})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
