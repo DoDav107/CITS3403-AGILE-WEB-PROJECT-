@@ -7,7 +7,7 @@ import time
 class SeleniumTests(unittest.TestCase):
 
     def setUp(self):
-        self.driver = webdriver.Chrome()
+        self.driver = webdriver.Chrome()  
         self.driver.get("http://127.0.0.1:5000")
 
     def tearDown(self):
@@ -27,7 +27,7 @@ class SeleniumTests(unittest.TestCase):
    def test_signup_page_loads(self):
         self.driver.get("http://127.0.0.1:5000/signup.html")
         self.assertIn("Join BiteScout", self.driver.page_source)
-
+    
     def test_search_input_exists(self):
         self.driver.get("http://127.0.0.1:5000/browse.html")
         search = self.driver.find_element(By.TAG_NAME, "input")
