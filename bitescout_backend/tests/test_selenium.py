@@ -7,7 +7,7 @@ import time
 class SeleniumTests(unittest.TestCase):
 
     def setUp(self):
-        self.driver = webdriver.Chrome()  # 要先装好 chromedriver
+        self.driver = webdriver.Chrome()
         self.driver.get("http://127.0.0.1:5000")
 
     def tearDown(self):
@@ -20,13 +20,13 @@ class SeleniumTests(unittest.TestCase):
         self.driver.get("http://127.0.0.1:5000/browse.html")
         self.assertIn("Find restaurants", self.driver.page_source)
 
-    def test_login_page_loads(self):
+   def test_login_page_loads(self):
         self.driver.get("http://127.0.0.1:5000/login.html")
-        self.assertIn("Login", self.driver.page_source)
+        self.assertIn("Log in", self.driver.page_source)
 
-    def test_signup_page_loads(self):
+   def test_signup_page_loads(self):
         self.driver.get("http://127.0.0.1:5000/signup.html")
-        self.assertIn("Sign Up", self.driver.page_source)
+        self.assertIn("Join BiteScout", self.driver.page_source)
 
     def test_search_input_exists(self):
         self.driver.get("http://127.0.0.1:5000/browse.html")
