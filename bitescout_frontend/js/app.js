@@ -1233,13 +1233,20 @@
         bodyEl.scrollTop = bodyEl.scrollHeight;
         
         try {
+          // Include user's location if available for Google Places context
+          const storedLoc = this.getUserLocation ? this.getUserLocation() : null;
+          const chatPayload = {
+            message: text,
+            history: this.state.chatHistory
+          };
+          if (storedLoc) {
+            chatPayload.location = { lat: storedLoc.lat, lng: storedLoc.lng };
+          }
+          
           const response = await fetch('/api/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              message: text,
-              history: this.state.chatHistory
-            })
+            body: JSON.stringify(chatPayload)
           });
           
           const data = await response.json();
