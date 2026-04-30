@@ -478,8 +478,9 @@ def chat():
     
     # Detect if the user is asking about a specific area/location
     location_keywords = re.findall(
-        r'\b(?:in|near|around|at|close to|nearby)\s+([A-Z][a-zA-Z\s,]+)',
-        user_message
+        r'\b(?:in|near|around|at|close to|nearby)\s+([a-zA-Z][a-zA-Z\s,]+)',
+        user_message,
+        flags=re.IGNORECASE
     )
     
     try:
