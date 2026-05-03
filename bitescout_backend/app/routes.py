@@ -169,8 +169,33 @@ def user_profile(user_id):
 @bp.post('/api/auth/signup')
 def signup():
     payload = request.get_json(silent=True) or request.form.to_dict()
-    required = ['name', 'username', 'email', 'password']
+    required = ['name', 'username', 'email', 'confirmEmail', 'password']
     missing = [field for field in required if not payload.get(field)]
+
+    if missing:
+        return jsonify({'error': f"Missing fields: {', '.join(missing)}"}), 400
+
+    email = (payload.get('email') or '').strip().lower()
+    confirm_email = (payload.get('confirmEmail') or '').strip().lower()
+
+    if email != confirm_email:
+        return jsonify({'error': 'The two email fields do not match.'}), 400
+
+    if User.query.filter((User.email == email) | (User.username == payload['username'])).first():
+        return jsonify({'error': 'Email or username already exists'}), 409
+
+    user = User(
+        name=payload['name'],
+        username=payload['username'],
+        email=email,
+        password_hash=generate_password_hash(payload['password']),
+        preferred_cuisine=payload.get('preferredCuisine', ''),
+        bio=payload.get('bio', ''),
+    )
+    db.session.add(user)
+    db.session.commit()
+    session['user_id'] = user.id
+    return jsonify({'message': 'Account created', 'user': user_to_dict(user)}), 201
     if missing:
         return jsonify({'error': f"Missing fields: {', '.join(missing)}"}), 400
     if User.query.filter((User.email == payload['email']) | (User.username == payload['username'])).first():
@@ -193,13 +218,54 @@ def signup():
 @bp.post('/api/auth/login')
 def login():
     payload = request.get_json(silent=True) or request.form.to_dict()
-    email = payload.get('email', '')
+    email = (payload.get('email') or '').strip().lower()
     password = payload.get('password', '')
     user = User.query.filter_by(email=email).first()
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'error': 'Incorrect email or password'}), 401
     session['user_id'] = user.id
     return jsonify({'message': 'Logged in', 'user': user_to_dict(user)})
+
+@bp.post('/api/auth/reset-password')
+def reset_password():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+
+    email = (payload.get('email') or '').strip().lower()
+    new_password = payload.get('password') or ''
+    confirm_password = payload.get('confirmPassword') or ''
+
+    if not email:
+        return jsonify({'error': 'Enter the email address for your account.'}), 400
+
+    if new_password != confirm_password:
+        return jsonify({'error': 'The two password fields do not match.'}), 400
+
+    if len(new_password) < 8 or len(new_password) > 72:
+        return jsonify({'error': 'Password must be 8-72 characters.'}), 400
+
+    if not any(char.islower() for char in new_password):
+        return jsonify({'error': 'Password needs at least one lowercase letter.'}), 400
+
+    if not any(char.isupper() for char in new_password):
+        return jsonify({'error': 'Password needs at least one uppercase letter.'}), 400
+
+    if not any(char.isdigit() for char in new_password):
+        return jsonify({'error': 'Password needs at least one number.'}), 400
+
+    user = User.query.filter_by(email=email).first()
+
+    if not user:
+        return jsonify({'error': 'No BiteScout account was found for this email address.'}), 404
+
+    user.password_hash = generate_password_hash(new_password)
+    db.session.commit()
+
+    session['user_id'] = user.id
+
+    return jsonify({
+        'message': 'Password reset successfully.',
+        'user': user_to_dict(user)
+    })
 
 
 @bp.post('/api/auth/logout')
