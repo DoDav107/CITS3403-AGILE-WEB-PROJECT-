@@ -536,6 +536,20 @@ h1, h2, .section-title, .hero-title, .cta-title {
   color: var(--gold-600);
 }
 
+.rating-stars {
+  letter-spacing: 0;
+}
+
+.tag-link {
+  text-decoration: none;
+}
+
+.tag-link:hover,
+.tag-link:focus {
+  color: var(--gold-600);
+  border-color: rgba(212, 175, 55, 0.55);
+}
+
 .price-pill {
   background: rgba(255,255,255,0.08);
   color: rgba(255,255,255,0.7);

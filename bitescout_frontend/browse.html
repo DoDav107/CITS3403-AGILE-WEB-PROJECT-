@@ -17,42 +17,41 @@
 <section class="py-5 page-banner border-bottom">
   <div class="container">
     <p class="eyebrow mb-2">Browse and search</p>
-    <h1 class="fw-bold mb-3">Find restaurants and drinks spots</h1>
-    <p class="text-secondary mb-0">Search by name or suburb, filter by cuisine, price and rating, then open a restaurant to see dishes and reviews.</p>
+    <h1 class="fw-bold mb-3">Restaurants near you</h1>
+    <p class="text-secondary mb-0">Allow location access to browse nearby places from Google, then filter by type, tags, and rating.</p>
   </div>
 </section>
 <section class="py-4">
   <div class="container">
     <div class="glass-card p-4 mb-4">
       <div class="row g-3 align-items-end">
-        <div class="col-lg-4">
+        <div class="col-lg-3">
           <label class="form-label">Search</label>
-          <input id="searchInput" class="form-control" placeholder="e.g. sushi, Victoria Park, coffee" />
+          <input id="searchInput" class="form-control" placeholder="e.g. ramen, bakery, coffee" />
         </div>
-        <div class="col-md-4 col-lg-2">
-          <label class="form-label">Cuisine</label>
-          <select id="cuisineFilter" class="form-select"></select>
-        </div>
-        <div class="col-md-4 col-lg-2">
-          <label class="form-label">Price</label>
-          <select id="priceFilter" class="form-select">
+        <div class="col-md-4 col-lg-3">
+          <label class="form-label">Type</label>
+          <select id="placeTypeFilter" class="form-select">
             <option value="">Any</option>
-            <option value="$">$</option>
-            <option value="$$">$$</option>
-            <option value="$$$">$$$</option>
+          </select>
+        </div>
+        <div class="col-md-4 col-lg-3">
+          <label class="form-label">Tag</label>
+          <select id="tagFilter" class="form-select">
+            <option value="">Any</option>
           </select>
         </div>
         <div class="col-md-4 col-lg-2">
-          <label class="form-label">Min rating</label>
+          <label class="form-label">Stars</label>
           <select id="ratingFilter" class="form-select">
             <option value="0">Any</option>
-            <option value="3">3+</option>
-            <option value="4">4+</option>
-            <option value="4.5">4.5+</option>
+            <option value="3">★★★☆☆ and up</option>
+            <option value="4">★★★★☆ and up</option>
+            <option value="5">★★★★★ only</option>
           </select>
         </div>
-        <div class="col-lg-2 d-grid">
-          <button id="useLocationBrowse" class="btn btn-outline-dark">Use my location</button>
+        <div class="col-lg-1 d-grid">
+          <button id="retryLocationBrowse" class="btn btn-outline-dark">Retry</button>
         </div>
       </div>
       <div id="browseLocationMessage" class="small text-secondary mt-3"></div>

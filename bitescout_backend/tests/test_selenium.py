@@ -18,7 +18,7 @@ class SeleniumTests(unittest.TestCase):
 
     def test_browse_page_loads(self):
         self.driver.get("http://127.0.0.1:5000/browse.html")
-        self.assertIn("Find restaurants", self.driver.page_source)
+        self.assertIn("Restaurants near you", self.driver.page_source)
 
     def test_login_flow(self):
         self.driver.get("http://127.0.0.1:5000/login.html")

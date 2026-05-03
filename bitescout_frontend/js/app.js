@@ -20,9 +20,9 @@
       case 1:
         return 'Location permission was denied. Allow location access for this site in your browser settings, then try again.';
       case 2:
-        return 'Your device could not determine a location. Check Location Services, then try again or search manually.';
+        return 'Your device could not determine a location. Check Location Services, then try again.';
       case 3:
-        return 'Location request timed out. Try again, or search for a suburb or postcode manually.';
+        return 'Location request timed out. Try again when your device has a clearer location fix.';
       default:
         return 'Your current location is unavailable right now. Check browser permissions or Location Services, then try again.';
     }
@@ -149,149 +149,36 @@
 
     initRecommendations() {
       const target = document.getElementById('recommendationsGrid');
-      const detectBtn = document.getElementById('detectLocationBtn');
-      const searchBtn = document.getElementById('searchLocationBtn');
-      const resetBtn = document.getElementById('resetRecommendationsBtn');
-      const manualInput = document.getElementById('manualLocationInput');
-      const radiusSelect = document.getElementById('recommendationRadius');
-      const typeSelect = document.getElementById('recommendationType');
-      const minRatingSelect = document.getElementById('minGoogleRating');
-    
-      if (!target || !detectBtn || !searchBtn || !resetBtn) return;
-    
-      let lastCoords = null;
-      let lastResults = [];
-      let lastSearchLabel = '';
-    
-      const renderPlaces = (places) => {
-        target.innerHTML = places.length
-          ? places.map(place => this.renderGooglePlaceCard(place)).join('')
-          : this.emptyState('No nearby places matched the selected filters.');
-      };
-    
-      const reRenderFromCurrentResults = () => {
-        const minRating = parseFloat(minRatingSelect?.value || '0');
-        const filtered = this.filterGooglePlaces(lastResults, minRating);
-        renderPlaces(filtered);
-        if (lastResults.length) {
-          this.showMessage(
-            'recommendationStatus',
-            `Showing ${filtered.length} nearby place${filtered.length === 1 ? '' : 's'}${lastSearchLabel ? ` for ${lastSearchLabel}` : ''}.`,
-            'info'
-          );
-        }
-      };
-    
-      const currentRadius = () => parseInt(radiusSelect?.value || '8000', 10);
-      const currentTypes = () =>
-        (typeSelect?.value || 'restaurant,cafe')
-          .split(',')
-          .map(value => value.trim())
-          .filter(Boolean);
-    
-      const loadNearbyPlaces = async (coords, label = 'your location') => {
-        this.showMessage('recommendationStatus', `Loading nearby places for ${label}...`, 'info');
-    
-        try {
-          const results = await this.fetchNearbyGooglePlaces(coords, currentRadius(), currentTypes(), 12);
-          lastCoords = coords;
-          lastResults = results;
-          lastSearchLabel = label;
-          if (label === 'your location') this.setUserLocation(coords);
-    
-          reRenderFromCurrentResults();
-    
-          const visibleCount = this.filterGooglePlaces(results, parseFloat(minRatingSelect?.value || '0')).length;
-          this.showMessage(
-            'recommendationStatus',
-            `Loaded ${visibleCount} nearby place${visibleCount === 1 ? '' : 's'} for ${label}.`,
-            'success'
-          );
-        } catch (error) {
-          this.showMessage('recommendationStatus', error.message, 'error');
-          target.innerHTML = this.emptyState('Unable to load nearby places right now.');
-        }
-      };
-    
-      const loadManualLocation = async () => {
-        const address = manualInput?.value.trim();
-        if (!address) {
-          this.showMessage('recommendationStatus', 'Please enter a suburb, postcode, or address first.', 'error');
-          return;
-        }
-    
-        this.showMessage('recommendationStatus', `Looking up ${address}...`, 'info');
-    
-        try {
-          const payload = await this.searchGooglePlacesByAddress(address, currentRadius(), currentTypes(), 12);
-    
-          const coords = {
-            lat: payload.searchLocation.lat,
-            lng: payload.searchLocation.lng
-          };
-    
-          lastCoords = coords;
-          lastResults = payload.results || [];
-          lastSearchLabel = payload.searchLocation.formattedAddress || address;
-    
-          reRenderFromCurrentResults();
-    
-          const visibleCount = this.filterGooglePlaces(lastResults, parseFloat(minRatingSelect?.value || '0')).length;
-          this.showMessage(
-            'recommendationStatus',
-            `Loaded ${visibleCount} nearby place${visibleCount === 1 ? '' : 's'} for ${lastSearchLabel}.`,
-            'success'
-          );
-        } catch (error) {
-          this.showMessage('recommendationStatus', error.message, 'error');
-          target.innerHTML = this.emptyState('Unable to load nearby places for that location.');
-        }
-      };
-    
-      detectBtn.addEventListener('click', () => {
-        this.requestLocation('recommendationStatus', async coords => {
-          await loadNearbyPlaces(coords, 'your location');
-        });
-      });
-    
-      searchBtn.addEventListener('click', async () => {
-        await loadManualLocation();
-      });
-    
-      manualInput?.addEventListener('keydown', async (event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          await loadManualLocation();
-        }
-      });
-    
-      resetBtn.addEventListener('click', () => {
-        lastCoords = null;
-        lastResults = [];
-        lastSearchLabel = '';
-        if (manualInput) manualInput.value = '';
-        target.innerHTML = this.emptyState('Use your current location or type another location to load live nearby recommendations.');
-        this.showMessage('recommendationStatus', 'Cleared nearby results.', 'info');
-      });
-    
-      minRatingSelect?.addEventListener('change', () => {
-        if (lastResults.length) reRenderFromCurrentResults();
-      });
-    
-      radiusSelect?.addEventListener('change', async () => {
-        if (lastCoords && lastSearchLabel) {
-          await loadNearbyPlaces(lastCoords, lastSearchLabel);
-        }
-      });
-    
-      typeSelect?.addEventListener('change', async () => {
-        if (lastCoords && lastSearchLabel) {
-          await loadNearbyPlaces(lastCoords, lastSearchLabel);
-        }
-      });
-    
-      target.innerHTML = this.emptyState('Use your current location or type another location to load live nearby recommendations.');
-      this.showMessage('recommendationStatus', 'Ready to search nearby places.', 'info');
+      const title = document.getElementById('recommendationTitle');
+      const user = this.getCurrentUser();
+      if (!target) return;
+
+      if (!user) {
+        if (title) title.textContent = 'A better mix after you log in';
+        this.showMessage('recommendationStatus', 'Log in with a favourite cuisine and BiteScout will shape this page around your taste.', 'info');
+        target.innerHTML = this.emptyState('No profile preference yet. Log in to get personal picks.');
+        return;
+      }
+
+      const preferredCuisine = user.preferredCuisine || '';
+      if (!preferredCuisine) {
+        if (title) title.textContent = 'Tell BiteScout what you like';
+        this.showMessage('recommendationStatus', 'Choose a favourite cuisine in your profile details so recommendations can start with food you already enjoy.', 'info');
+        target.innerHTML = this.emptyState('Your recommendation mix will appear once a favourite cuisine is set.');
+        return;
+      }
+
+      const recommendations = this.buildPreferenceRecommendations(this.state.restaurants, preferredCuisine, 6);
+      if (title) title.textContent = `${preferredCuisine} first, with room to explore`;
+      this.showMessage(
+        'recommendationStatus',
+        `Most picks match ${preferredCuisine}; the rest keep the list from feeling too narrow.`,
+        'info'
+      );
+      target.innerHTML = recommendations.length
+        ? recommendations.map(restaurant => this.renderRestaurantCard(restaurant)).join('')
+        : this.emptyState('No recommendations are available yet.');
+      this.bindSaveButtons();
     },
     
     async routePage() {
@@ -443,6 +330,64 @@
       }));
     },
 
+    ratingWord(value) {
+      return ['zero', 'one', 'two', 'three', 'four', 'five'][value] || 'zero';
+    },
+
+    renderRatingStars(rating) {
+      const numericRating = Number(rating);
+      const roundedRating = Number.isFinite(numericRating)
+        ? Math.max(0, Math.min(5, Math.round(numericRating)))
+        : 0;
+      const stars = `${'★'.repeat(roundedRating)}${'☆'.repeat(5 - roundedRating)}`;
+      return `<span class="rating-pill rating-stars" aria-label="Rated ${this.ratingWord(roundedRating)} out of five stars">${stars}</span>`;
+    },
+
+    buildPreferenceRecommendations(restaurants, preferredCuisine = '', limit = 6) {
+      const preferred = String(preferredCuisine || '').trim().toLowerCase();
+      const sorted = [...restaurants].sort((left, right) => Number(right.rating || 0) - Number(left.rating || 0));
+      if (!preferred) return sorted.slice(0, limit);
+
+      const preferredRestaurants = sorted.filter(restaurant => String(restaurant.cuisine || '').toLowerCase() === preferred);
+      const otherRestaurants = sorted.filter(restaurant => String(restaurant.cuisine || '').toLowerCase() !== preferred);
+      const preferredLimit = Math.min(preferredRestaurants.length, Math.ceil(limit * 0.8));
+      const chosen = preferredRestaurants.slice(0, preferredLimit);
+      return [...chosen, ...otherRestaurants.slice(0, limit - chosen.length)];
+    },
+
+    getGooglePlaceFilterOptions(places = []) {
+      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store']);
+      const typeSet = new Set();
+      const tagSet = new Set();
+
+      places.forEach(place => {
+        const primaryType = String(place.primaryType || '').trim();
+        if (primaryType) typeSet.add(primaryType);
+
+        (place.types || []).forEach(type => {
+          const normalizedType = String(type || '').trim();
+          if (!normalizedType || ignoredTags.has(normalizedType)) return;
+          if (primaryType && normalizedType === primaryType) return;
+          tagSet.add(normalizedType);
+        });
+      });
+
+      return {
+        types: Array.from(typeSet).sort(),
+        tags: Array.from(tagSet).sort()
+      };
+    },
+
+    renderRestaurantTagLinks(tags = []) {
+      return (tags || [])
+        .filter(Boolean)
+        .map(tag => {
+          const tagText = String(tag);
+          return `<a class="badge badge-soft tag-link" href="browse.html?tag=${encodeRouteValue(tagText)}">${escapeHtml(tagText)}</a>`;
+        })
+        .join('');
+    },
+
     renderRestaurantCard(restaurant) {
       const distanceHtml = restaurant.distanceKm != null ? `<span class="distance-pill">📍 ${restaurant.distanceKm.toFixed(1)} km</span>` : '';
       const restaurantImages = {
@@ -460,7 +405,7 @@
           <div class="restaurant-card p-3 d-flex flex-column">
             <div class="restaurant-image mb-3 position-relative overflow-hidden">${imageHtml}</div>
             <div class="d-flex flex-wrap mb-2">
-              <span class="rating-pill">⭐ ${restaurant.rating}</span>
+              ${this.renderRatingStars(restaurant.rating)}
               <span class="price-pill">${escapeHtml(restaurant.price)}</span>
               <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               ${distanceHtml}
@@ -485,7 +430,7 @@
           <div class="dish-card p-3">
             <h3 class="h5 fw-bold mb-2">${escapeHtml(dish.name)}</h3>
             <div class="d-flex flex-wrap mb-2">
-              <span class="rating-pill">⭐ ${dish.rating}</span>
+              ${this.renderRatingStars(dish.rating)}
               <span class="price-pill">$${dish.price}</span>
             </div>
             <p class="text-secondary">${escapeHtml(dish.description)}</p>
@@ -518,7 +463,7 @@
               <div class="review-meta">${reviewMeta.join(' • ')}</div>
             </div>
             <div class="text-end">
-              <span class="rating-pill">⭐ ${review.rating}</span>
+              ${this.renderRatingStars(review.rating)}
               ${manageButton}
             </div>
           </div>
@@ -556,7 +501,7 @@
       return payload;
     },
 
-    renderGooglePlaceCard(place) {
+    renderGooglePlaceCard(place, index = 0) {
       const tagHtml = (place.types || [])
         .filter(type => !['point_of_interest', 'establishment', 'food', 'store'].includes(type))
         .slice(0, 3)
@@ -568,18 +513,54 @@
           <div class="restaurant-card p-3 h-100">
             <div class="restaurant-image mb-3">${escapeHtml(place.name || 'Nearby place')}</div>
             <div class="d-flex flex-wrap mb-2">
-              <span class="rating-pill">⭐ ${place.rating ?? 'N/A'}</span>
+              ${this.renderRatingStars(place.rating)}
               <span class="cuisine-pill">${escapeHtml(this.formatPlaceType(place.primaryType || 'place'))}</span>
             </div>
             <h3 class="h5 fw-bold">${escapeHtml(place.name || 'Unnamed place')}</h3>
             <p class="text-secondary mb-2">${escapeHtml(place.address || 'Address unavailable')}</p>
             <div class="d-flex flex-wrap gap-2 mb-3">${tagHtml}</div>
             <div class="d-flex gap-2">
-              <a class="btn btn-primary btn-sm" href="${this.googleMapsUrl(place)}" target="_blank" rel="noopener noreferrer">Open map</a>
+              <button class="btn btn-primary btn-sm open-google-place-trigger" data-index="${index}">View details</button>
+              <a class="btn btn-outline-dark btn-sm" href="${this.googleMapsUrl(place)}" target="_blank" rel="noopener noreferrer">Open map</a>
             </div>
           </div>
         </div>
       `;
+    },
+
+    async mirrorGooglePlace(place) {
+      return this.api('/api/restaurants/from-google', {
+        method: 'POST',
+        body: {
+          placeId: place.id,
+          name: place.name,
+          address: place.address,
+          lat: place.lat,
+          lng: place.lng,
+          rating: place.rating,
+          primaryType: place.primaryType,
+          types: place.types || []
+        }
+      });
+    },
+
+    bindGooglePlaceButtons(places) {
+      document.querySelectorAll('.open-google-place-trigger').forEach(button => {
+        button.onclick = async () => {
+          const place = places[Number(button.dataset.index)];
+          if (!place) return;
+          button.disabled = true;
+          button.textContent = 'Opening...';
+          try {
+            const payload = await this.mirrorGooglePlace(place);
+            window.location.href = `restaurant.html?id=${encodeRouteValue(payload.restaurant.id)}`;
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = 'View details';
+            this.showMessage('browseLocationMessage', error.message, 'error');
+          }
+        };
+      });
     },
 
     async fetchNearbyGooglePlaces(coords, radius = 8000, includedTypes = ['restaurant', 'cafe'], maxResultCount = 12) {
@@ -870,91 +851,98 @@
     },
 
     initBrowse() {
-      const cuisineSelect = document.getElementById('cuisineFilter');
-      const manualLocationInput = document.getElementById('browseManualLocationInput');
-      const manualLocationBtn = document.getElementById('browseSearchLocationBtn');
-      const clearLocationBtn = document.getElementById('browseClearLocationBtn');
-      const cuisines = [...new Set(this.state.restaurants.map(restaurant => restaurant.cuisine))];
       const searchInput = document.getElementById('searchInput');
-      const urlSearch = new URLSearchParams(window.location.search).get('search');
-      if (urlSearch && searchInput) searchInput.value = urlSearch;
-      cuisineSelect.innerHTML = `<option value="">Any</option>${cuisines.map(cuisine => `<option value="${escapeHtml(cuisine)}">${escapeHtml(cuisine)}</option>`).join('')}`;
+      const typeSelect = document.getElementById('placeTypeFilter');
+      const tagSelect = document.getElementById('tagFilter');
+      const ratingSelect = document.getElementById('ratingFilter');
+      const retryBtn = document.getElementById('retryLocationBrowse');
+      const resultsTarget = document.getElementById('browseResults');
+      const resultsCount = document.getElementById('resultsCount');
+      const params = new URLSearchParams(window.location.search);
+      const urlSearch = params.get('search');
+      const urlTag = params.get('tag');
+      let places = [];
+
+      if (!searchInput || !typeSelect || !tagSelect || !ratingSelect || !resultsTarget) return;
+      if (urlSearch) searchInput.value = urlSearch;
+      if (!urlSearch && urlTag) searchInput.value = urlTag;
+
+      const setRetryVisible = visible => {
+        if (retryBtn) retryBtn.classList.toggle('d-none', !visible);
+      };
+
+      const renderFilterOptions = () => {
+        const options = this.getGooglePlaceFilterOptions(places);
+        const currentType = typeSelect.value;
+        const currentTag = tagSelect.value || urlTag || '';
+        if (currentTag && !options.tags.includes(currentTag)) options.tags.unshift(currentTag);
+        typeSelect.innerHTML = `<option value="">Any</option>${options.types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(this.formatPlaceType(type))}</option>`).join('')}`;
+        tagSelect.innerHTML = `<option value="">Any</option>${options.tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(this.formatPlaceType(tag))}</option>`).join('')}`;
+        if (options.types.includes(currentType)) typeSelect.value = currentType;
+        if (options.tags.includes(currentTag)) tagSelect.value = currentTag;
+      };
+
       const render = () => {
         const search = searchInput.value.trim().toLowerCase();
-        const cuisine = cuisineSelect.value;
-        const price = document.getElementById('priceFilter').value;
-        const rating = parseFloat(document.getElementById('ratingFilter').value || '0');
-        const coords = this.getUserLocation();
-        let restaurants = this.attachDistance(this.state.restaurants, coords);
-        restaurants = restaurants.filter(restaurant => {
-          const tags = Array.isArray(restaurant.tags) ? restaurant.tags.join(' ') : '';
-          const haystack = `${restaurant.name} ${restaurant.suburb} ${restaurant.cuisine} ${tags}`.toLowerCase();
-          return (!search || haystack.includes(search)) && (!cuisine || restaurant.cuisine === cuisine) && (!price || restaurant.price === price) && restaurant.rating >= rating;
+        const selectedType = typeSelect.value;
+        const selectedTag = tagSelect.value;
+        const minRating = parseFloat(ratingSelect.value || '0');
+        const filtered = this.filterGooglePlaces(places, minRating).filter(place => {
+          const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')}`.toLowerCase();
+          if (search && !haystack.includes(search)) return false;
+          if (selectedType && place.primaryType !== selectedType) return false;
+          if (selectedTag && !(place.types || []).includes(selectedTag) && !haystack.includes(selectedTag.toLowerCase())) return false;
+          return true;
         });
-        if (coords) restaurants.sort((left, right) => (left.distanceKm ?? 999) - (right.distanceKm ?? 999));
-        document.getElementById('browseResults').innerHTML = restaurants.length ? restaurants.map(restaurant => this.renderRestaurantCard(restaurant)).join('') : this.emptyState('No restaurants matched those filters.');
-        document.getElementById('resultsCount').textContent = `${restaurants.length} place${restaurants.length === 1 ? '' : 's'} found`;
-        this.bindSaveButtons();
-      };
-      ['searchInput', 'cuisineFilter', 'priceFilter', 'ratingFilter'].forEach(id => document.getElementById(id).addEventListener('input', render));
-      document.getElementById('useLocationBrowse').addEventListener('click', () => {
-        this.requestLocation('browseLocationMessage', coords => {
-          this.setUserLocation(coords);
-          this.showMessage('browseLocationMessage', 'Location saved. Results are now sorted by distance from you.', 'success');
-          render();
-        });
-      });
 
-      const searchBrowseLocation = async () => {
-        const address = manualLocationInput?.value.trim();
-        if (!address) {
-          this.showMessage('browseLocationMessage', 'Enter a suburb, postcode, or address to sort results by distance.', 'error');
-          return;
-        }
-
-        this.showMessage('browseLocationMessage', `Looking up ${address}...`, 'info');
-
-        try {
-          const payload = await this.searchGooglePlacesByAddress(address, 3000, ['restaurant', 'cafe'], 1);
-          const coords = {
-            lat: payload.searchLocation.lat,
-            lng: payload.searchLocation.lng
-          };
-
-          this.setUserLocation(coords);
-          this.showMessage(
-            'browseLocationMessage',
-            `Using ${payload.searchLocation.formattedAddress || address} to sort results by distance.`,
-            'success'
-          );
-          render();
-        } catch (error) {
-          this.showMessage('browseLocationMessage', error.message, 'error');
-        }
+        resultsTarget.innerHTML = filtered.length
+          ? filtered.map((place, index) => this.renderGooglePlaceCard(place, index)).join('')
+          : this.emptyState(places.length ? 'No nearby places matched those filters.' : 'Allow location access to load nearby restaurants.');
+        if (resultsCount) resultsCount.textContent = `${filtered.length} place${filtered.length === 1 ? '' : 's'} found`;
+        this.bindGooglePlaceButtons(filtered);
       };
 
-      manualLocationBtn?.addEventListener('click', async () => {
-        await searchBrowseLocation();
-      });
+      const loadNearby = () => {
+        setRetryVisible(false);
+        resultsTarget.innerHTML = this.emptyState('Asking your browser for location access...');
+        this.showMessage('browseLocationMessage', 'BiteScout needs your location to show nearby Google Places results.', 'info');
+        this.requestLocation(
+          'browseLocationMessage',
+          async coords => {
+            this.setUserLocation(coords);
+            this.showMessage('browseLocationMessage', 'Loading nearby restaurants from Google Places...', 'info');
+            try {
+              places = await this.fetchNearbyGooglePlaces(coords, 8000, ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'], 20);
+              renderFilterOptions();
+              render();
+              this.showMessage('browseLocationMessage', `Showing nearby places around your current location.`, 'success');
+            } catch (error) {
+              places = [];
+              renderFilterOptions();
+              render();
+              setRetryVisible(true);
+              this.showMessage('browseLocationMessage', error.message, 'error');
+            }
+          },
+          () => {
+            places = [];
+            renderFilterOptions();
+            render();
+            setRetryVisible(true);
+          }
+        );
+      };
 
-      manualLocationInput?.addEventListener('keydown', async event => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          await searchBrowseLocation();
-        }
+      ['input', 'change'].forEach(eventName => {
+        searchInput.addEventListener(eventName, render);
+        typeSelect.addEventListener(eventName, render);
+        tagSelect.addEventListener(eventName, render);
+        ratingSelect.addEventListener(eventName, render);
       });
+      retryBtn?.addEventListener('click', loadNearby);
 
-      clearLocationBtn?.addEventListener('click', () => {
-        this.clearUserLocation();
-        if (manualLocationInput) manualLocationInput.value = '';
-        this.showMessage('browseLocationMessage', 'Cleared saved location. Results are no longer sorted by distance.', 'info');
-        render();
-      });
-
-      if (this.getUserLocation()) {
-        this.showMessage('browseLocationMessage', 'Using your saved location to sort results by distance.', 'info');
-      }
-      render();
+      renderFilterOptions();
+      loadNearby();
     },
 
     async initRestaurantPage() {
@@ -967,7 +955,8 @@
         ]);
         this.upsertRestaurant(restaurant);
         const average = reviews.length ? (reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length).toFixed(1) : restaurant.rating.toFixed(1);
-        const safeTags = (restaurant.tags || []).map(tag => escapeHtml(tag)).join(', ');
+        const tagLinks = this.renderRestaurantTagLinks(restaurant.tags || []);
+        const reviewHref = `write-review.html?restaurantId=${encodeRouteValue(restaurant.id)}`;
         document.getElementById('restaurantHero').innerHTML = `
           <p class="eyebrow mb-2">Restaurant details</p>
           <div class="row g-4 align-items-center">
@@ -975,7 +964,7 @@
               <h1 class="fw-bold mb-3">${escapeHtml(restaurant.name)}</h1>
               <p class="text-secondary mb-3">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.address)}</p>
               <div class="d-flex flex-wrap">
-                <span class="rating-pill">⭐ ${average}</span>
+                ${this.renderRatingStars(average)}
                 <span class="price-pill">${escapeHtml(restaurant.price)}</span>
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
@@ -986,17 +975,20 @@
         document.getElementById('restaurantAbout').innerHTML = `
           <h2 class="h4 fw-bold mb-3">About this place</h2>
           <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
-          <p class="mb-0 text-secondary"><strong>Popular tags:</strong> ${safeTags}</p>
+          <div class="d-flex flex-wrap gap-2 align-items-center"><strong>Popular tags:</strong> ${tagLinks || '<span class="text-secondary">No tags yet.</span>'}</div>
         `;
-        document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('');
+        document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).length ? (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('') : this.emptyState('No dishes are listed yet. You can still review the restaurant.');
         document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
         document.getElementById('restaurantSidebar').innerHTML = `
           <h3 class="h5 fw-bold mb-3">Quick facts</h3>
           <p class="mb-2"><strong>Cuisine:</strong> ${escapeHtml(restaurant.cuisine)}</p>
           <p class="mb-2"><strong>Price range:</strong> ${escapeHtml(restaurant.price)}</p>
-          <p class="mb-2"><strong>Average rating:</strong> ${average}</p>
+          <div class="mb-2 d-flex flex-wrap gap-2 align-items-center"><strong>Average rating:</strong> ${this.renderRatingStars(average)}</div>
           <p class="mb-0"><strong>Dishes listed:</strong> ${(restaurant.dishes || []).length}</p>
         `;
+        document.querySelectorAll('a[href="write-review.html"]').forEach(link => {
+          link.href = reviewHref;
+        });
         document.getElementById('saveRestaurantBtn').addEventListener('click', async () => {
           await this.saveRestaurant(restaurant.id, 'saveRestaurantMessage');
         });
@@ -1026,7 +1018,7 @@
               <h1 class="fw-bold mb-3">${escapeHtml(dish.name)}</h1>
               <p class="text-secondary mb-3">From <a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">${escapeHtml(restaurant.name)}</a></p>
               <div class="d-flex flex-wrap">
-                <span class="rating-pill">⭐ ${dish.rating}</span>
+                ${this.renderRatingStars(dish.rating)}
                 <span class="price-pill">$${dish.price}</span>
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
@@ -1040,6 +1032,7 @@
           <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${escapeHtml(restaurant.name)} • ${escapeHtml(restaurant.suburb)}</p>
         `;
         document.getElementById('dishReviews').innerHTML = dishReviews.length ? dishReviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No dish reviews yet.');
+        document.querySelector('a[href="write-review.html"]')?.setAttribute('href', `write-review.html?restaurantId=${encodeRouteValue(restaurant.id)}&dishId=${encodeRouteValue(dish.id)}`);
         document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${encodeRouteValue(restaurant.id)}`;
         document.getElementById('saveDishBtn').addEventListener('click', async () => {
           await this.saveDish(restaurantId, dishId, 'saveDishMessage');
@@ -1224,23 +1217,27 @@
       this.renderLayout();
     },
 
-    requestLocation(messageTarget, onSuccess) {
+    requestLocation(messageTarget, onSuccess, onError = null) {
       const locationEnv = {
         hostname: root.location?.hostname || '',
         isSecureContext: root.isSecureContext
       };
 
       if (!isGeolocationOriginAllowed(locationEnv)) {
+        const message = buildLocationErrorMessage({ code: 1 }, locationEnv);
         this.showMessage(
           messageTarget,
-          buildLocationErrorMessage({ code: 1 }, locationEnv),
+          message,
           'error'
         );
+        if (onError) onError(message);
         return;
       }
 
       if (!root.navigator?.geolocation) {
-        this.showMessage(messageTarget, 'Geolocation is not supported in this browser.', 'error');
+        const message = 'Geolocation is not supported in this browser.';
+        this.showMessage(messageTarget, message, 'error');
+        if (onError) onError(message);
         return;
       }
 
@@ -1248,11 +1245,11 @@
         position => {
           onSuccess({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
-        error => this.showMessage(
-          messageTarget,
-          buildLocationErrorMessage(error, locationEnv),
-          'error'
-        ),
+        error => {
+          const message = buildLocationErrorMessage(error, locationEnv);
+          this.showMessage(messageTarget, message, 'error');
+          if (onError) onError(message);
+        },
         {
           enableHighAccuracy: true,
           timeout: 10000,

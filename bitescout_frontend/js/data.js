@@ -102,6 +102,74 @@ window.BiteScoutData = {
         { id: 'd11', name: 'Brown Sugar Pearl Milk Tea', price: 8, rating: 4.6, description: 'Creamy milk tea with caramelised tapioca pearls.' },
         { id: 'd12', name: 'Mango Jasmine Tea', price: 8, rating: 4.3, description: 'Refreshing jasmine tea with mango puree.' }
       ]
+    },
+    {
+      id: 'r7',
+      name: 'Tonkotsu Yard',
+      suburb: 'Mount Lawley',
+      cuisine: 'Japanese',
+      price: '$$',
+      rating: 4.7,
+      lat: -31.9347,
+      lng: 115.8712,
+      blurb: 'Ramen, gyoza, and quick izakaya plates with rich broths.',
+      address: '612 Beaufort St, Mount Lawley WA',
+      tags: ['ramen', 'gyoza', 'noodles'],
+      dishes: [
+        { id: 'd13', name: 'Black Garlic Tonkotsu', price: 24, rating: 4.8, description: 'Pork broth, black garlic oil, chashu, egg, and spring onion.' },
+        { id: 'd14', name: 'Pork Gyoza', price: 13, rating: 4.5, description: 'Pan-fried dumplings with bright dipping sauce.' }
+      ]
+    },
+    {
+      id: 'r8',
+      name: 'Seoul Table',
+      suburb: 'East Victoria Park',
+      cuisine: 'Korean',
+      price: '$$',
+      rating: 4.5,
+      lat: -31.9844,
+      lng: 115.9002,
+      blurb: 'Korean barbecue favourites, bibimbap, and crisp fried chicken.',
+      address: '900 Albany Hwy, East Victoria Park WA',
+      tags: ['korean bbq', 'bibimbap', 'kimchi'],
+      dishes: [
+        { id: 'd15', name: 'Beef Bibimbap', price: 21, rating: 4.5, description: 'Rice bowl with vegetables, beef, egg, and gochujang.' },
+        { id: 'd16', name: 'Soy Garlic Chicken', price: 18, rating: 4.6, description: 'Crisp fried chicken glazed with soy garlic sauce.' }
+      ]
+    },
+    {
+      id: 'r9',
+      name: 'Lemongrass Lane',
+      suburb: 'Subiaco',
+      cuisine: 'Thai',
+      price: '$$',
+      rating: 4.4,
+      lat: -31.9484,
+      lng: 115.8248,
+      blurb: 'Thai curries, wok noodles, and bright herb-heavy salads.',
+      address: '22 Rokeby Rd, Subiaco WA',
+      tags: ['pad thai', 'green curry', 'spicy'],
+      dishes: [
+        { id: 'd17', name: 'Green Curry Chicken', price: 23, rating: 4.4, description: 'Coconut green curry with chicken, basil, and vegetables.' },
+        { id: 'd18', name: 'Pad Thai Prawns', price: 24, rating: 4.3, description: 'Rice noodles, prawns, tamarind, peanuts, and lime.' }
+      ]
+    },
+    {
+      id: 'r10',
+      name: 'Masa Cantina',
+      suburb: 'North Perth',
+      cuisine: 'Mexican',
+      price: '$$',
+      rating: 4.5,
+      lat: -31.9277,
+      lng: 115.8536,
+      blurb: 'Tacos, grilled corn, and lively share plates.',
+      address: '419 Fitzgerald St, North Perth WA',
+      tags: ['tacos', 'quesadilla', 'corn'],
+      dishes: [
+        { id: 'd19', name: 'Birria Tacos', price: 20, rating: 4.7, description: 'Slow-cooked beef tacos with consommé for dipping.' },
+        { id: 'd20', name: 'Elote Corn', price: 10, rating: 4.4, description: 'Charred corn with crema, cheese, chilli, and lime.' }
+      ]
     }
   ],
   sampleUsers: [
