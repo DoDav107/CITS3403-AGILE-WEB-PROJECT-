@@ -77,12 +77,14 @@
       currentUser: null,
       restaurants: [],
       reviews: [],
-      favourites: { restaurants: [], dishes: [] }
+      favourites: { restaurants: [], dishes: [] },
+      chatHistory: []
     },
 
     async init() {
       await this.bootstrap();
       this.renderLayout();
+      this.initChatbot();
       await this.routePage();
     },
 
@@ -250,6 +252,40 @@
           </footer>
         `;
       }
+      
+      if (!document.getElementById('bitescout-chatbot')) {
+        const chatbotHtml = `
+          <div id="bitescout-chatbot">
+            <div class="chat-widget-btn" id="chatWidgetBtn">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
+            </div>
+            <div class="chat-window" id="chatWindow">
+              <div class="chat-header">
+                <h3>BiteScout AI</h3>
+                <button class="chat-close" id="chatCloseBtn">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </div>
+              <div class="chat-body" id="chatBody">
+                <div class="chat-msg ai">
+                  <p>Hi there! 👋 I'm your BiteScout assistant. Looking for a place to eat?</p>
+                </div>
+                <div class="typing-indicator" id="chatTyping">
+                  <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+                </div>
+              </div>
+              <div class="chat-footer">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Ask for recommendations..." />
+                <button class="chat-send" id="chatSendBtn">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        document.body.insertAdjacentHTML('beforeend', chatbotHtml);
+      }
+      
       this.highlightActiveNav();
     },
 
@@ -1323,6 +1359,90 @@
       } else {
         this.state.restaurants.push(restaurant);
       }
+    },
+    
+    initChatbot() {
+      const widgetBtn = document.getElementById('chatWidgetBtn');
+      const windowEl = document.getElementById('chatWindow');
+      const closeBtn = document.getElementById('chatCloseBtn');
+      const inputEl = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('chatSendBtn');
+      const bodyEl = document.getElementById('chatBody');
+      const typingEl = document.getElementById('chatTyping');
+
+      if (!widgetBtn || !windowEl) return;
+
+      const toggleChat = () => {
+        windowEl.classList.toggle('open');
+        if (windowEl.classList.contains('open')) inputEl.focus();
+      };
+
+      widgetBtn.addEventListener('click', toggleChat);
+      closeBtn.addEventListener('click', toggleChat);
+
+      const appendMessage = (text, sender) => {
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chat-msg ${sender}`;
+        msgDiv.innerHTML = text; // Allow HTML from AI response (like links)
+        bodyEl.insertBefore(msgDiv, typingEl);
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+      };
+
+      const sendMessage = async () => {
+        const text = inputEl.value.trim();
+        if (!text) return;
+        
+        inputEl.value = '';
+        appendMessage(`<p>${escapeHtml(text)}</p>`, 'user');
+        
+        typingEl.classList.add('visible');
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+        
+        try {
+          // Include user's location if available for Google Places context
+          const storedLoc = this.getUserLocation ? this.getUserLocation() : null;
+          const chatPayload = {
+            message: text,
+            history: this.state.chatHistory
+          };
+          if (storedLoc) {
+            chatPayload.location = { lat: storedLoc.lat, lng: storedLoc.lng };
+          }
+          
+          const response = await fetch('/api/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(chatPayload)
+          });
+          
+          const data = await response.json();
+          typingEl.classList.remove('visible');
+          
+          if (!response.ok) {
+            appendMessage(`<p class="text-danger">Sorry, I encountered an error: ${escapeHtml(data.error || 'Unknown error')}</p>`, 'ai');
+          } else {
+            // Convert markdown style links if any, though system prompt asks for HTML
+            // Add to chat history
+            this.state.chatHistory.push({ role: 'user', content: text });
+            this.state.chatHistory.push({ role: 'model', content: data.response });
+            
+            // Render basic markdown like **bold** to <strong> and newlines to <br>
+            let formattedText = data.response
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\n/g, '<br/>');
+            
+            appendMessage(formattedText, 'ai');
+          }
+        } catch (err) {
+          typingEl.classList.remove('visible');
+          appendMessage(`<p class="text-danger">Sorry, I couldn't reach the server.</p>`, 'ai');
+        }
+      };
+
+      sendBtn.addEventListener('click', sendMessage);
+      inputEl.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') sendMessage();
+      });
     }
   };
 

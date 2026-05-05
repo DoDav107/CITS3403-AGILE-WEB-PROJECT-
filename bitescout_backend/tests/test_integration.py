@@ -50,6 +50,10 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def tearDown(self):
+        from app import db
+        with self.app.app_context():
+            db.session.remove()
+            db.engine.dispose()
         self.temp_dir.cleanup()
 
     def login_demo_user(self):
