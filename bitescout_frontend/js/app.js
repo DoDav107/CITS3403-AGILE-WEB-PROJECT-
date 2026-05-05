@@ -199,7 +199,8 @@
         recommendations: () => this.initRecommendations(),
         favourites: () => this.initFavourites(),
         about: () => this.initAbout(),
-        logout: () => this.initLogout()
+        logout: () => this.initLogout(),
+        'forgot-password': () => this.initForgotPassword(),
       };
       if (routes[page]) await routes[page]();
     },
@@ -882,6 +883,40 @@
         } catch (error) {
           this.showMessage('loginMessage', error.message, 'error');
           this.applyAuthServerError(form, 'login', error.message);
+        }
+      });
+    },
+
+        initForgotPassword() {
+      const form = document.getElementById('forgotPasswordForm');
+      if (!form) return;
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        try {
+          await this.api('/api/auth/reset-password', {
+            method: 'POST',
+            body: payload
+          });
+
+          await this.loadCurrentUser();
+          this.renderLayout();
+
+          this.showMessage(
+            'forgotPasswordMessage',
+            'Password reset successfully. Redirecting to your profile...',
+            'success'
+          );
+
+          window.setTimeout(() => {
+            window.location.href = 'profile.html';
+          }, 900);
+        } catch (error) {
+          this.showMessage('forgotPasswordMessage', error.message, 'error');
         }
       });
     },

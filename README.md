@@ -35,3 +35,13 @@ http://127.0.0.1:5000/login.html
 http://127.0.0.1:5000/signup.html
 http://127.0.0.1:5000/browse.html
 http://127.0.0.1:5000/recommendations.html
+
+how to run the test
+cd bitescout_backend
+source .venv/bin/activate
+python run.py
+open a new terminal
+cd bitescout_backend
+source .venv/bin/activate
+python -m unittest tests/test_integration.py
+python -m unittest tests/test_selenium.py
