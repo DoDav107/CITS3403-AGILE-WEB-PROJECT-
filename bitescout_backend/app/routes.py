@@ -1,6 +1,8 @@
 from datetime import datetime
 from functools import wraps
+from pathlib import Path
 import hashlib
+import json
 from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
@@ -33,7 +35,9 @@ def user_to_dict(user):
         'username': user.username,
         'email': user.email,
         'preferredCuisine': user.preferred_cuisine,
-        'bio': user.bio,
+        'bio': user.bio or '',
+        'avatar': getattr(user, 'avatar', None) or '🍽️',
+        'avatarImage': getattr(user, 'avatar_image', None) or '',
         'createdAt': user.created_at.isoformat(),
     }
 
@@ -266,6 +270,8 @@ def signup():
         password_hash=generate_password_hash(payload['password']),
         preferred_cuisine=payload.get('preferredCuisine', ''),
         bio=payload.get('bio', ''),
+        avatar=(payload.get('avatar') or '🍽️')[:20],
+        avatar_image=payload.get('avatarImage') or '',
     )
     db.session.add(user)
     db.session.commit()
@@ -298,6 +304,80 @@ def me():
     if not user:
         return jsonify({'user': None})
     return jsonify({'user': user_to_dict(user)})
+
+
+@bp.put('/api/auth/me')
+@login_required
+def update_me():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    user = current_user()
+
+    name = (payload.get('name') or '').strip()
+    preferred_cuisine = (payload.get('preferredCuisine') or '').strip()
+    bio = (payload.get('bio') or '').strip()
+    avatar = (payload.get('avatar') or '').strip()
+    avatar_image = (payload.get('avatarImage') or '').strip()
+
+    if not name:
+        return jsonify({'error': 'Display name is required.'}), 400
+    if len(name) > 120:
+        return jsonify({'error': 'Display name must be 120 characters or fewer.'}), 400
+    if len(preferred_cuisine) > 80:
+        return jsonify({'error': 'Preferred cuisine must be 80 characters or fewer.'}), 400
+    if len(bio) > 300:
+        return jsonify({'error': 'Bio must be 300 characters or fewer.'}), 400
+    if len(avatar) > 20:
+        return jsonify({'error': 'Avatar value is too long.'}), 400
+    if len(avatar_image) > 3_000_000:
+        return jsonify({'error': 'Avatar image is too large.'}), 400
+
+    user.name = name
+    user.preferred_cuisine = preferred_cuisine
+    user.bio = bio
+    user.avatar = avatar or '🍽️'
+    user.avatar_image = avatar_image
+    db.session.commit()
+
+    return jsonify({'message': 'Profile updated', 'user': user_to_dict(user)})
+
+
+@bp.post('/api/place-requests')
+def create_place_request():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    place_name = (payload.get('placeName') or '').strip()
+    suburb = (payload.get('suburb') or '').strip()
+    category = (payload.get('category') or '').strip()
+    notes = (payload.get('notes') or '').strip()
+    contact = (payload.get('contact') or '').strip()
+
+    if not place_name:
+        return jsonify({'error': 'Place name is required.'}), 400
+
+    request_record = {
+        'placeName': place_name,
+        'suburb': suburb,
+        'category': category,
+        'notes': notes,
+        'contact': contact,
+        'createdAt': datetime.utcnow().isoformat(),
+    }
+
+    instance_dir = Path(current_app.instance_path)
+    instance_dir.mkdir(parents=True, exist_ok=True)
+    request_file = instance_dir / 'place_requests.json'
+
+    if request_file.exists():
+        try:
+            existing_requests = json.loads(request_file.read_text(encoding='utf-8'))
+        except json.JSONDecodeError:
+            existing_requests = []
+    else:
+        existing_requests = []
+
+    existing_requests.append(request_record)
+    request_file.write_text(json.dumps(existing_requests, indent=2), encoding='utf-8')
+
+    return jsonify({'message': 'Place request submitted', 'request': request_record}), 201
 
 
 @bp.get('/api/reviews')

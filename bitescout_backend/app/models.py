@@ -10,6 +10,8 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     preferred_cuisine = db.Column(db.String(80), default="")
     bio = db.Column(db.Text, default="")
+    avatar = db.Column(db.String(20), default="🍽️")
+    avatar_image = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     reviews = db.relationship('Review', backref='user', cascade='all, delete-orphan', lazy=True)
