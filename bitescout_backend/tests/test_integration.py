@@ -73,7 +73,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         response = self.client.get("/browse.html")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b"Find restaurants and drinks spots", response.data)
+        self.assertIn(b"Restaurants near you", response.data)
 
     def test_frontend_app_script_is_served(self):
         response = self.client.get("/js/app.js")
@@ -100,6 +100,38 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(save_response.status_code, 200)
         payload = list_response.get_json()
         self.assertEqual(payload["restaurants"][0]["id"], "r1")
+
+    def test_restaurants_can_be_filtered_by_tag(self):
+        response = self.client.get("/api/restaurants?tag=sushi")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual([restaurant["id"] for restaurant in payload], ["r3"])
+
+    def test_google_place_can_be_mirrored_as_local_restaurant(self):
+        response = self.client.post(
+            "/api/restaurants/from-google",
+            json={
+                "placeId": "places/google-ramen-1",
+                "name": "Northbridge Ramen Lab",
+                "address": "99 Roe St, Northbridge WA",
+                "lat": -31.9471,
+                "lng": 115.8599,
+                "rating": 4.7,
+                "primaryType": "japanese_restaurant",
+                "types": ["restaurant", "food", "ramen_restaurant"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+        restaurant = response.get_json()["restaurant"]
+        self.assertEqual(restaurant["name"], "Northbridge Ramen Lab")
+        self.assertEqual(restaurant["cuisine"], "Japanese Restaurant")
+        self.assertIn("ramen_restaurant", restaurant["tags"])
+
+        detail_response = self.client.get(f"/api/restaurants/{restaurant['id']}")
+        self.assertEqual(detail_response.status_code, 200)
+        self.assertEqual(detail_response.get_json()["address"], "99 Roe St, Northbridge WA")
 
     def test_review_can_be_created(self):
         self.login_demo_user()

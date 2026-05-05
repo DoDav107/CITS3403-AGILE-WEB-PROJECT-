@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 from functools import wraps
-import google.generativeai as genai
+import hashlib
 from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
@@ -88,6 +88,38 @@ def google_maps_api_key():
     return (current_app.config.get("GOOGLE_MAPS_API_KEY") or "").strip()
 
 
+def format_place_type(value):
+    words = str(value or '').replace('_', ' ').split()
+    if not words:
+        return 'Restaurant'
+    return ' '.join(word.capitalize() for word in words)
+
+
+def google_restaurant_id(place_id):
+    digest = hashlib.sha1(str(place_id).encode('utf-8')).hexdigest()[:16]
+    return f"g_{digest}"
+
+
+def google_place_tags(types, primary_type=''):
+    ignored = {'point_of_interest', 'establishment', 'food', 'store'}
+    primary = str(primary_type or '').strip()
+    tags = []
+    for place_type in types or []:
+        normalized = str(place_type or '').strip()
+        if not normalized or normalized in ignored or normalized == primary:
+            continue
+        if normalized not in tags:
+            tags.append(normalized)
+    return tags
+
+
+def suburb_from_address(address):
+    parts = [part.strip() for part in str(address or '').split(',') if part.strip()]
+    if len(parts) >= 2:
+        return parts[1]
+    return parts[0] if parts else 'Nearby'
+
+
 def parse_review_rating(raw_value):
     try:
         rating = int(raw_value)
@@ -124,17 +156,21 @@ def restaurants():
     search = (request.args.get('search') or '').strip().lower()
     cuisine = request.args.get('cuisine') or ''
     price = request.args.get('price') or ''
+    tag = (request.args.get('tag') or '').strip().lower()
     min_rating = float(request.args.get('min_rating') or 0)
 
     items = Restaurant.query.all()
     results = []
     for r in items:
         haystack = f"{r.name} {r.suburb} {r.cuisine} {r.tags}".lower()
+        tags = [item.strip().lower() for item in r.tags.split(',') if item.strip()]
         if search and search not in haystack:
             continue
         if cuisine and r.cuisine != cuisine:
             continue
         if price and r.price != price:
+            continue
+        if tag and tag not in tags:
             continue
         if r.rating < min_rating:
             continue
@@ -146,6 +182,52 @@ def restaurants():
 def restaurant_detail(restaurant_id):
     restaurant = Restaurant.query.get_or_404(restaurant_id)
     return jsonify(restaurant_to_dict(restaurant, include_dishes=True))
+
+
+@bp.post('/api/restaurants/from-google')
+def restaurant_from_google():
+    payload = request.get_json(silent=True) or {}
+    place_id = payload.get('placeId') or payload.get('id')
+    name = (payload.get('name') or '').strip()
+    address = (payload.get('address') or '').strip()
+
+    if not place_id or not name:
+        return jsonify({'error': 'Google place id and name are required.'}), 400
+
+    try:
+        lat = float(payload.get('lat'))
+        lng = float(payload.get('lng'))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'Latitude and longitude are required.'}), 400
+
+    try:
+        rating = float(payload.get('rating') or 0)
+    except (TypeError, ValueError):
+        rating = 0.0
+
+    primary_type = payload.get('primaryType') or 'restaurant'
+    tags = google_place_tags(payload.get('types') or [], primary_type)
+    restaurant_id = google_restaurant_id(place_id)
+    restaurant = db.session.get(Restaurant, restaurant_id)
+    status_code = 200 if restaurant else 201
+
+    if not restaurant:
+        restaurant = Restaurant(id=restaurant_id)
+        db.session.add(restaurant)
+
+    restaurant.name = name
+    restaurant.suburb = suburb_from_address(address)
+    restaurant.cuisine = format_place_type(primary_type)
+    restaurant.price = payload.get('price') or '$$'
+    restaurant.rating = max(0.0, min(5.0, rating))
+    restaurant.lat = lat
+    restaurant.lng = lng
+    restaurant.blurb = payload.get('blurb') or f"Live Google Places listing for {name}."
+    restaurant.address = address or 'Address unavailable'
+    restaurant.tags = ','.join(tags)
+
+    db.session.commit()
+    return jsonify({'message': 'Restaurant synced', 'restaurant': restaurant_to_dict(restaurant, include_dishes=True)}), status_code
 
 
 @bp.get('/api/restaurants/<restaurant_id>/reviews')
