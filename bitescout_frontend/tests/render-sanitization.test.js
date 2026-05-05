@@ -3,6 +3,47 @@ const assert = require('node:assert/strict');
 
 const { App } = require('../js/app.js');
 
+test('rating display uses stars without visible numeric scores', () => {
+  const html = App.renderRatingStars(4.5);
+
+  assert.match(html, /★★★★★/);
+  assert.doesNotMatch(html, />\s*4\.5\s*</);
+});
+
+test('preference recommendations reserve roughly eighty percent for preferred cuisine', () => {
+  const restaurants = [
+    { id: 'j1', cuisine: 'Japanese', rating: 4.2 },
+    { id: 'v1', cuisine: 'Vietnamese', rating: 4.9 },
+    { id: 'j2', cuisine: 'Japanese', rating: 4.8 },
+    { id: 'i1', cuisine: 'Italian', rating: 4.6 },
+    { id: 'j3', cuisine: 'Japanese', rating: 4.5 },
+    { id: 'j4', cuisine: 'Japanese', rating: 4.7 }
+  ];
+
+  const recommendations = App.buildPreferenceRecommendations(restaurants, 'Japanese', 5);
+
+  assert.deepEqual(recommendations.map(restaurant => restaurant.id), ['j2', 'j4', 'j3', 'j1', 'v1']);
+});
+
+test('Google place filter options include primary types and place tags', () => {
+  const options = App.getGooglePlaceFilterOptions([
+    { primaryType: 'restaurant', types: ['restaurant', 'food', 'sushi_restaurant'] },
+    { primaryType: 'cafe', types: ['cafe', 'food', 'bakery'] },
+    { primaryType: 'restaurant', types: ['restaurant', 'meal_takeaway'] }
+  ]);
+
+  assert.deepEqual(options.types, ['cafe', 'restaurant']);
+  assert.deepEqual(options.tags, ['bakery', 'meal_takeaway', 'sushi_restaurant']);
+});
+
+test('restaurant tag links are escaped and point back to Browse filters', () => {
+  const html = App.renderRestaurantTagLinks(['sushi', '<script>alert(1)</script>']);
+
+  assert.match(html, /href="browse\.html\?tag=sushi"/);
+  assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.doesNotMatch(html, /<script/i);
+});
+
 test('restaurant card escapes user-controlled restaurant fields', () => {
   const html = App.renderRestaurantCard({
     id: 'r-danger',
@@ -35,7 +76,9 @@ test('review card escapes user-controlled review and profile fields', () => {
     },
     formatDate() {
       return '2026-04-22';
-    }
+    },
+    renderRatingStars: App.renderRatingStars,
+    ratingWord: App.ratingWord
   };
 
   const html = App.renderReviewCard.call(

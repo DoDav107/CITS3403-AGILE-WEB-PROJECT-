@@ -18,7 +18,7 @@
   <div class="container">
     <p class="eyebrow mb-2">About the project</p>
     <h1 class="fw-bold mb-3">About & Help</h1>
-    <p class="text-secondary mb-0">What the app does, how to use it, and which features are currently mocked on the frontend.</p>
+    <p class="text-secondary mb-0">What the app does and how discovery, reviews, and favourites work.</p>
   </div>
 </section>
 <section class="py-4">
@@ -28,12 +28,13 @@
         <div class="glass-card p-4 h-100">
           <h2 class="h4 fw-bold mb-3">What BiteScout does</h2>
           <ul class="text-secondary mb-0">
-            <li>Create accounts and log in on the frontend demo</li>
-            <li>Search and filter restaurants by cuisine, price, rating and suburb</li>
+            <li>Create accounts and log in with the Flask backend</li>
+            <li>Browse nearby Google Places restaurants using your current location</li>
+            <li>Search and filter places by type, tag, and star level</li>
             <li>Open restaurant and dish details pages</li>
             <li>Write, edit and delete reviews</li>
             <li>Save favourites</li>
-            <li>Use browser location to find nearby spots</li>
+            <li>Get recommendations from your favourite cuisine</li>
           </ul>
         </div>
       </div>
@@ -46,12 +47,12 @@
               <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion"><div class="accordion-body">Geolocation usually works on localhost or HTTPS. Some browsers block it on plain file paths.</div></div>
             </div>
             <div class="accordion-item">
-              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">Is login secure yet?</button></h2>
-              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">This starter version uses localStorage for a front-end demo. Real security should be built later with your Flask backend.</div></div>
+              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">How do favourites work?</button></h2>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Log in, open a restaurant or dish, then save it from the quick actions panel.</div></div>
             </div>
             <div class="accordion-item">
               <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq3">How are recommendations calculated?</button></h2>
-              <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Nearby recommendations are sorted using geographic distance and then displayed with rating and cuisine information.</div></div>
+              <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Recommendations start with your favourite cuisine, then add a smaller set of other cuisines so the list still has variety.</div></div>
             </div>
           </div>
         </div>
