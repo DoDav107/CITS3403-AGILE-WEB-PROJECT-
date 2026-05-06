@@ -634,6 +634,21 @@
       });
     },
 
+    filterBrowseGooglePlaces(places, filters = {}) {
+      const search = String(filters.search || '').trim().toLowerCase();
+      const selectedType = String(filters.selectedType || '');
+      const selectedTag = String(filters.selectedTag || '');
+      const minRating = parseFloat(filters.minRating || '0');
+
+      return this.filterGooglePlaces(places, Number.isFinite(minRating) ? minRating : 0).filter(place => {
+        const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')}`.toLowerCase();
+        if (search && !haystack.includes(search)) return false;
+        if (selectedType && place.primaryType !== selectedType) return false;
+        if (selectedTag && !(place.types || []).includes(selectedTag) && !haystack.includes(selectedTag.toLowerCase())) return false;
+        return true;
+      });
+    },
+
     emptyState(message) {
       return `<div class="empty-state">${escapeHtml(message)}</div>`;
     },
@@ -922,11 +937,13 @@
     },
 
     initBrowse() {
+      const locationForm = document.getElementById('browseLocationForm');
+      const locationInput = document.getElementById('locationInput');
+      const locationSearchBtn = document.getElementById('searchLocationBrowse');
       const searchInput = document.getElementById('searchInput');
       const typeSelect = document.getElementById('placeTypeFilter');
       const tagSelect = document.getElementById('tagFilter');
       const ratingSelect = document.getElementById('ratingFilter');
-      const retryBtn = document.getElementById('retryLocationBrowse');
       const resultsTarget = document.getElementById('browseResults');
       const resultsCount = document.getElementById('resultsCount');
       const params = new URLSearchParams(window.location.search);
@@ -934,13 +951,9 @@
       const urlTag = params.get('tag');
       let places = [];
 
-      if (!searchInput || !typeSelect || !tagSelect || !ratingSelect || !resultsTarget) return;
+      if (!locationForm || !locationInput || !searchInput || !typeSelect || !tagSelect || !ratingSelect || !resultsTarget) return;
       if (urlSearch) searchInput.value = urlSearch;
       if (!urlSearch && urlTag) searchInput.value = urlTag;
-
-      const setRetryVisible = visible => {
-        if (retryBtn) retryBtn.classList.toggle('d-none', !visible);
-      };
 
       const renderFilterOptions = () => {
         const options = this.getGooglePlaceFilterOptions(places);
@@ -954,54 +967,54 @@
       };
 
       const render = () => {
-        const search = searchInput.value.trim().toLowerCase();
-        const selectedType = typeSelect.value;
-        const selectedTag = tagSelect.value;
-        const minRating = parseFloat(ratingSelect.value || '0');
-        const filtered = this.filterGooglePlaces(places, minRating).filter(place => {
-          const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')}`.toLowerCase();
-          if (search && !haystack.includes(search)) return false;
-          if (selectedType && place.primaryType !== selectedType) return false;
-          if (selectedTag && !(place.types || []).includes(selectedTag) && !haystack.includes(selectedTag.toLowerCase())) return false;
-          return true;
+        const filtered = this.filterBrowseGooglePlaces(places, {
+          search: searchInput.value,
+          selectedType: typeSelect.value,
+          selectedTag: tagSelect.value,
+          minRating: ratingSelect.value
         });
 
         resultsTarget.innerHTML = filtered.length
           ? filtered.map((place, index) => this.renderGooglePlaceCard(place, index)).join('')
-          : this.emptyState(places.length ? 'No nearby places matched those filters.' : 'Allow location access to load nearby restaurants.');
+          : this.emptyState(places.length ? 'No nearby places matched those filters.' : 'Enter a location to load nearby restaurants.');
         if (resultsCount) resultsCount.textContent = `${filtered.length} place${filtered.length === 1 ? '' : 's'} found`;
         this.bindGooglePlaceButtons(filtered);
       };
 
-      const loadNearby = () => {
-        setRetryVisible(false);
-        resultsTarget.innerHTML = this.emptyState('Asking your browser for location access...');
-        this.showMessage('browseLocationMessage', 'BiteScout needs your location to show nearby Google Places results.', 'info');
-        this.requestLocation(
-          'browseLocationMessage',
-          async coords => {
-            this.setUserLocation(coords);
-            this.showMessage('browseLocationMessage', 'Loading nearby restaurants from Google Places...', 'info');
-            try {
-              places = await this.fetchNearbyGooglePlaces(coords, 8000, ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'], 20);
-              renderFilterOptions();
-              render();
-              this.showMessage('browseLocationMessage', `Showing nearby places around your current location.`, 'success');
-            } catch (error) {
-              places = [];
-              renderFilterOptions();
-              render();
-              setRetryVisible(true);
-              this.showMessage('browseLocationMessage', error.message, 'error');
-            }
-          },
-          () => {
-            places = [];
-            renderFilterOptions();
-            render();
-            setRetryVisible(true);
-          }
-        );
+      const setLocationLoading = loading => {
+        if (locationSearchBtn) {
+          locationSearchBtn.disabled = loading;
+          locationSearchBtn.textContent = loading ? 'Searching...' : 'Search area';
+        }
+      };
+
+      const loadLocationSearch = async address => {
+        const trimmedAddress = String(address || '').trim();
+        if (!trimmedAddress) {
+          this.showMessage('browseLocationMessage', 'Enter a suburb, postcode, or address to search.', 'error');
+          locationInput.focus();
+          return;
+        }
+
+        setLocationLoading(true);
+        resultsTarget.innerHTML = this.emptyState(`Searching near ${trimmedAddress}...`);
+        this.showMessage('browseLocationMessage', 'Loading nearby restaurants from Google Places...', 'info');
+
+        try {
+          const payload = await this.searchGooglePlacesByAddress(trimmedAddress, 8000, ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'], 20);
+          places = payload.results || [];
+          renderFilterOptions();
+          render();
+          const resolvedAddress = payload.searchLocation?.formattedAddress || trimmedAddress;
+          this.showMessage('browseLocationMessage', `Showing nearby places around ${resolvedAddress}.`, 'success');
+        } catch (error) {
+          places = [];
+          renderFilterOptions();
+          render();
+          this.showMessage('browseLocationMessage', error.message, 'error');
+        } finally {
+          setLocationLoading(false);
+        }
       };
 
       ['input', 'change'].forEach(eventName => {
@@ -1010,10 +1023,14 @@
         tagSelect.addEventListener(eventName, render);
         ratingSelect.addEventListener(eventName, render);
       });
-      retryBtn?.addEventListener('click', loadNearby);
+      locationForm.addEventListener('submit', event => {
+        event.preventDefault();
+        loadLocationSearch(locationInput.value);
+      });
 
       renderFilterOptions();
-      loadNearby();
+      render();
+      this.showMessage('browseLocationMessage', 'Enter a location to search nearby restaurants.', 'info');
     },
 
     async initRestaurantPage() {

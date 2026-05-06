@@ -74,6 +74,10 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Restaurants near you", response.data)
+        self.assertIn(b'id="locationInput"', response.data)
+        self.assertNotIn(b"Use current location", response.data)
+        self.assertIn(b'<option value="3">\xe2\x98\x85\xe2\x98\x85\xe2\x98\x85\xe2\x98\x86\xe2\x98\x86</option>', response.data)
+        self.assertNotIn(b"and up", response.data)
 
     def test_frontend_app_script_is_served(self):
         response = self.client.get("/js/app.js")

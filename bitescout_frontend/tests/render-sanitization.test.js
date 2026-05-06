@@ -36,6 +36,44 @@ test('Google place filter options include primary types and place tags', () => {
   assert.deepEqual(options.tags, ['bakery', 'meal_takeaway', 'sushi_restaurant']);
 });
 
+test('Browse Google place filters combine search, type, tag, and rating', () => {
+  const places = [
+    {
+      id: 'p1',
+      name: 'Northbridge Ramen Lab',
+      address: '99 Roe St, Northbridge WA',
+      rating: 4.7,
+      primaryType: 'restaurant',
+      types: ['restaurant', 'ramen_restaurant', 'food']
+    },
+    {
+      id: 'p2',
+      name: 'City Coffee',
+      address: 'Perth CBD',
+      rating: 4.8,
+      primaryType: 'cafe',
+      types: ['cafe', 'coffee_shop', 'food']
+    },
+    {
+      id: 'p3',
+      name: 'Low Rated Ramen',
+      address: 'Northbridge WA',
+      rating: 3.2,
+      primaryType: 'restaurant',
+      types: ['restaurant', 'ramen_restaurant', 'food']
+    }
+  ];
+
+  const filtered = App.filterBrowseGooglePlaces(places, {
+    search: 'ramen',
+    selectedType: 'restaurant',
+    selectedTag: 'ramen_restaurant',
+    minRating: 4
+  });
+
+  assert.deepEqual(filtered.map(place => place.id), ['p1']);
+});
+
 test('restaurant tag links are escaped and point back to Browse filters', () => {
   const html = App.renderRestaurantTagLinks(['sushi', '<script>alert(1)</script>']);
 
