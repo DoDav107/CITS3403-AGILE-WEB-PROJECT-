@@ -7,6 +7,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from . import google_places
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
+import google.generativeai as genai
 
 
 bp = Blueprint('main', __name__)
