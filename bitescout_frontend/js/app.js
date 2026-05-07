@@ -1103,7 +1103,7 @@
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image">${escapeHtml(restaurant.name)}</div></div>
+            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(restaurant.id || restaurant.name)}" alt="${escapeHtml(restaurant.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
           </div>
         `;
         document.getElementById('restaurantAbout').innerHTML = `
@@ -1157,7 +1157,7 @@
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image">${escapeHtml(dish.name)}</div></div>
+            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(dish.id || dish.name)}" alt="${escapeHtml(dish.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
           </div>
         `;
         document.getElementById('dishDetails').innerHTML = `
