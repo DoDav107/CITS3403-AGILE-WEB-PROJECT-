@@ -425,17 +425,42 @@
         .join('');
     },
 
+    getRestaurantImage(identifier) {
+      const RESTAURANT_IMAGES = [
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1432139509613-5c4255a1d0f7?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=600'
+      ];
+      let hash = 0;
+      const str = String(identifier || '');
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return RESTAURANT_IMAGES[Math.abs(hash) % RESTAURANT_IMAGES.length];
+    },
+
     renderRestaurantCard(restaurant) {
       const distanceHtml = restaurant.distanceKm != null ? `<span class="distance-pill">📍 ${restaurant.distanceKm.toFixed(1)} km</span>` : '';
-      const restaurantImages = {
-        'Harbour Roast': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=1000',
-        'Saigon Alley': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=1000',
-        'Sora Sushi Bar': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=1000'
-      };
-      const imageUrl = restaurantImages[restaurant.name] || '';
-      const imageHtml = imageUrl
-        ? `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" />`
-        : `<div class="restaurant-image mb-3">${this.escapeHtml(restaurant.name)}</div>`;
+      const imageUrl = this.getRestaurantImage(restaurant.id || restaurant.name);
+      const imageHtml = `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" />`;
       const restaurantId = encodeRouteValue(restaurant.id);
       return `
         <div class="col-md-6 col-xl-4">
@@ -548,7 +573,7 @@
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3 h-100">
-            <div class="restaurant-image mb-3">${escapeHtml(place.name || 'Nearby place')}</div>
+            <div class="restaurant-image mb-3 position-relative overflow-hidden"><img src="${this.getRestaurantImage(place.id || place.name)}" alt="${escapeHtml(place.name || 'Nearby place')}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div>
             <div class="d-flex flex-wrap mb-2">
               ${this.renderRatingStars(place.rating)}
               <span class="cuisine-pill">${escapeHtml(this.formatPlaceType(place.primaryType || 'place'))}</span>
