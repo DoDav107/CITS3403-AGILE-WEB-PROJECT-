@@ -1082,9 +1082,72 @@
         loadLocationSearch(locationInput.value);
       });
 
+      const useMyLocationBtn = document.getElementById('useMyLocationBtn');
+
+      const loadLocationByCoords = async (lat, lng, label) => {
+        setLocationLoading(true);
+        if (useMyLocationBtn) { useMyLocationBtn.disabled = true; useMyLocationBtn.textContent = 'Locating...'; }
+        locationInput.value = label || 'My location';
+        resultsTarget.innerHTML = this.emptyState('Finding restaurants near you...');
+        this.showMessage('browseLocationMessage', 'Loading nearby restaurants from your location...', 'info');
+
+        try {
+          const results = await this.fetchNearbyGooglePlaces(
+            { lat, lng },
+            8000,
+            ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'],
+            20
+          );
+          places = results;
+          renderFilterOptions();
+          render();
+          this.showMessage('browseLocationMessage', `Showing ${places.length} places near your location.`, 'success');
+          this.setUserLocation({ lat, lng });
+        } catch (error) {
+          places = [];
+          renderFilterOptions();
+          render();
+          this.showMessage('browseLocationMessage', error.message, 'error');
+        } finally {
+          setLocationLoading(false);
+          if (useMyLocationBtn) { useMyLocationBtn.disabled = false; useMyLocationBtn.textContent = '📍 Use my location'; }
+        }
+      };
+
+      const requestGeolocation = () => {
+        if (!navigator.geolocation) {
+          this.showMessage('browseLocationMessage', 'Geolocation is not supported by your browser.', 'error');
+          return;
+        }
+        if (useMyLocationBtn) { useMyLocationBtn.disabled = true; useMyLocationBtn.textContent = 'Locating...'; }
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            loadLocationByCoords(position.coords.latitude, position.coords.longitude, 'My location');
+          },
+          () => {
+            if (useMyLocationBtn) { useMyLocationBtn.disabled = false; useMyLocationBtn.textContent = '📍 Use my location'; }
+            this.showMessage('browseLocationMessage', 'Location access denied. Please type a location or allow permission.', 'error');
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      };
+
+      if (useMyLocationBtn) {
+        useMyLocationBtn.addEventListener('click', requestGeolocation);
+      }
+
       renderFilterOptions();
       render();
-      this.showMessage('browseLocationMessage', 'Enter a location to search nearby restaurants.', 'info');
+
+      // Auto-detect: use cached location or prompt for geolocation on first visit
+      const cachedLocation = this.getUserLocation();
+      if (cachedLocation) {
+        loadLocationByCoords(cachedLocation.lat, cachedLocation.lng, 'My location');
+      } else if (navigator.geolocation) {
+        requestGeolocation();
+      } else {
+        this.showMessage('browseLocationMessage', 'Enter a location to search nearby restaurants.', 'info');
+      }
     },
 
     async initRestaurantPage() {
