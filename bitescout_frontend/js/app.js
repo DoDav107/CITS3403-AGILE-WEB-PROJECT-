@@ -425,17 +425,63 @@
         .join('');
     },
 
+    getRestaurantImage(identifier) {
+      const RESTAURANT_IMAGES = [
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1432139509613-5c4255a1d0f7?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1515669097368-22e68427d265?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1569058242567-93de6f36f8e6?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1493770348161-369560ae357d?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1506354666786-959d6d497f1a?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1560717789-0ac7c58ac90a?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&q=80&w=600',
+        'https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&q=80&w=600'
+      ];
+      const str = String(identifier || '');
+      if (!str) return RESTAURANT_IMAGES[Math.floor(Math.random() * RESTAURANT_IMAGES.length)];
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return RESTAURANT_IMAGES[Math.abs(hash) % RESTAURANT_IMAGES.length];
+    },
+
     renderRestaurantCard(restaurant) {
       const distanceHtml = restaurant.distanceKm != null ? `<span class="distance-pill">📍 ${restaurant.distanceKm.toFixed(1)} km</span>` : '';
-      const restaurantImages = {
-        'Harbour Roast': 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=1000',
-        'Saigon Alley': 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=1000',
-        'Sora Sushi Bar': 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=1000'
-      };
-      const imageUrl = restaurantImages[restaurant.name] || '';
-      const imageHtml = imageUrl
-        ? `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" />`
-        : `<div class="restaurant-image mb-3">${this.escapeHtml(restaurant.name)}</div>`;
+      const imageUrl = this.getRestaurantImage(restaurant.id || restaurant.name);
+      const imageHtml = `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" />`;
       const restaurantId = encodeRouteValue(restaurant.id);
       return `
         <div class="col-md-6 col-xl-4">
@@ -548,7 +594,7 @@
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3 h-100">
-            <div class="restaurant-image mb-3">${escapeHtml(place.name || 'Nearby place')}</div>
+            <div class="restaurant-image mb-3 position-relative overflow-hidden"><img src="${this.getRestaurantImage(place.id || place.name)}" alt="${escapeHtml(place.name || 'Nearby place')}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div>
             <div class="d-flex flex-wrap mb-2">
               ${this.renderRatingStars(place.rating)}
               <span class="cuisine-pill">${escapeHtml(this.formatPlaceType(place.primaryType || 'place'))}</span>
@@ -1036,9 +1082,72 @@
         loadLocationSearch(locationInput.value);
       });
 
+      const useMyLocationBtn = document.getElementById('useMyLocationBtn');
+
+      const loadLocationByCoords = async (lat, lng, label) => {
+        setLocationLoading(true);
+        if (useMyLocationBtn) { useMyLocationBtn.disabled = true; useMyLocationBtn.textContent = 'Locating...'; }
+        locationInput.value = label || 'My location';
+        resultsTarget.innerHTML = this.emptyState('Finding restaurants near you...');
+        this.showMessage('browseLocationMessage', 'Loading nearby restaurants from your location...', 'info');
+
+        try {
+          const results = await this.fetchNearbyGooglePlaces(
+            { lat, lng },
+            8000,
+            ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'],
+            20
+          );
+          places = results;
+          renderFilterOptions();
+          render();
+          this.showMessage('browseLocationMessage', `Showing ${places.length} places near your location.`, 'success');
+          this.setUserLocation({ lat, lng });
+        } catch (error) {
+          places = [];
+          renderFilterOptions();
+          render();
+          this.showMessage('browseLocationMessage', error.message, 'error');
+        } finally {
+          setLocationLoading(false);
+          if (useMyLocationBtn) { useMyLocationBtn.disabled = false; useMyLocationBtn.textContent = '📍 Use my location'; }
+        }
+      };
+
+      const requestGeolocation = () => {
+        if (!navigator.geolocation) {
+          this.showMessage('browseLocationMessage', 'Geolocation is not supported by your browser.', 'error');
+          return;
+        }
+        if (useMyLocationBtn) { useMyLocationBtn.disabled = true; useMyLocationBtn.textContent = 'Locating...'; }
+        navigator.geolocation.getCurrentPosition(
+          position => {
+            loadLocationByCoords(position.coords.latitude, position.coords.longitude, 'My location');
+          },
+          () => {
+            if (useMyLocationBtn) { useMyLocationBtn.disabled = false; useMyLocationBtn.textContent = '📍 Use my location'; }
+            this.showMessage('browseLocationMessage', 'Location access denied. Please type a location or allow permission.', 'error');
+          },
+          { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 }
+        );
+      };
+
+      if (useMyLocationBtn) {
+        useMyLocationBtn.addEventListener('click', requestGeolocation);
+      }
+
       renderFilterOptions();
       render();
-      this.showMessage('browseLocationMessage', 'Enter a location to search nearby restaurants.', 'info');
+
+      // Auto-detect: use cached location or prompt for geolocation on first visit
+      const cachedLocation = this.getUserLocation();
+      if (cachedLocation) {
+        loadLocationByCoords(cachedLocation.lat, cachedLocation.lng, 'My location');
+      } else if (navigator.geolocation) {
+        requestGeolocation();
+      } else {
+        this.showMessage('browseLocationMessage', 'Enter a location to search nearby restaurants.', 'info');
+      }
     },
 
     async initRestaurantPage() {
@@ -1065,7 +1174,7 @@
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image">${escapeHtml(restaurant.name)}</div></div>
+            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(restaurant.id || restaurant.name)}" alt="${escapeHtml(restaurant.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
           </div>
         `;
         document.getElementById('restaurantAbout').innerHTML = `
@@ -1119,7 +1228,7 @@
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image">${escapeHtml(dish.name)}</div></div>
+            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(dish.id || dish.name)}" alt="${escapeHtml(dish.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
           </div>
         `;
         document.getElementById('dishDetails').innerHTML = `
