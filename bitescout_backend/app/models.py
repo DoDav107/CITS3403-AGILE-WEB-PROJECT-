@@ -10,6 +10,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     preferred_cuisine = db.Column(db.String(80), default="")
     bio = db.Column(db.Text, default="")
+    avatar_url = db.Column(db.Text, default="")
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     reviews = db.relationship('Review', backref='user', cascade='all, delete-orphan', lazy=True)
@@ -71,3 +72,10 @@ class FavouriteDish(db.Model):
     dish_id = db.Column(db.String(20), db.ForeignKey('dish.id'), nullable=False)
 
     dish = db.relationship('Dish')
+
+
+class MissingPlaceRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    place_name = db.Column(db.String(160), nullable=False)
+    details = db.Column(db.Text, default="")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)

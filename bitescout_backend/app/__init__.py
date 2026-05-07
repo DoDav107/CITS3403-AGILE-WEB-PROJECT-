@@ -3,9 +3,21 @@ from flask_sqlalchemy import SQLAlchemy
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from sqlalchemy import inspect, text
 
 
 db = SQLAlchemy()
+
+
+def ensure_user_profile_columns():
+    inspector = inspect(db.engine)
+    if "user" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("user")}
+    if "avatar_url" not in columns:
+        db.session.execute(text('ALTER TABLE "user" ADD COLUMN avatar_url TEXT DEFAULT ""'))
+        db.session.commit()
 
 
 def create_app(test_config=None):
@@ -36,6 +48,7 @@ def create_app(test_config=None):
 
     with app.app_context():
         db.create_all()
+        ensure_user_profile_columns()
         from .seed import seed_if_empty
         seed_if_empty()
 

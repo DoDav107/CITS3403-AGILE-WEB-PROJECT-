@@ -82,6 +82,15 @@ test('restaurant tag links are escaped and point back to Browse filters', () => 
   assert.doesNotMatch(html, /<script/i);
 });
 
+test('profile avatars resolve preset and default images', () => {
+  const presetAvatar = App.resolveAvatarUrl('preset:avatar-sushi', 'Ava Tran');
+  const defaultAvatar = App.getUserAvatarUrl({ name: 'Demo User' });
+
+  assert.match(presetAvatar, /^https:\/\/images\.unsplash\.com\//);
+  assert.match(defaultAvatar, /^https:\/\/images\.unsplash\.com\//);
+  assert.notEqual(presetAvatar, defaultAvatar);
+});
+
 test('restaurant card escapes user-controlled restaurant fields', () => {
   const html = App.renderRestaurantCard({
     id: 'r-danger',

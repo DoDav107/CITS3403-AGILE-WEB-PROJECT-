@@ -69,6 +69,22 @@
     userLocation: 'bitescout_user_location'
   };
 
+  const DEFAULT_AVATAR_ID = 'avatar-scout';
+  const AVATAR_PRESETS = [
+    { id: 'avatar-scout', label: 'Scout', initials: 'BS', image: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-noodles', label: 'Noodles', initials: 'NO', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-sushi', label: 'Sushi', initials: 'SU', image: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-pizza', label: 'Pizza', initials: 'PI', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-taco', label: 'Taco', initials: 'TA', image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-boba', label: 'Boba', initials: 'BO', image: 'https://images.unsplash.com/photo-1558857563-b371033873b8?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-tea', label: 'Tea', initials: 'TE', image: 'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-ramen', label: 'Ramen', initials: 'RA', image: 'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-coffee', label: 'Coffee', initials: 'CO', image: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-cake', label: 'Cake', initials: 'CA', image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-grill', label: 'Grill', initials: 'GR', image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=240&h=240' },
+    { id: 'avatar-curry', label: 'Curry', initials: 'CU', image: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=240&h=240' }
+  ];
+
 
   const data = root.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
 
@@ -196,6 +212,7 @@
         'edit-review': () => this.initEditReview(),
         profile: () => this.initProfile(),
         user: () => this.initOtherUser(),
+        'places-request': () => this.initPlaceRequests(),
         recommendations: () => this.initRecommendations(),
         favourites: () => this.initFavourites(),
         about: () => this.initAbout(),
@@ -210,6 +227,7 @@
       const header = document.getElementById('site-header');
       const footer = document.getElementById('site-footer');
       const firstName = user ? escapeHtml((user.name || 'User').split(' ')[0]) : '';
+      const userAvatar = user ? escapeHtml(this.getUserAvatarUrl(user)) : '';
       if (header) {
         header.innerHTML = `
           <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
@@ -229,7 +247,7 @@
                   ${this.navLink('about.html', 'About')}
                 </ul>
                 <div class="d-flex align-items-center gap-2">
-                  ${user ? `<a class="btn btn-outline-dark btn-sm" href="profile.html">${firstName}'s profile</a><a class="btn btn-primary btn-sm" href="logout.html">Log out</a>` : `<a class="btn btn-outline-dark btn-sm" href="login.html">Log in</a><a class="btn btn-primary btn-sm" href="signup.html">Sign up</a>`}
+                  ${user ? `<a class="btn btn-outline-dark btn-sm profile-nav-link" href="profile.html"><img class="profile-avatar-xs" src="${userAvatar}" alt="">${firstName}'s profile</a><a class="btn btn-primary btn-sm" href="logout.html">Log out</a>` : `<a class="btn btn-outline-dark btn-sm" href="login.html">Log in</a><a class="btn btn-primary btn-sm" href="signup.html">Sign up</a>`}
                 </div>
               </div>
             </div>
@@ -303,6 +321,59 @@
 
     getCurrentUser() {
       return this.state.currentUser;
+    },
+
+    getAvatarPresets() {
+      return AVATAR_PRESETS;
+    },
+
+    avatarPresetToDataUrl(preset = AVATAR_PRESETS[0]) {
+      if (preset.image) return preset.image;
+      const initials = escapeHtml(preset.initials || 'BS');
+      const label = escapeHtml(preset.label || 'BiteScout avatar');
+      const svg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="${label}">
+          <rect width="160" height="160" rx="80" fill="${preset.background || '#d4af37'}"/>
+          <circle cx="116" cy="42" r="28" fill="rgba(255,255,255,0.18)"/>
+          <circle cx="42" cy="118" r="34" fill="rgba(10,10,10,0.18)"/>
+          <text x="80" y="95" text-anchor="middle" font-family="Inter, Arial, sans-serif" font-size="46" font-weight="800" fill="${preset.accent || '#0a0a0a'}">${initials}</text>
+        </svg>
+      `;
+      return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg.replace(/\s+/g, ' ').trim())}`;
+    },
+
+    resolveAvatarUrl(avatarUrl = '', fallbackName = '') {
+      const value = String(avatarUrl || '').trim();
+      if (value.startsWith('preset:')) {
+        const presetId = value.slice('preset:'.length);
+        const preset = AVATAR_PRESETS.find(item => item.id === presetId);
+        if (preset) return this.avatarPresetToDataUrl(preset);
+      }
+      if (value.startsWith('data:image/')) return value;
+
+      const defaultPreset = AVATAR_PRESETS.find(item => item.id === DEFAULT_AVATAR_ID) || AVATAR_PRESETS[0];
+      if (fallbackName) {
+        const initials = String(fallbackName)
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map(part => part.charAt(0).toUpperCase())
+          .join('') || defaultPreset.initials;
+        return this.avatarPresetToDataUrl({ ...defaultPreset, initials });
+      }
+      return this.avatarPresetToDataUrl(defaultPreset);
+    },
+
+    getUserAvatarUrl(user = {}) {
+      return this.resolveAvatarUrl(user.avatarUrl || user.avatar_url || '', user.name || user.username || 'BiteScout user');
+    },
+
+    getCuisineOptions() {
+      const cuisines = new Set();
+      [...(this.state.restaurants || []), ...(data.restaurants || [])].forEach(restaurant => {
+        if (restaurant.cuisine) cuisines.add(restaurant.cuisine);
+      });
+      return Array.from(cuisines).sort((left, right) => left.localeCompare(right));
     },
 
     getRestaurantById(id) {
@@ -1338,6 +1409,134 @@
       });
     },
 
+    renderAvatarPicker(selectedValue = '') {
+      const selected = selectedValue || `preset:${DEFAULT_AVATAR_ID}`;
+      return this.getAvatarPresets().map(preset => {
+        const value = `preset:${preset.id}`;
+        const activeClass = value === selected ? ' is-selected' : '';
+        return `
+          <button class="avatar-choice${activeClass}" type="button" data-avatar-value="${escapeHtml(value)}" aria-label="Choose ${escapeHtml(preset.label)} avatar">
+            <img src="${escapeHtml(this.avatarPresetToDataUrl(preset))}" alt="">
+            <span>${escapeHtml(preset.label)}</span>
+          </button>
+        `;
+      }).join('');
+    },
+
+    renderProfileUserBar(user, options = {}) {
+      const preferredCuisine = user.preferredCuisine || '';
+      const preferredHref = preferredCuisine ? `browse.html?search=${encodeRouteValue(preferredCuisine)}` : 'recommendations.html';
+      const bio = user.bio || 'No bio yet.';
+      const reviewsLabel = `${options.reviewCount || 0} review${options.reviewCount === 1 ? '' : 's'}`;
+      const favouritesLabel = options.favouriteCount == null ? '' : `${options.favouriteCount} favourite${options.favouriteCount === 1 ? '' : 's'}`;
+      const editButton = options.editable ? '<button class="btn btn-primary" id="toggleProfileEditorBtn" type="button">Edit profile</button>' : '';
+
+      return `
+        <div class="profile-bar">
+          <img class="profile-avatar-xl" id="${options.editable ? 'profileAvatarPreview' : 'otherProfileAvatar'}" src="${escapeHtml(this.getUserAvatarUrl(user))}" alt="${escapeHtml(user.name)} profile picture">
+          <div class="profile-bar-body">
+            <p class="eyebrow mb-2">${escapeHtml(options.eyebrow || 'My profile')}</p>
+            <h1 class="fw-bold mb-2">${escapeHtml(user.name)}</h1>
+            <p class="text-secondary mb-3">@${escapeHtml(user.username || 'member')}</p>
+            <p class="profile-bio mb-3">${escapeHtml(bio)}</p>
+            <div class="profile-bar-meta">
+              <a class="profile-cuisine-link" href="${preferredHref}">Preferred cuisine: ${escapeHtml(preferredCuisine || 'Not set')}</a>
+              <span>${escapeHtml(reviewsLabel)}</span>
+              ${favouritesLabel ? `<span>${escapeHtml(favouritesLabel)}</span>` : ''}
+            </div>
+          </div>
+          <div class="profile-bar-actions">${editButton}</div>
+        </div>
+      `;
+    },
+
+    bindProfileEditor(currentUser) {
+      const editor = document.getElementById('profileEditor');
+      const toggleButton = document.getElementById('toggleProfileEditorBtn');
+      const form = document.getElementById('profileSettingsForm');
+      const preview = document.getElementById('profileAvatarPreview');
+      const avatarInput = document.getElementById('profileAvatarValue');
+      const photoInput = document.getElementById('profilePhotoInput');
+      const resetButton = document.getElementById('resetAvatarBtn');
+      if (!editor || !toggleButton || !form || !preview || !avatarInput) return;
+
+      const setAvatarValue = value => {
+        avatarInput.value = value;
+        preview.src = this.resolveAvatarUrl(value, currentUser.name);
+        form.querySelectorAll('.avatar-choice').forEach(button => {
+          button.classList.toggle('is-selected', button.dataset.avatarValue === value);
+        });
+      };
+
+      toggleButton.addEventListener('click', () => {
+        editor.hidden = !editor.hidden;
+        toggleButton.textContent = editor.hidden ? 'Edit profile' : 'Close editor';
+      });
+
+      form.querySelectorAll('.avatar-choice').forEach(button => {
+        button.addEventListener('click', () => {
+          setAvatarValue(button.dataset.avatarValue || `preset:${DEFAULT_AVATAR_ID}`);
+        });
+      });
+
+      if (resetButton) {
+        resetButton.addEventListener('click', () => setAvatarValue(`preset:${DEFAULT_AVATAR_ID}`));
+      }
+
+      if (photoInput) {
+        photoInput.addEventListener('change', () => {
+          const file = photoInput.files && photoInput.files[0];
+          if (!file) return;
+          if (!/^image\/(png|jpe?g|webp|gif)$/i.test(file.type)) {
+            this.showMessage('profileEditorMessage', 'Choose a PNG, JPEG, WebP, or GIF image.', 'error');
+            photoInput.value = '';
+            return;
+          }
+          if (file.size > 1_500_000) {
+            this.showMessage('profileEditorMessage', 'Profile photo is too large. Choose an image under 1.5 MB.', 'error');
+            photoInput.value = '';
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.addEventListener('load', () => {
+            setAvatarValue(reader.result);
+            this.showMessage('profileEditorMessage', 'Photo ready. Save your profile to keep it.', 'info');
+          });
+          reader.readAsDataURL(file);
+        });
+      }
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const submitButton = form.querySelector('button[type="submit"]');
+        const payload = {
+          bio: form.elements.bio.value.trim(),
+          preferredCuisine: form.elements.preferredCuisine.value,
+          avatarUrl: avatarInput.value
+        };
+
+        if (submitButton) {
+          submitButton.disabled = true;
+          submitButton.textContent = 'Saving...';
+        }
+
+        try {
+          const response = await this.api('/api/users/me', { method: 'PUT', body: payload });
+          this.state.currentUser = response.user;
+          this.renderLayout();
+          await this.initProfile();
+          this.showMessage('profileEditorMessage', 'Profile updated.', 'success');
+        } catch (error) {
+          this.showMessage('profileEditorMessage', error.message, 'error');
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Save profile';
+          }
+        }
+      });
+    },
+
     async initProfile() {
       const currentUser = this.getCurrentUser();
       if (!currentUser) {
@@ -1348,18 +1547,42 @@
       const myReviews = this.getAllReviews().filter(review => review.userId === currentUser.id);
       const favouriteRestaurants = this.state.favourites.restaurants;
       const favouriteDishes = this.state.favourites.dishes;
+      const favouriteCount = favouriteRestaurants.length + favouriteDishes.length;
+      const selectedAvatar = currentUser.avatarUrl || `preset:${DEFAULT_AVATAR_ID}`;
+      const cuisineOptions = this.getCuisineOptions().map(cuisine => `<option value="${escapeHtml(cuisine)}"${cuisine === currentUser.preferredCuisine ? ' selected' : ''}>${escapeHtml(cuisine)}</option>`).join('');
       document.getElementById('profileHeader').innerHTML = `
-        <p class="eyebrow mb-2">My profile</p>
-        <h1 class="fw-bold mb-3">${escapeHtml(currentUser.name)}</h1>
-        <p class="text-secondary mb-0">@${escapeHtml(currentUser.username)} • Preferred cuisine: ${escapeHtml(currentUser.preferredCuisine || 'Not set')}</p>
+        ${this.renderProfileUserBar(currentUser, { editable: true, reviewCount: myReviews.length, favouriteCount })}
+        <div class="profile-editor glass-card p-4 mt-4" id="profileEditor" hidden>
+          <form id="profileSettingsForm">
+            <div class="row g-4">
+              <div class="col-lg-5">
+                <label class="form-label fw-bold" for="profileBioInput">Bio</label>
+                <textarea class="form-control" id="profileBioInput" name="bio" rows="5" maxlength="500" placeholder="Tell people what food you like.">${escapeHtml(currentUser.bio || '')}</textarea>
+              </div>
+              <div class="col-lg-7">
+                <label class="form-label fw-bold" for="profileCuisineInput">Preferred cuisine</label>
+                <select class="form-select mb-3" id="profileCuisineInput" name="preferredCuisine">
+                  <option value="">Not set</option>
+                  ${cuisineOptions}
+                </select>
+                <input type="hidden" id="profileAvatarValue" name="avatarUrl" value="${escapeHtml(selectedAvatar)}">
+                <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+                  <label class="btn btn-outline-dark btn-sm profile-upload-control" for="profilePhotoInput">Upload photo</label>
+                  <input class="visually-hidden" id="profilePhotoInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+                  <button class="btn btn-outline-dark btn-sm" id="resetAvatarBtn" type="button">Use default avatar</button>
+                </div>
+                <div class="avatar-choice-grid">
+                  ${this.renderAvatarPicker(selectedAvatar)}
+                </div>
+              </div>
+            </div>
+            <div class="d-flex justify-content-end gap-2 mt-4">
+              <button class="btn btn-primary" type="submit">Save profile</button>
+            </div>
+          </form>
+        </div>
       `;
-      document.getElementById('profileSummary').innerHTML = `
-        <h2 class="h4 fw-bold mb-3">Account summary</h2>
-        <p class="text-secondary">${escapeHtml(currentUser.bio || 'No bio yet.')}</p>
-        <p class="mb-2"><strong>Email:</strong> ${escapeHtml(currentUser.email)}</p>
-        <p class="mb-2"><strong>Reviews:</strong> ${myReviews.length}</p>
-        <p class="mb-0"><strong>Favourites:</strong> ${favouriteRestaurants.length + favouriteDishes.length}</p>
-      `;
+      this.bindProfileEditor(currentUser);
       document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(review => this.renderReviewCard(review, true)).join('') : this.emptyState('You have not written any reviews yet.');
       const favouriteHtml = [
         ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`),
@@ -1374,13 +1597,7 @@
       try {
         const user = await this.api(`/api/users/${userId}`);
         document.getElementById('otherUserHeader').innerHTML = `
-          <p class="eyebrow mb-2">Community member</p>
-          <h1 class="fw-bold mb-3">${escapeHtml(user.name)}</h1>
-          <p class="text-secondary mb-0">@${escapeHtml(user.username || 'member')}</p>
-        `;
-        document.getElementById('otherUserSummary').innerHTML = `
-          <h2 class="h4 fw-bold mb-3">Profile summary</h2>
-          <p class="text-secondary mb-0">${escapeHtml(user.bio || 'This user has not added a bio yet.')}</p>
+          ${this.renderProfileUserBar(user, { eyebrow: 'Community member', reviewCount: user.reviews.length })}
         `;
         document.getElementById('otherUserReviews').innerHTML = user.reviews.length ? user.reviews.map(review => this.renderReviewCard(review)).join('') : this.emptyState('This user has no reviews yet.');
       } catch (error) {
@@ -1407,7 +1624,55 @@
       }
     },
 
-    initAbout() {},
+    initAbout() {
+      const form = document.getElementById('missingPlaceForm');
+      if (!form) return;
+
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        const payload = Object.fromEntries(new FormData(form).entries());
+        const placeName = String(payload.placeName || '').trim();
+        const details = String(payload.details || '').trim();
+
+        if (!placeName) {
+          this.showMessage('missingPlaceMessage', 'Enter the place name before sending the request.', 'error');
+          form.elements.placeName.focus();
+          return;
+        }
+
+        try {
+          await this.api('/api/missing-place-requests', {
+            method: 'POST',
+            body: { placeName, details }
+          });
+          form.reset();
+          this.showMessage('missingPlaceMessage', 'Request sent for the BiteScout team to review.', 'success');
+        } catch (error) {
+          this.showMessage('missingPlaceMessage', error.message, 'error');
+        }
+      });
+    },
+
+    async initPlaceRequests() {
+      const list = document.getElementById('placeRequestsList');
+      if (!list) return;
+
+      try {
+        const requests = await this.api('/api/missing-place-requests');
+        list.innerHTML = requests.length ? requests.map(item => `
+          <div class="favorite-card p-3 mb-3">
+            <div class="d-flex justify-content-between gap-3 flex-wrap">
+              <h2 class="h5 fw-bold mb-1">${escapeHtml(item.placeName)}</h2>
+              <span class="review-meta">${escapeHtml(this.formatDate(item.createdAt))}</span>
+            </div>
+            <p class="text-secondary mb-0">${escapeHtml(item.details || 'No extra details provided.')}</p>
+          </div>
+        `).join('') : this.emptyState('No missing place requests yet.');
+        this.showMessage('placeRequestsStatus', `${requests.length} request${requests.length === 1 ? '' : 's'} ready for developer review.`, 'info');
+      } catch (error) {
+        list.innerHTML = this.emptyState(error.message);
+      }
+    },
 
     async initLogout() {
       if (this.getCurrentUser()) {
