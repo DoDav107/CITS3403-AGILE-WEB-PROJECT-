@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BiteScout | Sign up</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-page="signup">
+  <div id="site-header"></div>
+  <main>
+    
+<section class="py-5 auth-shell">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6 col-xl-5">
+        <div class="glass-card auth-card p-4 p-md-5">
+          <p class="eyebrow mb-2">Create account</p>
+          <h1 class="h2 fw-bold mb-3">Join BiteScout</h1>
+          <p class="text-secondary mb-4">Save reviews, favourites, and preferences.</p>
+          <form id="signupForm" class="auth-form" novalidate>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="signupName">Full name</label>
+              <input
+                id="signupName"
+                type="text"
+                class="form-control"
+                name="name"
+                placeholder="Avery Tan"
+                autocomplete="name"
+                minlength="2"
+                maxlength="60"
+                aria-describedby="signupNameHint signupNameError"
+                aria-invalid="false"
+                required
+              >
+              <p id="signupNameHint" class="field-hint">2-60 letters. Spaces, hyphens, and apostrophes are allowed.</p>
+              <p id="signupNameError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="signupUsername">Username</label>
+              <input
+                id="signupUsername"
+                type="text"
+                class="form-control"
+                name="username"
+                placeholder="avery_tan"
+                autocomplete="username"
+                minlength="3"
+                maxlength="24"
+                aria-describedby="signupUsernameHint signupUsernameError"
+                aria-invalid="false"
+                required
+              >
+              <p id="signupUsernameHint" class="field-hint">3-24 characters. Start with a letter; use letters, numbers, or underscores.</p>
+              <p id="signupUsernameError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="signupEmail">Email</label>
+              <input
+                id="signupEmail"
+                type="email"
+                class="form-control"
+                name="email"
+                placeholder="avery@example.com"
+                autocomplete="email"
+                maxlength="255"
+                aria-describedby="signupEmailHint signupEmailError"
+                aria-invalid="false"
+                required
+              >
+              <p id="signupEmailHint" class="field-hint">Use a valid email address such as avery@example.com.</p>
+              <p id="signupEmailError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="signupConfirmEmail">Confirm email</label>
+              <input
+                id="signupConfirmEmail"
+                type="email"
+                class="form-control"
+                name="confirmEmail"
+                placeholder="avery@example.com"
+                autocomplete="email"
+                maxlength="255"
+                aria-describedby="signupConfirmEmailHint signupConfirmEmailError"
+                aria-invalid="false"
+                required
+              >
+              <p id="signupConfirmEmailHint" class="field-hint">Re-enter your email to confirm.</p>
+              <p id="signupConfirmEmailError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="signupCuisine">Favourite cuisine</label>
+              <select
+                id="signupCuisine"
+                class="form-select"
+                name="preferredCuisine"
+                aria-describedby="signupCuisineHint signupCuisineError"
+                aria-invalid="false"
+              >
+                <option value="">Choose one</option>
+                <option>Vietnamese</option>
+                <option>Italian</option>
+                <option>Japanese</option>
+                <option>Korean</option>
+                <option>Thai</option>
+                <option>Mexican</option>
+                <option>Indian</option>
+                <option>Chinese</option>
+                <option>Middle Eastern</option>
+                <option>Burgers</option>
+                <option>Cafe</option>
+                <option>Brunch</option>
+              </select>
+              <p id="signupCuisineHint" class="field-hint">Optional. Pick one from the list to personalise recommendations.</p>
+              <p id="signupCuisineError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="mb-3 auth-field">
+              <label class="form-label" for="signupPassword">Password</label>
+              <input
+                id="signupPassword"
+                type="password"
+                class="form-control"
+                name="password"
+                placeholder="Create a password"
+                autocomplete="new-password"
+                minlength="8"
+                maxlength="72"
+                aria-describedby="signupPasswordHint signupPasswordRules signupPasswordError"
+                aria-invalid="false"
+                required
+              >
+              <p id="signupPasswordHint" class="field-hint">Use 8-72 characters with a mix of letter cases and numbers.</p>
+              <ul id="signupPasswordRules" class="password-rules" aria-label="Password requirements">
+                <li data-rule="length">8-72 characters</li>
+                <li data-rule="lowercase">One lowercase letter</li>
+                <li data-rule="uppercase">One uppercase letter</li>
+                <li data-rule="number">One number</li>
+              </ul>
+              <p id="signupPasswordError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <button class="btn btn-primary w-100" type="submit">Create account</button>
+          </form>
+          <div id="signupMessage" class="auth-message mt-3" aria-live="polite"></div>
+          <p class="small text-secondary mt-3 mb-0">Already have an account? <a href="login.html">Log in</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  </main>
+  <div id="site-footer"></div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
