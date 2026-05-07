@@ -756,6 +756,14 @@
         }
       }
 
+      if (input.name === 'confirmEmail' && mode === 'signup') {
+        if (!value) return 'Please confirm your email address.';
+        const emailInput = input.form ? input.form.elements.email : null;
+        if (emailInput && value.toLowerCase() !== emailInput.value.trim().toLowerCase()) {
+          return 'Email addresses do not match.';
+        }
+      }
+
       if (input.name === 'password') {
         const password = input.value;
         const checks = this.getPasswordChecks(password);
@@ -861,7 +869,7 @@
         form.elements.email?.focus();
       }
 
-      if (mode === 'signup' && /email|username|exists/i.test(message)) {
+      if (mode === 'signup' && /already exists/i.test(message)) {
         ['email', 'username'].forEach(name => {
           const input = form.elements[name];
           if (input) this.setAuthFieldState(input, 'This username or email may already be in use.', true);

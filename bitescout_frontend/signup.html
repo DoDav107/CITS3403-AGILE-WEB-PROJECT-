@@ -77,6 +77,23 @@
               <p id="signupEmailError" class="field-error" role="alert" aria-live="polite"></p>
             </div>
             <div class="mb-3 auth-field">
+              <label class="form-label" for="signupConfirmEmail">Confirm email</label>
+              <input
+                id="signupConfirmEmail"
+                type="email"
+                class="form-control"
+                name="confirmEmail"
+                placeholder="avery@example.com"
+                autocomplete="email"
+                maxlength="255"
+                aria-describedby="signupConfirmEmailHint signupConfirmEmailError"
+                aria-invalid="false"
+                required
+              >
+              <p id="signupConfirmEmailHint" class="field-hint">Re-enter your email to confirm.</p>
+              <p id="signupConfirmEmailError" class="field-error" role="alert" aria-live="polite"></p>
+            </div>
+            <div class="mb-3 auth-field">
               <label class="form-label" for="signupCuisine">Favourite cuisine</label>
               <select
                 id="signupCuisine"

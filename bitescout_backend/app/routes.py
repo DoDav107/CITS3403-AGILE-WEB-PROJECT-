@@ -281,23 +281,6 @@ def signup():
     db.session.commit()
     session['user_id'] = user.id
     return jsonify({'message': 'Account created', 'user': user_to_dict(user)}), 201
-    if missing:
-        return jsonify({'error': f"Missing fields: {', '.join(missing)}"}), 400
-    if User.query.filter((User.email == payload['email']) | (User.username == payload['username'])).first():
-        return jsonify({'error': 'Email or username already exists'}), 409
-
-    user = User(
-        name=payload['name'],
-        username=payload['username'],
-        email=payload['email'],
-        password_hash=generate_password_hash(payload['password']),
-        preferred_cuisine=payload.get('preferredCuisine', ''),
-        bio=payload.get('bio', ''),
-    )
-    db.session.add(user)
-    db.session.commit()
-    session['user_id'] = user.id
-    return jsonify({'message': 'Account created', 'user': user_to_dict(user)}), 201
 
 
 @bp.post('/api/auth/login')
