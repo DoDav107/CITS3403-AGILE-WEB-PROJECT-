@@ -1423,9 +1423,17 @@
       const typingEl = document.getElementById('chatTyping');
 
       if (!widgetBtn || !windowEl) return;
+      
+      try {
+        const savedHistory = sessionStorage.getItem('bitescout_chat_history');
+        if (savedHistory) {
+          this.state.chatHistory = JSON.parse(savedHistory);
+        }
+      } catch (e) {}
 
       const toggleChat = () => {
         windowEl.classList.toggle('open');
+        sessionStorage.setItem('bitescout_chat_open', windowEl.classList.contains('open') ? '1' : '0');
         if (windowEl.classList.contains('open')) inputEl.focus();
       };
 
@@ -1439,6 +1447,24 @@
         bodyEl.insertBefore(msgDiv, typingEl);
         bodyEl.scrollTop = bodyEl.scrollHeight;
       };
+
+      if (this.state.chatHistory && this.state.chatHistory.length > 0) {
+        this.state.chatHistory.forEach(msg => {
+          if (msg.role === 'user') {
+            appendMessage(`<p>${escapeHtml(msg.content)}</p>`, 'user');
+          } else {
+            let formattedText = msg.content
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\n/g, '<br/>');
+            appendMessage(formattedText, 'ai');
+          }
+        });
+      }
+
+      if (sessionStorage.getItem('bitescout_chat_open') === '1') {
+        windowEl.classList.add('open');
+        bodyEl.scrollTop = bodyEl.scrollHeight;
+      }
 
       const sendMessage = async () => {
         const text = inputEl.value.trim();
@@ -1477,6 +1503,7 @@
             // Add to chat history
             this.state.chatHistory.push({ role: 'user', content: text });
             this.state.chatHistory.push({ role: 'model', content: data.response });
+            sessionStorage.setItem('bitescout_chat_history', JSON.stringify(this.state.chatHistory));
             
             // Render basic markdown like **bold** to <strong> and newlines to <br>
             let formattedText = data.response
