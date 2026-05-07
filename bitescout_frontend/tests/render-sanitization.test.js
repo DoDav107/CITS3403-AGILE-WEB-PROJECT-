@@ -36,6 +36,16 @@ test('Google place filter options include primary types and place tags', () => {
   assert.deepEqual(options.tags, ['bakery', 'meal_takeaway', 'sushi_restaurant']);
 });
 
+test('Google place filter options do not duplicate values between type and tag filters', () => {
+  const options = App.getGooglePlaceFilterOptions([
+    { primaryType: 'restaurant', types: ['restaurant', 'food', 'cafe', 'ramen_restaurant'] },
+    { primaryType: 'cafe', types: ['cafe', 'food', 'bakery'] }
+  ]);
+
+  assert.deepEqual(options.types, ['cafe', 'restaurant']);
+  assert.deepEqual(options.tags, ['bakery', 'ramen_restaurant']);
+});
+
 test('Browse Google place filters combine search, type, tag, and rating', () => {
   const places = [
     {
@@ -69,6 +79,54 @@ test('Browse Google place filters combine search, type, tag, and rating', () => 
     selectedType: 'restaurant',
     selectedTag: 'ramen_restaurant',
     minRating: 4
+  });
+
+  assert.deepEqual(filtered.map(place => place.id), ['p1']);
+});
+
+test('Browse Google place type filter matches place types, not only primary type', () => {
+  const places = [
+    {
+      id: 'p1',
+      name: 'Northbridge Ramen Lab',
+      address: '99 Roe St, Northbridge WA',
+      rating: 4.7,
+      primaryType: 'japanese_restaurant',
+      types: ['restaurant', 'ramen_restaurant', 'food']
+    },
+    {
+      id: 'p2',
+      name: 'City Coffee',
+      address: 'Perth CBD',
+      rating: 4.8,
+      primaryType: 'cafe',
+      types: ['cafe', 'coffee_shop', 'food']
+    }
+  ];
+
+  const filtered = App.filterBrowseGooglePlaces(places, {
+    selectedType: 'restaurant',
+    minRating: 0
+  });
+
+  assert.deepEqual(filtered.map(place => place.id), ['p1']);
+});
+
+test('Browse Google place search matches formatted type labels', () => {
+  const places = [
+    {
+      id: 'p1',
+      name: 'Northbridge Ramen Lab',
+      address: '99 Roe St, Northbridge WA',
+      rating: 4.7,
+      primaryType: 'japanese_restaurant',
+      types: ['restaurant', 'ramen_restaurant', 'food']
+    }
+  ];
+
+  const filtered = App.filterBrowseGooglePlaces(places, {
+    search: 'Japanese Restaurant',
+    minRating: 0
   });
 
   assert.deepEqual(filtered.map(place => place.id), ['p1']);

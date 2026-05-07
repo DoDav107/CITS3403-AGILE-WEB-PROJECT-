@@ -464,18 +464,22 @@
     },
 
     getGooglePlaceFilterOptions(places = []) {
-      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store']);
+      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store', 'restaurant', 'cafe', 'bar']);
       const typeSet = new Set();
       const tagSet = new Set();
 
       places.forEach(place => {
         const primaryType = String(place.primaryType || '').trim();
         if (primaryType) typeSet.add(primaryType);
+      });
 
+      places.forEach(place => {
+        const primaryType = String(place.primaryType || '').trim();
         (place.types || []).forEach(type => {
           const normalizedType = String(type || '').trim();
           if (!normalizedType || ignoredTags.has(normalizedType)) return;
           if (primaryType && normalizedType === primaryType) return;
+          if (typeSet.has(normalizedType)) return;
           tagSet.add(normalizedType);
         });
       });
@@ -656,8 +660,15 @@
     },
 
     renderGooglePlaceCard(place, index = 0) {
+      const primaryType = String(place.primaryType || '').trim();
+      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store', 'restaurant', 'cafe', 'bar']);
       const tagHtml = (place.types || [])
-        .filter(type => !['point_of_interest', 'establishment', 'food', 'store'].includes(type))
+        .filter(type => {
+          const normalizedType = String(type || '').trim();
+          return normalizedType
+            && normalizedType !== primaryType
+            && !ignoredTags.has(normalizedType);
+        })
         .slice(0, 3)
         .map(type => `<span class="badge badge-soft">${escapeHtml(this.formatPlaceType(type))}</span>`)
         .join('');
@@ -758,9 +769,12 @@
       const minRating = parseFloat(filters.minRating || '0');
 
       return this.filterGooglePlaces(places, Number.isFinite(minRating) ? minRating : 0).filter(place => {
-        const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')}`.toLowerCase();
+        const typeLabels = [place.primaryType, ...(place.types || [])]
+          .filter(Boolean)
+          .map(type => this.formatPlaceType(String(type)));
+        const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')} ${typeLabels.join(' ')}`.toLowerCase();
         if (search && !haystack.includes(search)) return false;
-        if (selectedType && place.primaryType !== selectedType) return false;
+        if (selectedType && place.primaryType !== selectedType && !(place.types || []).includes(selectedType)) return false;
         if (selectedTag && !(place.types || []).includes(selectedTag) && !haystack.includes(selectedTag.toLowerCase())) return false;
         return true;
       });

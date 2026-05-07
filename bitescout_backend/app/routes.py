@@ -136,7 +136,7 @@ def google_restaurant_id(place_id):
 
 
 def google_place_tags(types, primary_type=''):
-    ignored = {'point_of_interest', 'establishment', 'food', 'store'}
+    ignored = {'point_of_interest', 'establishment', 'food', 'store', 'restaurant', 'cafe', 'bar'}
     primary = str(primary_type or '').strip()
     tags = []
     for place_type in types or []:

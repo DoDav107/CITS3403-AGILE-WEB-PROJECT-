@@ -182,6 +182,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(restaurant["name"], "Northbridge Ramen Lab")
         self.assertEqual(restaurant["cuisine"], "Japanese Restaurant")
         self.assertIn("ramen_restaurant", restaurant["tags"])
+        self.assertNotIn("restaurant", restaurant["tags"])
 
         detail_response = self.client.get(f"/api/restaurants/{restaurant['id']}")
         self.assertEqual(detail_response.status_code, 200)
