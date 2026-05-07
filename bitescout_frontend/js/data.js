@@ -173,8 +173,8 @@ window.BiteScoutData = {
     }
   ],
   sampleUsers: [
-    { id: 'u-demo-1', name: 'Ava Tran', username: 'avatran', preferredCuisine: 'Vietnamese', bio: 'Always hunting for comfort food and good coffee.' },
-    { id: 'u-demo-2', name: 'Luca Marino', username: 'lucamarino', preferredCuisine: 'Italian', bio: 'Pizza, pasta, and dessert are my main priorities.' }
+    { id: 'u-demo-1', name: 'Ava Tran', username: 'avatran', preferredCuisine: 'Vietnamese', bio: 'Always hunting for comfort food and good coffee.', avatarUrl: 'preset:avatar-noodles' },
+    { id: 'u-demo-2', name: 'Luca Marino', username: 'lucamarino', preferredCuisine: 'Italian', bio: 'Pizza, pasta, and dessert are my main priorities.', avatarUrl: 'preset:avatar-pizza' }
   ],
   sampleReviews: [
     { id: 'sr1', userId: 'u-demo-1', restaurantId: 'r1', dishId: 'd1', rating: 5, title: 'Best broth I have had lately', content: 'Deep flavour, fresh herbs, and really good portion size.', createdAt: '2026-04-06T11:00:00' },

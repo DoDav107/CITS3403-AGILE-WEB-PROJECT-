@@ -115,7 +115,8 @@ def seed_if_empty():
             email='demo@bitescout.app',
             password_hash=generate_password_hash('password123'),
             preferred_cuisine='Japanese',
-            bio='I love finding hidden gems around Perth.'
+            bio='I love finding hidden gems around Perth.',
+            avatar_url='preset:avatar-sushi'
         )
         db.session.add(demo)
 
@@ -127,7 +128,8 @@ def seed_if_empty():
             email='ava@example.com',
             password_hash=generate_password_hash('password123'),
             preferred_cuisine='Vietnamese',
-            bio='Always hunting for comfort food and good coffee.'
+            bio='Always hunting for comfort food and good coffee.',
+            avatar_url='preset:avatar-noodles'
         )
         db.session.add(ava)
 

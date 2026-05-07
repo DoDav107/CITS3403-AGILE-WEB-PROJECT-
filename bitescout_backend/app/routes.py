@@ -1,16 +1,22 @@
 from datetime import datetime
 import os
+import re
 from functools import wraps
 import hashlib
 from flask import Blueprint, current_app, jsonify, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from . import google_places
-from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish
+from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest
 import google.generativeai as genai
 
 
 bp = Blueprint('main', __name__)
+
+MAX_BIO_LENGTH = 500
+MAX_AVATAR_URL_LENGTH = 1_500_000
+AVATAR_DATA_URL_RE = re.compile(r"^data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+$")
+AVATAR_PRESET_RE = re.compile(r"^preset:avatar-[a-z0-9-]{1,40}$")
 
 
 def current_user():
@@ -36,8 +42,22 @@ def user_to_dict(user):
         'email': user.email,
         'preferredCuisine': user.preferred_cuisine,
         'bio': user.bio,
+        'avatarUrl': user.avatar_url or '',
         'createdAt': user.created_at.isoformat(),
     }
+
+
+def normalize_avatar_url(value):
+    avatar_url = (value or '').strip()
+    if not avatar_url:
+        return '', None
+    if len(avatar_url) > MAX_AVATAR_URL_LENGTH:
+        return None, 'Profile photo is too large. Choose an image under 1.5 MB.'
+    if AVATAR_PRESET_RE.match(avatar_url):
+        return avatar_url, None
+    if AVATAR_DATA_URL_RE.match(avatar_url):
+        return avatar_url, None
+    return None, 'Choose one of the provided avatars or upload a PNG, JPEG, WebP, or GIF image.'
 
 
 def dish_to_dict(dish):
@@ -81,7 +101,21 @@ def review_to_dict(review):
         'content': review.content,
         'createdAt': review.created_at.isoformat(),
         'updatedAt': review.updated_at.isoformat(),
-        'user': {'id': review.user.id, 'name': review.user.name, 'username': review.user.username},
+        'user': {
+            'id': review.user.id,
+            'name': review.user.name,
+            'username': review.user.username,
+            'avatarUrl': review.user.avatar_url or '',
+        },
+    }
+
+
+def missing_place_request_to_dict(item):
+    return {
+        'id': item.id,
+        'placeName': item.place_name,
+        'details': item.details or '',
+        'createdAt': item.created_at.isoformat(),
     }
 
 
@@ -249,6 +283,59 @@ def user_profile(user_id):
     data = user_to_dict(user)
     data['reviews'] = [review_to_dict(r) for r in sorted(user.reviews, key=lambda x: x.created_at, reverse=True)]
     return jsonify(data)
+
+
+@bp.get('/api/missing-place-requests')
+def list_missing_place_requests():
+    requests = MissingPlaceRequest.query.order_by(MissingPlaceRequest.created_at.desc()).all()
+    return jsonify([missing_place_request_to_dict(item) for item in requests])
+
+
+@bp.post('/api/missing-place-requests')
+def create_missing_place_request():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    place_name = (payload.get('placeName') or '').strip()
+    details = (payload.get('details') or '').strip()
+
+    if not place_name:
+        return jsonify({'error': 'Enter the place name before sending the request.'}), 400
+    if len(place_name) > 160:
+        return jsonify({'error': 'Place name must be 160 characters or fewer.'}), 400
+    if len(details) > 1000:
+        return jsonify({'error': 'Details must be 1000 characters or fewer.'}), 400
+
+    item = MissingPlaceRequest(place_name=place_name, details=details)
+    db.session.add(item)
+    db.session.commit()
+    return jsonify({'message': 'Missing place request saved.', 'request': missing_place_request_to_dict(item)}), 201
+
+
+@bp.put('/api/users/me')
+@login_required
+def update_my_profile():
+    user = current_user()
+    payload = request.get_json(silent=True) or request.form.to_dict()
+
+    if 'bio' in payload:
+        bio = (payload.get('bio') or '').strip()
+        if len(bio) > MAX_BIO_LENGTH:
+            return jsonify({'error': f'Bio must be {MAX_BIO_LENGTH} characters or fewer.'}), 400
+        user.bio = bio
+
+    if 'preferredCuisine' in payload:
+        preferred_cuisine = (payload.get('preferredCuisine') or '').strip()
+        if len(preferred_cuisine) > 80:
+            return jsonify({'error': 'Preferred cuisine must be 80 characters or fewer.'}), 400
+        user.preferred_cuisine = preferred_cuisine
+
+    if 'avatarUrl' in payload:
+        avatar_url, avatar_error = normalize_avatar_url(payload.get('avatarUrl'))
+        if avatar_error:
+            return jsonify({'error': avatar_error}), 400
+        user.avatar_url = avatar_url
+
+    db.session.commit()
+    return jsonify({'message': 'Profile updated', 'user': user_to_dict(user)})
 
 
 @bp.post('/api/auth/signup')
@@ -738,5 +825,3 @@ def chat():
         return jsonify({'response': ai_text})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-

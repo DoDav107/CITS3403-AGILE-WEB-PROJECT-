@@ -85,15 +85,65 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"navigator.geolocation.getCurrentPosition", response.data)
 
+    def test_places_request_page_is_served(self):
+        response = self.client.get("/places-request.html")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"Missing Place Requests", response.data)
+
     def test_login_round_trip_sets_session(self):
         response = self.login_demo_user()
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.get_json()["user"]["email"], "demo@bitescout.app")
+        self.assertEqual(response.get_json()["user"]["avatarUrl"], "preset:avatar-sushi")
 
         me_response = self.client.get("/api/auth/me")
         self.assertEqual(me_response.status_code, 200)
         self.assertEqual(me_response.get_json()["user"]["email"], "demo@bitescout.app")
+
+    def test_profile_can_be_updated(self):
+        self.login_demo_user()
+
+        response = self.client.put(
+            "/api/users/me",
+            json={
+                "bio": "Updated bio from the profile page.",
+                "preferredCuisine": "Thai",
+                "avatarUrl": "preset:avatar-curry",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        user = response.get_json()["user"]
+        self.assertEqual(user["bio"], "Updated bio from the profile page.")
+        self.assertEqual(user["preferredCuisine"], "Thai")
+        self.assertEqual(user["avatarUrl"], "preset:avatar-curry")
+
+    def test_profile_rejects_invalid_avatar_url(self):
+        self.login_demo_user()
+
+        response = self.client.put(
+            "/api/users/me",
+            json={"avatarUrl": "javascript:alert(1)"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+
+    def test_missing_place_request_can_be_created_and_listed(self):
+        create_response = self.client.post(
+            "/api/missing-place-requests",
+            json={
+                "placeName": "Test Dumpling House",
+                "details": "Northbridge, dumplings, suggested by a user.",
+            },
+        )
+        list_response = self.client.get("/api/missing-place-requests")
+
+        self.assertEqual(create_response.status_code, 201)
+        payload = list_response.get_json()
+        self.assertEqual(payload[0]["placeName"], "Test Dumpling House")
+        self.assertIn("Northbridge", payload[0]["details"])
 
     def test_favourites_can_be_saved_and_listed(self):
         self.login_demo_user()
