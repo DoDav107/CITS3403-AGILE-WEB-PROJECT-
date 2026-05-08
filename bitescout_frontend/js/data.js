@@ -177,8 +177,8 @@ window.BiteScoutData = {
     { id: 'u-demo-2', name: 'Luca Marino', username: 'lucamarino', preferredCuisine: 'Italian', bio: 'Pizza, pasta, and dessert are my main priorities.', avatarUrl: 'preset:avatar-pizza' }
   ],
   sampleReviews: [
-    { id: 'sr1', userId: 'u-demo-1', restaurantId: 'r1', dishId: 'd1', rating: 5, title: 'Best broth I have had lately', content: 'Deep flavour, fresh herbs, and really good portion size.', createdAt: '2026-04-06T11:00:00' },
-    { id: 'sr2', userId: 'u-demo-2', restaurantId: 'r5', dishId: 'd9', rating: 5, title: 'Excellent pizza base', content: 'Crispy edges, good mushroom balance, and not too oily.', createdAt: '2026-04-05T18:30:00' },
+    { id: 'sr1', userId: 'u-demo-1', restaurantId: 'r1', dishId: '', rating: 5, title: 'Best Vietnamese comfort spot lately', content: 'Deep flavour, fresh herbs, and really good portion size.', createdAt: '2026-04-06T11:00:00' },
+    { id: 'sr2', userId: 'u-demo-2', restaurantId: 'r5', dishId: '', rating: 5, title: 'Excellent Italian night out', content: 'Crispy edges, good mushroom balance, and not too oily.', createdAt: '2026-04-05T18:30:00' },
     { id: 'sr3', userId: 'u-demo-1', restaurantId: 'r3', dishId: '', rating: 4, title: 'Fresh sushi and great service', content: 'A bit pricey, but the fish quality is worth it.', createdAt: '2026-04-07T13:45:00' }
   ]
 };

@@ -18,7 +18,7 @@
   <div class="container">
     <p class="eyebrow mb-2">Browse and search</p>
     <h1 class="fw-bold mb-3">Restaurants near you</h1>
-    <p class="text-secondary mb-0">Enter a suburb, postcode, or address to browse nearby places from Google, then filter by type, tags, and rating.</p>
+    <p class="text-secondary mb-0">Enter a suburb, postcode, or address to browse nearby places from Google, then search by place, cuisine, or craving.</p>
   </div>
 </section>
 <section class="py-4">
@@ -35,23 +35,17 @@
         </div>
       </form>
       <div class="row g-3 align-items-end">
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-xl-4">
           <label class="form-label">Search</label>
-          <input id="searchInput" class="form-control" placeholder="e.g. ramen, bakery, coffee" />
+          <input id="searchInput" class="form-control" placeholder="e.g. Nando's, noodles, coffee" />
         </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label">Type</label>
+        <div class="col-md-6 col-xl-4">
+          <label class="form-label">Cuisine or place type</label>
           <select id="placeTypeFilter" class="form-select">
             <option value="">Any</option>
           </select>
         </div>
-        <div class="col-md-6 col-xl-3">
-          <label class="form-label">Tag</label>
-          <select id="tagFilter" class="form-select">
-            <option value="">Any</option>
-          </select>
-        </div>
-        <div class="col-md-6 col-xl-3">
+        <div class="col-md-6 col-xl-4">
           <label class="form-label">Stars</label>
           <select id="ratingFilter" class="form-select">
             <option value="0">Any</option>
