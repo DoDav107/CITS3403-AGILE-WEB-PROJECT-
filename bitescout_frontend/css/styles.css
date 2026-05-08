@@ -438,6 +438,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
 }
 
 .restaurant-card,
+.dish-card,
 .review-card,
 .favorite-card {
   border: 1px solid rgba(255,255,255,0.08);
@@ -450,7 +451,8 @@ h1, h2, .section-title, .hero-title, .cta-title {
   overflow: hidden;
 }
 
-.restaurant-card::before {
+.restaurant-card::before,
+.dish-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -462,22 +464,23 @@ h1, h2, .section-title, .hero-title, .cta-title {
   transition: opacity 0.3s ease;
 }
 
-.restaurant-card:hover {
+.restaurant-card:hover,
+.dish-card:hover {
   transform: translateY(-6px) scale(1.01);
   box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15);
   border-color: rgba(212,175,55,0.25);
 }
 
-.restaurant-card:hover::before {
+.restaurant-card:hover::before,
+.dish-card:hover::before {
   opacity: 1;
 }
 
 .restaurant-image,
 .detail-image {
   background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-950));
-  aspect-ratio: 3 / 2;
-  min-height: 0;
-  height: auto;
+  min-height: 180px;
+  height: 260px;
   border-radius: 1rem;
   display: grid;
   place-items: center;
@@ -509,7 +512,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
 }
 
 .detail-image {
-  aspect-ratio: 4 / 3;
+  min-height: 220px;
 }
 
 /* ── Pills ── */
@@ -1379,12 +1382,20 @@ small, .small {
 }
 
 /* ── Chatbot Widget ── */
+#bitescout-chatbot {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+}
+
 .chat-widget-btn {
   position: fixed;
-  bottom: 2rem;
-  right: 2rem;
+  bottom: clamp(1rem, 2.5vw, 2rem);
+  right: clamp(1rem, 2.5vw, 2rem);
   width: 60px;
   height: 60px;
+  pointer-events: auto;
   border-radius: 50%;
   background: var(--gold-500);
   color: var(--charcoal-950);
@@ -1403,12 +1414,15 @@ small, .small {
 }
 
 .chat-window {
+  box-sizing: border-box;
   position: fixed;
-  bottom: 5.5rem;
-  right: 2rem;
-  width: 350px;
-  max-height: 500px;
-  height: 60vh;
+  bottom: clamp(5rem, 9vw, 5.75rem);
+  left: auto;
+  right: clamp(1rem, 2.5vw, 2rem);
+  width: min(24rem, calc(100vw - 2rem));
+  max-width: calc(100vw - 2rem);
+  max-height: min(34rem, calc(100dvh - 7rem));
+  height: min(60vh, 34rem);
   background: rgba(18, 18, 18, 0.95);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -1460,6 +1474,7 @@ small, .small {
 
 .chat-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   padding: 1rem;
   display: flex;
@@ -1468,12 +1483,13 @@ small, .small {
 }
 
 .chat-msg {
-  max-width: 85%;
+  max-width: min(88%, 19rem);
   padding: 0.75rem 1rem;
   border-radius: 1rem;
   font-size: 0.95rem;
   line-height: 1.5;
   animation: fadeIn 0.3s ease;
+  overflow-wrap: anywhere;
 }
 
 .chat-msg p:last-child {
@@ -1511,10 +1527,12 @@ small, .small {
   border-top: 1px solid rgba(255,255,255,0.08);
   display: flex;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .chat-input {
   flex: 1;
+  min-width: 0;
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 999px;
@@ -1529,6 +1547,7 @@ small, .small {
 }
 
 .chat-send {
+  flex: 0 0 38px;
   background: var(--gold-500);
   color: var(--charcoal-950);
   border: none;
@@ -1575,4 +1594,1575 @@ small, .small {
 @keyframes typingBounce {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
+}
+
+/* ── Luxury UI presentation refresh ── */
+:root {
+  --copper-500: #c47c35;
+  --wine-800: #3b1015;
+  --sage-400: #8fbfa0;
+  --glass-deep: rgba(18, 17, 15, 0.78);
+  --glass-soft: rgba(255, 255, 255, 0.055);
+  --luxury-border: rgba(230, 197, 92, 0.2);
+  --luxury-border-strong: rgba(230, 197, 92, 0.42);
+  --shadow-luxury: 0 28px 70px rgba(0, 0, 0, 0.55);
+  --shadow-gold: 0 16px 38px rgba(212, 175, 55, 0.24);
+}
+
+html {
+  --pointer-x: 50%;
+  --pointer-y: 18%;
+}
+
+body {
+  background:
+    linear-gradient(120deg, rgba(59, 16, 21, 0.18), transparent 34%),
+    linear-gradient(240deg, rgba(143, 191, 160, 0.08), transparent 30%),
+    linear-gradient(180deg, #070707 0%, #10100f 48%, #070707 100%);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before {
+  opacity: 0.045;
+  mix-blend-mode: screen;
+}
+
+body::after {
+  animation: luxuryBackdropShift 26s linear infinite;
+  background-image:
+    linear-gradient(115deg, transparent 0%, rgba(230, 197, 92, 0.06) 42%, transparent 58%),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.025) 0 1px, transparent 1px 92px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.018) 0 1px, transparent 1px 92px);
+  background-position:
+    calc(var(--pointer-x) * 0.15) calc(var(--pointer-y) * 0.1),
+    0 0,
+    0 0;
+  background-size:
+    180% 180%,
+    92px 92px,
+    92px 92px;
+  content: '';
+  inset: 0;
+  opacity: 0.2;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+main {
+  isolation: isolate;
+}
+
+main::after {
+  animation: goldThread 14s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(230, 197, 92, 0.18), transparent);
+  content: '';
+  height: 1px;
+  left: -25%;
+  pointer-events: none;
+  position: fixed;
+  top: 6.25rem;
+  width: 55%;
+  z-index: -1;
+}
+
+.navbar {
+  background:
+    linear-gradient(180deg, rgba(19, 18, 16, 0.94), rgba(8, 8, 8, 0.86)) !important;
+  box-shadow: inset 0 -1px 0 rgba(230, 197, 92, 0.08);
+}
+
+.navbar-brand .badge {
+  background:
+    linear-gradient(135deg, #f0d878, var(--gold-500) 48%, var(--copper-500)) !important;
+  box-shadow: 0 0 0 1px rgba(255,255,255,0.14), 0 10px 24px rgba(212,175,55,0.24);
+  color: #070707 !important;
+  min-width: 3.25rem;
+}
+
+.navbar-brand:hover .badge {
+  animation: brandPulse 900ms ease;
+}
+
+.navbar-nav .nav-link {
+  overflow: hidden;
+}
+
+.navbar-nav .nav-link::before {
+  background: linear-gradient(90deg, transparent, rgba(230, 197, 92, 0.14), transparent);
+  content: '';
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  transform: translateX(-70%);
+  transition: opacity 0.25s ease, transform 0.45s ease;
+}
+
+.navbar-nav .nav-link:hover::before,
+.navbar-nav .nav-link.active::before {
+  opacity: 1;
+  transform: translateX(70%);
+}
+
+.hero-premium {
+  min-height: 88vh;
+}
+
+.hero-premium::before {
+  animation: heroPan 18s ease-in-out infinite alternate;
+  background:
+    linear-gradient(125deg, rgba(230, 197, 92, 0.16), transparent 32%),
+    linear-gradient(245deg, rgba(196, 124, 53, 0.14), transparent 28%),
+    repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 16px);
+  content: '';
+  inset: 0;
+  mix-blend-mode: screen;
+  opacity: 0.28;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.hero-premium::after {
+  animation: slowZoom 22s ease-in-out infinite alternate;
+  background: inherit;
+  background-position: center;
+  background-size: cover;
+  content: '';
+  filter: saturate(1.16) contrast(1.08);
+  inset: -1.5rem;
+  opacity: 0.42;
+  pointer-events: none;
+  position: absolute;
+  transform: scale(1.02);
+  z-index: 0;
+}
+
+.hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(5,5,5,0.95) 0%, rgba(10,10,10,0.72) 47%, rgba(8,8,8,0.94) 100%),
+    linear-gradient(to bottom, rgba(10,10,10,0.72) 0%, rgba(18,18,18,0.58) 46%, rgba(10,10,10,0.98) 100%);
+  z-index: 1;
+}
+
+.hero-overlay::after {
+  animation: sheenDrift 9s ease-in-out infinite;
+  background: linear-gradient(110deg, transparent 5%, rgba(230, 197, 92, 0.12) 45%, transparent 63%);
+  opacity: 0.36;
+}
+
+.hero-badge {
+  animation: fadeInUp 0.8s ease forwards, badgeFloat 5.5s ease-in-out 1.1s infinite;
+  background:
+    linear-gradient(135deg, rgba(230,197,92,0.22), rgba(196,124,53,0.14)),
+    rgba(18,17,15,0.74);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+.hero-title {
+  text-shadow: 0 16px 55px rgba(0,0,0,0.55), 0 0 34px rgba(230,197,92,0.16);
+}
+
+.text-gold {
+  background: linear-gradient(135deg, #fff1a6, var(--gold-500) 48%, var(--copper-500));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+}
+
+.hero-subtitle {
+  color: rgba(255,255,255,0.78);
+}
+
+.hero-search-bar {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.045)),
+    rgba(20,18,16,0.76);
+  border-color: rgba(230,197,92,0.2);
+  box-shadow: var(--shadow-luxury), inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+.hero-search-bar:hover {
+  border-color: rgba(230,197,92,0.34);
+  transform: translateY(-1px);
+}
+
+.search-icon {
+  color: var(--gold-400);
+}
+
+.btn,
+.btn-gold,
+.chat-send,
+.chat-widget-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary,
+.btn-gold {
+  background: linear-gradient(135deg, #f4da6f 0%, var(--gold-500) 52%, var(--copper-500) 100%) !important;
+  border-color: rgba(230,197,92,0.8) !important;
+  box-shadow: 0 10px 26px rgba(212,175,55,0.22), inset 0 1px 0 rgba(255,255,255,0.22);
+}
+
+.btn-primary::after,
+.btn-outline-dark::after,
+.btn-outline-light::after {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.26), transparent);
+  content: '';
+  inset: 0;
+  opacity: 0;
+  position: absolute;
+  transform: translateX(-120%);
+  transition: opacity 0.2s ease, transform 0.55s ease;
+}
+
+.btn-primary:hover::after,
+.btn-outline-dark:hover::after,
+.btn-outline-light:hover::after {
+  opacity: 1;
+  transform: translateX(120%);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-gold:hover,
+.btn-gold:focus {
+  box-shadow: var(--shadow-gold), inset 0 1px 0 rgba(255,255,255,0.28);
+  transform: translateY(-3px);
+}
+
+.btn-outline-dark,
+.btn-outline-light {
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025));
+  border-color: rgba(255,255,255,0.18);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.btn-outline-dark:hover,
+.btn-outline-light:hover {
+  background:
+    linear-gradient(135deg, rgba(230,197,92,0.13), rgba(255,255,255,0.055));
+  border-color: var(--luxury-border-strong);
+  color: var(--white);
+}
+
+.stats-bar,
+.section-top-rated,
+.section-how,
+.section-testimonials,
+.section-cta,
+.hero-section,
+.page-banner {
+  position: relative;
+  overflow: hidden;
+}
+
+.stats-bar {
+  background:
+    linear-gradient(180deg, rgba(18,18,18,0.96), rgba(12,12,11,0.94)),
+    repeating-linear-gradient(90deg, rgba(230,197,92,0.055) 0 1px, transparent 1px 18rem);
+}
+
+.stat-item {
+  transition: background 0.25s ease, transform 0.25s ease;
+}
+
+.stat-item:hover {
+  background: rgba(230,197,92,0.055);
+  transform: translateY(-2px);
+}
+
+.section-top-rated,
+.section-testimonials {
+  background:
+    linear-gradient(180deg, #070707 0%, #11100f 45%, #070707 100%);
+}
+
+.section-how {
+  background:
+    linear-gradient(135deg, rgba(59,16,21,0.18), transparent 34%),
+    linear-gradient(180deg, #11100f 0%, #0a0a0a 100%);
+}
+
+.section-top-rated::before,
+.section-how::before,
+.section-testimonials::before,
+.section-cta::before,
+.hero-section::before,
+.page-banner::before {
+  animation: edgeGlow 8s ease-in-out infinite;
+  background: linear-gradient(90deg, transparent, rgba(230,197,92,0.25), rgba(143,191,160,0.12), transparent);
+  content: '';
+  height: 1px;
+  left: 0;
+  opacity: 0.72;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.section-heading,
+.section-title,
+.cta-title {
+  position: relative;
+}
+
+.section-title::after {
+  background: linear-gradient(90deg, var(--gold-500), rgba(143,191,160,0.35), transparent);
+  border-radius: 999px;
+  content: '';
+  display: block;
+  height: 3px;
+  margin-top: 0.8rem;
+  width: 4.5rem;
+}
+
+.text-center .section-title::after {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.restaurant-card,
+.dish-card,
+.review-card,
+.favorite-card,
+.how-card,
+.testimonial-card,
+.glass-card,
+.auth-card,
+.profile-bar,
+.chat-window {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.075), rgba(255,255,255,0.026)),
+    var(--glass-deep);
+  border-color: rgba(255,255,255,0.095);
+  box-shadow: var(--shadow-luxury), inset 0 1px 0 rgba(255,255,255,0.08);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  overflow: hidden;
+  position: relative;
+}
+
+.restaurant-card::after,
+.dish-card::after,
+.review-card::after,
+.favorite-card::after,
+.how-card::after,
+.testimonial-card::after,
+.glass-card::after,
+.auth-card::after,
+.profile-bar::after {
+  background: linear-gradient(115deg, transparent 0%, rgba(230,197,92,0.12) 45%, transparent 62%);
+  content: '';
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-70%);
+  transition: opacity 0.25s ease, transform 0.7s ease;
+}
+
+.restaurant-card:hover,
+.dish-card:hover,
+.review-card:hover,
+.favorite-card:hover,
+.how-card:hover,
+.testimonial-card:hover,
+.glass-card:hover,
+.auth-card:hover,
+.profile-bar:hover {
+  border-color: var(--luxury-border);
+  box-shadow: 0 32px 80px rgba(0,0,0,0.62), 0 0 0 1px rgba(230,197,92,0.12);
+}
+
+.restaurant-card:hover::after,
+.dish-card:hover::after,
+.review-card:hover::after,
+.favorite-card:hover::after,
+.how-card:hover::after,
+.testimonial-card:hover::after,
+.glass-card:hover::after,
+.auth-card:hover::after,
+.profile-bar:hover::after {
+  opacity: 1;
+  transform: translateX(70%);
+}
+
+.restaurant-image,
+.detail-image {
+  background:
+    linear-gradient(135deg, rgba(230,197,92,0.14), rgba(196,124,53,0.12)),
+    linear-gradient(135deg, #22211d, #070707);
+  box-shadow: inset 0 0 0 1px rgba(230,197,92,0.12);
+}
+
+.restaurant-image::before,
+.detail-image::before {
+  animation: imageGrainMove 7s steps(8) infinite;
+  background-image:
+    repeating-linear-gradient(115deg, rgba(255,255,255,0.05) 0 1px, transparent 1px 10px);
+  content: '';
+  inset: 0;
+  opacity: 0.18;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1;
+}
+
+.rating-pill,
+.price-pill,
+.distance-pill,
+.cuisine-pill,
+.profile-bar-meta span,
+.profile-cuisine-link,
+.badge-soft {
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.rating-pill,
+.cuisine-pill,
+.profile-cuisine-link,
+.badge-soft {
+  background:
+    linear-gradient(135deg, rgba(230,197,92,0.18), rgba(196,124,53,0.08));
+  color: var(--gold-400);
+}
+
+.price-pill,
+.distance-pill,
+.profile-bar-meta span {
+  background: rgba(255,255,255,0.06);
+}
+
+.how-icon,
+.testimonial-avatar,
+.chat-widget-btn {
+  background: linear-gradient(135deg, #f4da6f, var(--gold-500) 55%, var(--copper-500));
+  color: #080808;
+}
+
+.how-card:hover .how-icon {
+  transform: translateY(-4px) rotate(-5deg) scale(1.08);
+}
+
+.form-control,
+.form-select,
+.chat-input {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.065), rgba(255,255,255,0.035)),
+    rgba(15,15,14,0.9);
+  border-color: rgba(255,255,255,0.14);
+}
+
+.form-control:hover,
+.form-select:hover,
+.chat-input:hover {
+  border-color: rgba(230,197,92,0.28);
+}
+
+.form-control:focus,
+.form-select:focus,
+.chat-input:focus {
+  border-color: rgba(230,197,92,0.72);
+  box-shadow: 0 0 0 3px rgba(212,175,55,0.18), 0 12px 34px rgba(0,0,0,0.3);
+}
+
+.avatar-choice {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.07), rgba(255,255,255,0.025)),
+    rgba(14,14,13,0.78);
+}
+
+.avatar-choice img {
+  border: 2px solid rgba(230,197,92,0.18);
+  box-shadow: 0 10px 26px rgba(0,0,0,0.36);
+  transition: border-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.avatar-choice:hover img,
+.avatar-choice:focus img,
+.avatar-choice.is-selected img {
+  border-color: rgba(230,197,92,0.7);
+  box-shadow: 0 14px 34px rgba(212,175,55,0.18);
+  transform: scale(1.05);
+}
+
+.profile-avatar-xl {
+  box-shadow: 0 0 0 6px rgba(230,197,92,0.06), 0 20px 48px rgba(0,0,0,0.44);
+}
+
+.page-banner,
+.hero-section {
+  background:
+    linear-gradient(135deg, rgba(59,16,21,0.18), transparent 42%),
+    linear-gradient(180deg, rgba(18,18,18,0.96), rgba(8,8,8,0.94));
+}
+
+.site-footer {
+  background:
+    linear-gradient(180deg, rgba(10,10,10,0.94), #060606),
+    repeating-linear-gradient(90deg, rgba(230,197,92,0.05) 0 1px, transparent 1px 9rem);
+}
+
+.chat-widget-btn {
+  animation: chatPulse 2.7s ease-in-out infinite;
+  box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(230,197,92,0.26);
+}
+
+.chat-window {
+  border-color: var(--luxury-border);
+}
+
+.chat-header {
+  background: linear-gradient(90deg, rgba(230,197,92,0.11), rgba(255,255,255,0.02));
+}
+
+.luxury-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition:
+    opacity 0.72s ease var(--reveal-delay, 0ms),
+    transform 0.72s cubic-bezier(0.2, 0.8, 0.2, 1) var(--reveal-delay, 0ms),
+    box-shadow 0.35s ease,
+    border-color 0.35s ease,
+    background 0.35s ease;
+}
+
+.luxury-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.luxury-reveal.is-visible.restaurant-card:hover,
+.luxury-reveal.is-visible.dish-card:hover,
+.luxury-reveal.is-visible.review-card:hover,
+.luxury-reveal.is-visible.favorite-card:hover,
+.luxury-reveal.is-visible.how-card:hover,
+.luxury-reveal.is-visible.testimonial-card:hover {
+  transform: translateY(-6px) scale(1.01);
+}
+
+.luxury-reveal.is-visible.glass-card:hover,
+.luxury-reveal.is-visible.auth-card:hover,
+.luxury-reveal.is-visible.profile-bar:hover {
+  transform: translateY(-3px);
+}
+
+@keyframes luxuryBackdropShift {
+  0% {
+    background-position: -18% -12%, 0 0, 0 0;
+  }
+  50% {
+    background-position: 28% 18%, 46px 22px, 18px 46px;
+  }
+  100% {
+    background-position: 72% -8%, 92px 46px, 46px 92px;
+  }
+}
+
+@keyframes goldThread {
+  0%, 100% {
+    opacity: 0.18;
+    transform: translateX(-24%);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translateX(156%);
+  }
+}
+
+@keyframes heroPan {
+  0% {
+    opacity: 0.2;
+    transform: translateX(-2%);
+  }
+  100% {
+    opacity: 0.36;
+    transform: translateX(2%);
+  }
+}
+
+@keyframes slowZoom {
+  0% {
+    transform: scale(1.02);
+  }
+  100% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes sheenDrift {
+  0%, 100% {
+    opacity: 0.14;
+    transform: translateX(-18%);
+  }
+  50% {
+    opacity: 0.42;
+    transform: translateX(18%);
+  }
+}
+
+@keyframes badgeFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes edgeGlow {
+  0%, 100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.82;
+  }
+}
+
+@keyframes imageGrainMove {
+  0% {
+    transform: translateX(-1%);
+  }
+  100% {
+    transform: translateX(1%);
+  }
+}
+
+@keyframes brandPulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes chatPulse {
+  0%, 100% {
+    box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 0 rgba(230,197,92,0.28);
+  }
+  50% {
+    box-shadow: 0 18px 46px rgba(0,0,0,0.56), 0 0 0 12px rgba(230,197,92,0);
+  }
+}
+
+@media (max-width: 768px) {
+  body::after {
+    opacity: 0.13;
+  }
+
+  .hero-premium {
+    min-height: 76vh;
+  }
+
+  .hero-search-bar {
+    border-radius: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    padding: 0.85rem;
+  }
+
+  .hero-search-input {
+    flex-basis: calc(100% - 2.3rem);
+  }
+
+  .hero-search-bar .btn {
+    width: 100%;
+  }
+
+  .restaurant-card,
+  .dish-card,
+  .review-card,
+  .favorite-card,
+  .how-card,
+  .testimonial-card,
+  .glass-card,
+  .auth-card,
+  .profile-bar {
+    box-shadow: 0 18px 45px rgba(0,0,0,0.46), inset 0 1px 0 rgba(255,255,255,0.06);
+  }
+}
+
+@media (max-width: 480px) {
+  .chat-widget-btn {
+    bottom: 0.85rem;
+    right: 0.85rem;
+    width: 54px;
+    height: 54px;
+  }
+
+  .chat-window {
+    border-radius: 1rem;
+    bottom: 4.75rem;
+    right: 0.75rem;
+    width: calc(100vw - 1.5rem);
+    max-width: calc(100vw - 1.5rem);
+    height: min(70dvh, calc(100dvh - 6rem));
+    max-height: calc(100dvh - 6rem);
+  }
+
+  .chat-header,
+  .chat-body,
+  .chat-footer {
+    padding-left: 0.85rem;
+    padding-right: 0.85rem;
+  }
+
+  .chat-msg {
+    max-width: 92%;
+    font-size: 0.9rem;
+  }
+}
+
+/* ── Food-photo atmosphere and card image alignment ── */
+body:not([data-page="home"])::after {
+  animation: pagePhotoDrift 36s ease-in-out infinite alternate;
+  background-image:
+    linear-gradient(180deg, rgba(7,7,7,0.76), rgba(7,7,7,0.88)),
+    linear-gradient(115deg, rgba(230,197,92,0.18), transparent 34%, rgba(143,191,160,0.14)),
+    url('https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1800');
+  background-position: center, center, center;
+  background-size: cover, cover, cover;
+  opacity: 0.5;
+}
+
+body[data-page="browse"]::after {
+  background-image:
+    linear-gradient(180deg, rgba(7,7,7,0.72), rgba(7,7,7,0.88)),
+    linear-gradient(115deg, rgba(230,197,92,0.18), transparent 38%, rgba(143,191,160,0.14)),
+    url('https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=1800');
+}
+
+body[data-page="recommendations"]::after {
+  background-image:
+    linear-gradient(180deg, rgba(7,7,7,0.74), rgba(7,7,7,0.9)),
+    linear-gradient(115deg, rgba(196,124,53,0.18), transparent 38%, rgba(230,197,92,0.13)),
+    url('https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=1800');
+}
+
+body[data-page="favourites"]::after,
+body[data-page="profile"]::after,
+body[data-page="user"]::after {
+  background-image:
+    linear-gradient(180deg, rgba(7,7,7,0.76), rgba(7,7,7,0.9)),
+    linear-gradient(115deg, rgba(230,197,92,0.15), transparent 36%, rgba(127,29,29,0.16)),
+    url('https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=1800');
+}
+
+body[data-page="write-review"]::after,
+body[data-page="edit-review"]::after {
+  background-image:
+    linear-gradient(180deg, rgba(7,7,7,0.74), rgba(7,7,7,0.88)),
+    linear-gradient(115deg, rgba(230,197,92,0.2), transparent 40%, rgba(196,124,53,0.14)),
+    url('https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=1800');
+}
+
+body[data-page="about"]::after {
+  background-image:
+    linear-gradient(180deg, rgba(7,7,7,0.78), rgba(7,7,7,0.9)),
+    linear-gradient(115deg, rgba(143,191,160,0.15), transparent 36%, rgba(230,197,92,0.13)),
+    url('https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=1800');
+}
+
+body:not([data-page="home"]) .page-banner,
+body[data-page="write-review"] main > section:first-child,
+body[data-page="edit-review"] main > section:first-child {
+  background:
+    linear-gradient(135deg, rgba(18,18,18,0.9), rgba(12,12,11,0.62)),
+    linear-gradient(90deg, rgba(230,197,92,0.1), transparent 58%);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+}
+
+body:not([data-page="home"]) main > section:not(.hero-premium) {
+  position: relative;
+  z-index: 1;
+}
+
+.page-food-motion {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: fixed;
+  z-index: 0;
+}
+
+.food-float {
+  animation: floatingFoodPhoto var(--float-duration, 20s) ease-in-out var(--float-delay, 0s) infinite alternate;
+  aspect-ratio: 1;
+  background-image: var(--float-image);
+  background-position: center;
+  background-size: cover;
+  border: 1px solid rgba(230,197,92,0.22);
+  border-radius: 1.25rem;
+  box-shadow: 0 28px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.16);
+  filter: saturate(1.18) contrast(1.05);
+  left: var(--float-left, 10%);
+  opacity: 0.16;
+  position: absolute;
+  top: var(--float-top, 20%);
+  transform: rotate(var(--float-rotate, 0deg));
+  width: clamp(5.5rem, var(--float-size, 10vw), 12rem);
+}
+
+.food-float::after {
+  background: linear-gradient(180deg, rgba(7,7,7,0.1), rgba(7,7,7,0.55));
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  position: absolute;
+}
+
+body[data-page="write-review"] .food-float,
+body[data-page="edit-review"] .food-float,
+body[data-page="browse"] .food-float {
+  opacity: 0.2;
+}
+
+.restaurant-image,
+.detail-image {
+  align-items: stretch;
+  aspect-ratio: 16 / 10;
+  display: block;
+  height: auto;
+  min-height: 13.5rem;
+}
+
+.detail-image {
+  min-height: clamp(14rem, 28vw, 21rem);
+}
+
+.restaurant-image-img,
+.restaurant-image > img,
+.detail-image > img {
+  border-radius: inherit !important;
+  display: block !important;
+  height: 100% !important;
+  inset: 0;
+  object-fit: cover;
+  object-position: center;
+  position: absolute;
+  width: 100% !important;
+  z-index: 0;
+}
+
+.restaurant-image::before,
+.detail-image::before {
+  z-index: 1;
+}
+
+.restaurant-image::after,
+.detail-image::after {
+  z-index: 2;
+}
+
+@keyframes pagePhotoDrift {
+  0% {
+    background-position: center, 0% 0%, 45% 45%;
+    transform: scale(1);
+  }
+  100% {
+    background-position: center, 100% 100%, 55% 55%;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes floatingFoodPhoto {
+  0% {
+    transform: translate3d(-0.4rem, 0.4rem, 0) rotate(var(--float-rotate, 0deg)) scale(0.96);
+  }
+  50% {
+    transform: translate3d(0.8rem, -1.1rem, 0) rotate(calc(var(--float-rotate, 0deg) * -0.35)) scale(1.03);
+  }
+  100% {
+    transform: translate3d(-0.6rem, -1.8rem, 0) rotate(var(--float-rotate, 0deg)) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+
+  .luxury-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .page-food-motion {
+    display: none;
+  }
+}
+
+/* Final chat placement lock: keep the assistant compact in the visible bottom-right corner. */
+:root {
+  --chat-right: 18px;
+  --chat-bottom: 18px;
+}
+
+#bitescout-chatbot {
+  bottom: 0 !important;
+  height: 0 !important;
+  inset: auto 0 0 auto !important;
+  left: auto !important;
+  pointer-events: none !important;
+  position: fixed !important;
+  right: 0 !important;
+  top: auto !important;
+  width: 0 !important;
+  z-index: 2147483000 !important;
+}
+
+#bitescout-chatbot .chat-widget-btn {
+  bottom: var(--chat-bottom) !important;
+  left: auto !important;
+  position: fixed !important;
+  right: var(--chat-right) !important;
+  top: auto !important;
+}
+
+#bitescout-chatbot .chat-window {
+  bottom: calc(var(--chat-bottom) + 76px) !important;
+  box-sizing: border-box !important;
+  height: 430px !important;
+  left: auto !important;
+  max-height: calc(100vh - 120px) !important;
+  max-width: 360px !important;
+  min-height: 0 !important;
+  position: fixed !important;
+  right: var(--chat-right) !important;
+  top: auto !important;
+  transform: translate3d(0, 16px, 0) !important;
+  width: 360px !important;
+}
+
+#bitescout-chatbot .chat-window.open {
+  transform: translate3d(0, 0, 0) !important;
+}
+
+@media (max-width: 520px) {
+  #bitescout-chatbot .chat-window {
+    bottom: calc(var(--chat-bottom) + 70px) !important;
+    height: min(68vh, 420px) !important;
+    max-height: calc(100vh - 108px) !important;
+    max-width: calc(100vw - 24px) !important;
+    right: max(12px, var(--chat-right)) !important;
+    width: calc(100vw - 24px) !important;
+  }
+
+  #bitescout-chatbot .chat-widget-btn {
+    height: 56px !important;
+    width: 56px !important;
+  }
+}
+
+/* ── Vibrant luxury color refresh ── */
+:root {
+  --cream-50: #fffaf0;
+  --cream-100: #fff0d6;
+  --peach-200: #ffd2a6;
+  --coral-500: #ff6b4a;
+  --teal-500: #00a887;
+  --mint-100: #dcfff3;
+  --plum-700: #552846;
+  --espresso-900: #241710;
+  --ink-warm: #2a1b13;
+  --muted-warm: #725f52;
+  --panel-light: rgba(255, 250, 240, 0.82);
+  --panel-light-strong: rgba(255, 249, 236, 0.92);
+  --border-warm: rgba(115, 79, 39, 0.18);
+}
+
+body {
+  color: var(--ink-warm);
+  background:
+    linear-gradient(135deg, rgba(255,107,74,0.18), transparent 30%),
+    linear-gradient(235deg, rgba(0,168,135,0.16), transparent 35%),
+    linear-gradient(180deg, #fff6e7 0%, #ffedd0 44%, #e4fff5 100%);
+}
+
+body::before {
+  opacity: 0.08;
+}
+
+body::after {
+  opacity: 0.3;
+}
+
+.navbar {
+  background:
+    linear-gradient(180deg, rgba(255,250,240,0.95), rgba(255,238,208,0.88)) !important;
+  border-bottom-color: rgba(255,107,74,0.18) !important;
+  box-shadow: 0 18px 55px rgba(128, 75, 32, 0.14), inset 0 -1px 0 rgba(255,255,255,0.5);
+}
+
+.navbar.scrolled {
+  background: rgba(255,250,240,0.98) !important;
+  border-bottom-color: rgba(0,168,135,0.24) !important;
+  box-shadow: 0 18px 60px rgba(89,55,24,0.18);
+}
+
+.navbar-brand,
+.navbar-brand strong,
+.navbar-nav .nav-link,
+.navbar .btn-outline-primary {
+  color: var(--ink-warm) !important;
+}
+
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+  background: linear-gradient(90deg, rgba(255,107,74,0.13), rgba(0,168,135,0.1));
+  color: var(--plum-700) !important;
+}
+
+.navbar-brand .badge {
+  background: linear-gradient(135deg, #ffe66d, #ffb84d 48%, #ff6b4a) !important;
+  color: var(--ink-warm) !important;
+}
+
+.hero-premium {
+  background-color: #fff0d6;
+}
+
+.hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(68,38,24,0.76) 0%, rgba(68,38,24,0.36) 48%, rgba(255,244,222,0.12) 100%),
+    linear-gradient(to bottom, rgba(255,210,166,0.18) 0%, rgba(255,189,107,0.16) 48%, rgba(255,246,231,0.38) 100%);
+}
+
+.hero-premium::before {
+  opacity: 0.42;
+}
+
+.hero-premium::after {
+  filter: saturate(1.42) contrast(1.08) brightness(1.08);
+  opacity: 0.76;
+}
+
+.hero-title,
+body[data-page="home"] .hero-title {
+  color: #fffaf0;
+  text-shadow: 0 8px 35px rgba(47,28,16,0.46), 0 0 18px rgba(255,184,77,0.18);
+}
+
+.hero-subtitle,
+body[data-page="home"] .hero-subtitle {
+  color: rgba(255,250,240,0.9);
+}
+
+.hero-badge {
+  background: linear-gradient(135deg, rgba(255,230,109,0.9), rgba(255,107,74,0.54));
+  border-color: rgba(255,250,240,0.52);
+  color: var(--ink-warm);
+}
+
+.hero-search-bar {
+  background: rgba(255,250,240,0.78);
+  border-color: rgba(255,230,109,0.72);
+  box-shadow: 0 22px 65px rgba(72,39,18,0.22), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.hero-search-input {
+  color: var(--ink-warm);
+}
+
+.hero-search-input::placeholder {
+  color: rgba(42,27,19,0.52);
+}
+
+.search-icon {
+  color: var(--coral-500);
+}
+
+.text-gold {
+  background: linear-gradient(135deg, #ffe66d, #ffb84d 46%, #ff6b4a);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+h1, h2, h3, h4, h5, h6,
+.section-title,
+.cta-title,
+.fw-bold,
+strong,
+b {
+  color: var(--ink-warm);
+}
+
+body[data-page="home"] h1,
+body[data-page="home"] .fw-bold,
+body[data-page="home"] strong {
+  color: #fffaf0;
+}
+
+.eyebrow {
+  color: var(--coral-500);
+}
+
+.text-secondary,
+.text-muted,
+small,
+.small,
+.footer-note,
+.review-meta,
+.profile-bio {
+  color: var(--muted-warm) !important;
+}
+
+.section-top-rated,
+.section-testimonials,
+.section-how,
+.stats-bar,
+.section-cta,
+.site-footer {
+  background:
+    linear-gradient(135deg, rgba(255,250,240,0.86), rgba(255,238,208,0.74)),
+    linear-gradient(115deg, rgba(255,107,74,0.12), transparent 38%, rgba(0,168,135,0.1));
+  color: var(--ink-warm);
+}
+
+.page-banner,
+.hero-section,
+body:not([data-page="home"]) .page-banner,
+body[data-page="write-review"] main > section:first-child,
+body[data-page="edit-review"] main > section:first-child {
+  background:
+    linear-gradient(115deg, rgba(255,250,240,0.9), rgba(255,210,166,0.7)),
+    linear-gradient(90deg, rgba(255,107,74,0.13), rgba(0,168,135,0.12));
+  border-bottom-color: rgba(255,107,74,0.2) !important;
+}
+
+.restaurant-card,
+.dish-card,
+.review-card,
+.favorite-card,
+.how-card,
+.testimonial-card,
+.glass-card,
+.auth-card,
+.profile-bar,
+.chat-window,
+.empty-state,
+.card,
+.list-group-item,
+.modal-content {
+  background:
+    linear-gradient(145deg, rgba(255,255,255,0.78), rgba(255,240,214,0.72)),
+    var(--panel-light);
+  border-color: var(--border-warm);
+  color: var(--ink-warm);
+  box-shadow: 0 24px 70px rgba(128,75,32,0.16), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+
+.restaurant-card:hover,
+.dish-card:hover,
+.review-card:hover,
+.favorite-card:hover,
+.how-card:hover,
+.testimonial-card:hover,
+.glass-card:hover,
+.auth-card:hover,
+.profile-bar:hover {
+  border-color: rgba(255,107,74,0.34);
+  box-shadow: 0 32px 90px rgba(128,75,32,0.24), 0 0 0 1px rgba(0,168,135,0.1);
+}
+
+.form-control,
+.form-select,
+.chat-input,
+.input-group-text {
+  background: rgba(255,255,255,0.72);
+  border-color: rgba(89,55,24,0.2);
+  color: var(--ink-warm);
+}
+
+.form-control:focus,
+.form-select:focus,
+.chat-input:focus {
+  background: rgba(255,255,255,0.9);
+  border-color: var(--teal-500);
+  box-shadow: 0 0 0 3px rgba(0,168,135,0.18), 0 10px 28px rgba(128,75,32,0.12);
+  color: var(--ink-warm);
+}
+
+.form-control::placeholder {
+  color: rgba(42,27,19,0.42);
+}
+
+.form-label {
+  color: var(--ink-warm);
+}
+
+.btn-primary,
+.btn-gold,
+.chat-send,
+.chat-widget-btn {
+  background: linear-gradient(135deg, #ffe66d 0%, #ffb84d 46%, #ff6b4a 100%) !important;
+  border-color: rgba(255,107,74,0.62) !important;
+  color: var(--ink-warm) !important;
+  box-shadow: 0 14px 34px rgba(255,107,74,0.22), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-gold:hover,
+.btn-gold:focus,
+.chat-send:hover {
+  background: linear-gradient(135deg, #ff6b4a 0%, #ffb84d 48%, #00a887 100%) !important;
+  color: #fffaf0 !important;
+}
+
+.btn-outline-dark,
+.btn-outline-light,
+.btn-outline-primary {
+  background: rgba(255,255,255,0.46);
+  border-color: rgba(42,27,19,0.2);
+  color: var(--ink-warm);
+}
+
+.btn-outline-dark:hover,
+.btn-outline-light:hover,
+.btn-outline-primary:hover {
+  background: rgba(0,168,135,0.12);
+  border-color: rgba(0,168,135,0.4);
+  color: var(--ink-warm);
+}
+
+.rating-pill,
+.price-pill,
+.distance-pill,
+.cuisine-pill,
+.badge-soft,
+.profile-bar-meta span,
+.profile-cuisine-link {
+  background: rgba(255,230,109,0.32);
+  border-color: rgba(255,107,74,0.22);
+  color: var(--plum-700);
+}
+
+.price-pill,
+.distance-pill,
+.profile-bar-meta span {
+  background: rgba(0,168,135,0.12);
+}
+
+.restaurant-image::after,
+.detail-image::after {
+  background: linear-gradient(to bottom, rgba(255,255,255,0.02) 52%, rgba(36,23,16,0.16) 100%);
+}
+
+body:not([data-page="home"])::after {
+  opacity: 0.42;
+  filter: saturate(1.28) brightness(1.06);
+}
+
+.food-float {
+  opacity: 0.26;
+  filter: saturate(1.28) contrast(1.04) brightness(1.08);
+}
+
+.chat-header {
+  background: linear-gradient(90deg, rgba(255,230,109,0.38), rgba(0,168,135,0.1));
+}
+
+.chat-msg.ai {
+  background: rgba(255,255,255,0.68);
+  border-color: rgba(89,55,24,0.12);
+  color: var(--ink-warm);
+}
+
+.chat-msg.user {
+  background: rgba(0,168,135,0.18);
+  border-color: rgba(0,168,135,0.24);
+  color: var(--ink-warm);
+}
+
+/* ── Final bright presentation pass ── */
+:root {
+  --sunrise-cream: #fff8e8;
+  --sunrise-peach: #ffd9b0;
+  --sunrise-papaya: #ff9f43;
+  --sunrise-coral: #ff5f57;
+  --sunrise-teal: #00b894;
+  --sunrise-berry: #7a2f58;
+  --sunrise-ink: #2d1710;
+  --sunrise-muted: #6f594d;
+  --sunrise-card: rgba(255, 252, 244, 0.86);
+  --sunrise-card-strong: rgba(255, 250, 239, 0.95);
+  --sunrise-line: rgba(124, 78, 36, 0.18);
+}
+
+body {
+  color: var(--sunrise-ink);
+  background:
+    radial-gradient(circle at 12% 8%, rgba(255, 95, 87, 0.24), transparent 32%),
+    radial-gradient(circle at 84% 16%, rgba(0, 184, 148, 0.20), transparent 34%),
+    radial-gradient(circle at 55% 82%, rgba(255, 159, 67, 0.25), transparent 36%),
+    linear-gradient(135deg, #fff8e8 0%, #ffe2bf 42%, #d9fff2 100%);
+  background-size: 120% 120%, 130% 130%, 115% 115%, 100% 100%;
+  animation: sunriseBackgroundDrift 18s ease-in-out infinite alternate;
+}
+
+@keyframes sunriseBackgroundDrift {
+  from {
+    background-position: 0% 0%, 100% 10%, 42% 100%, center;
+  }
+  to {
+    background-position: 9% 6%, 88% 2%, 58% 82%, center;
+  }
+}
+
+body::before {
+  opacity: 0.055;
+  mix-blend-mode: multiply;
+}
+
+body:not([data-page="home"])::after {
+  opacity: 0.36;
+  filter: saturate(1.45) brightness(1.2) contrast(1.02);
+}
+
+body[data-page="browse"]::after,
+body[data-page="recommendations"]::after,
+body[data-page="favourites"]::after,
+body[data-page="profile"]::after,
+body[data-page="user"]::after,
+body[data-page="write-review"]::after,
+body[data-page="edit-review"]::after,
+body[data-page="about"]::after {
+  background-blend-mode: screen, normal, normal;
+}
+
+.navbar {
+  background:
+    linear-gradient(135deg, rgba(255, 252, 244, 0.96), rgba(255, 216, 176, 0.88)),
+    radial-gradient(circle at 90% 8%, rgba(0, 184, 148, 0.14), transparent 34%) !important;
+  border-bottom-color: rgba(255, 95, 87, 0.2) !important;
+}
+
+.navbar-collapse.show,
+.navbar-collapse.collapsing {
+  background:
+    linear-gradient(135deg, rgba(255, 248, 232, 0.96), rgba(255, 210, 166, 0.9)),
+    url("https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=1200");
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: soft-light;
+  border: 1px solid rgba(255, 95, 87, 0.18);
+  border-radius: 1.15rem;
+  box-shadow: 0 24px 70px rgba(112, 63, 28, 0.18);
+  margin-top: 1rem;
+  padding: 1rem;
+}
+
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link:hover {
+  background:
+    linear-gradient(90deg, rgba(255, 230, 109, 0.34), rgba(255, 95, 87, 0.18), rgba(0, 184, 148, 0.12));
+}
+
+.hero-premium {
+  background-color: #ffecd0;
+}
+
+.hero-premium::after {
+  filter: saturate(1.35) brightness(1.22) contrast(1.02);
+  opacity: 0.9;
+}
+
+.hero-premium::before {
+  opacity: 0.16;
+}
+
+.hero-overlay {
+  background:
+    linear-gradient(90deg, rgba(67, 34, 20, 0.52) 0%, rgba(67, 34, 20, 0.24) 46%, rgba(255, 248, 232, 0.08) 100%),
+    linear-gradient(to bottom, rgba(255, 222, 177, 0.18) 0%, rgba(255, 159, 67, 0.08) 52%, rgba(255, 248, 232, 0.22) 100%);
+}
+
+.hero-badge,
+.eyebrow,
+.page-banner .eyebrow {
+  color: #7a2f18;
+}
+
+.hero-title,
+body[data-page="home"] .hero-title {
+  color: #fffdf8;
+  text-shadow: 0 6px 28px rgba(42, 23, 14, 0.52), 0 0 26px rgba(255, 159, 67, 0.28);
+}
+
+.hero-subtitle,
+body[data-page="home"] .hero-subtitle {
+  color: rgba(255, 253, 248, 0.94);
+}
+
+.hero-search-bar {
+  background: rgba(255, 252, 244, 0.9);
+  border-color: rgba(255, 159, 67, 0.46);
+  box-shadow: 0 22px 60px rgba(89, 50, 22, 0.2), inset 0 1px 0 rgba(255,255,255,0.72);
+}
+
+.page-banner,
+.hero-section,
+body:not([data-page="home"]) .page-banner,
+body[data-page="write-review"] main > section:first-child,
+body[data-page="edit-review"] main > section:first-child {
+  background:
+    linear-gradient(115deg, rgba(255, 252, 244, 0.93), rgba(255, 217, 176, 0.82), rgba(217, 255, 242, 0.64)),
+    url("https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=1600");
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: screen;
+  border-bottom-color: rgba(255, 95, 87, 0.22) !important;
+}
+
+body[data-page="browse"] .page-banner,
+body[data-page="browse"] .hero-section {
+  background-image:
+    linear-gradient(115deg, rgba(255,252,244,0.9), rgba(255,217,176,0.78), rgba(217,255,242,0.58)),
+    url("https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&q=80&w=1600");
+}
+
+body[data-page="recommendations"] .page-banner,
+body[data-page="recommendations"] .hero-section {
+  background-image:
+    linear-gradient(115deg, rgba(255,252,244,0.9), rgba(255,217,176,0.78), rgba(217,255,242,0.58)),
+    url("https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&q=80&w=1600");
+}
+
+body[data-page="favourites"] .page-banner,
+body[data-page="favourites"] .hero-section,
+body[data-page="profile"] .page-banner,
+body[data-page="profile"] .hero-section {
+  background-image:
+    linear-gradient(115deg, rgba(255,252,244,0.9), rgba(255,217,176,0.78), rgba(217,255,242,0.58)),
+    url("https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1600");
+}
+
+body[data-page="write-review"] main > section:first-child,
+body[data-page="edit-review"] main > section:first-child {
+  background-image:
+    linear-gradient(115deg, rgba(255,252,244,0.9), rgba(255,217,176,0.78), rgba(217,255,242,0.58)),
+    url("https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=1600");
+}
+
+.section-top-rated,
+.section-testimonials,
+.section-how,
+.stats-bar,
+.section-cta,
+.site-footer,
+body:not([data-page="home"]) main > section:not(.hero-premium) {
+  background:
+    linear-gradient(135deg, rgba(255, 252, 244, 0.78), rgba(255, 237, 212, 0.64)),
+    radial-gradient(circle at 15% 10%, rgba(255, 95, 87, 0.12), transparent 32%),
+    radial-gradient(circle at 90% 80%, rgba(0, 184, 148, 0.12), transparent 28%);
+}
+
+.restaurant-card,
+.dish-card,
+.review-card,
+.favorite-card,
+.how-card,
+.testimonial-card,
+.glass-card,
+.auth-card,
+.profile-bar,
+.empty-state,
+.card,
+.list-group-item,
+.modal-content,
+#bitescout-chatbot .chat-window {
+  background:
+    linear-gradient(145deg, rgba(255, 252, 244, 0.88), rgba(255, 232, 201, 0.78)),
+    radial-gradient(circle at 100% 0%, rgba(0, 184, 148, 0.1), transparent 32%);
+  border-color: var(--sunrise-line);
+  color: var(--sunrise-ink);
+}
+
+.restaurant-card:hover,
+.dish-card:hover,
+.review-card:hover,
+.favorite-card:hover,
+.glass-card:hover,
+.profile-bar:hover {
+  border-color: rgba(255, 95, 87, 0.34);
+  box-shadow: 0 32px 90px rgba(122, 47, 24, 0.22), 0 0 0 1px rgba(0, 184, 148, 0.1);
+}
+
+.restaurant-image,
+.detail-image {
+  background: linear-gradient(135deg, rgba(255, 159, 67, 0.16), rgba(0, 184, 148, 0.12));
+}
+
+.restaurant-image::before,
+.detail-image::before {
+  opacity: 0.18;
+}
+
+.restaurant-image::after,
+.detail-image::after {
+  background: linear-gradient(to bottom, rgba(255,255,255,0) 58%, rgba(255,248,232,0.16) 100%);
+}
+
+.rating-pill,
+.price-pill,
+.distance-pill,
+.cuisine-pill,
+.badge-soft,
+.profile-bar-meta span,
+.profile-cuisine-link {
+  background: rgba(255, 248, 232, 0.72);
+  border-color: rgba(255, 159, 67, 0.34);
+  color: #6f331c;
+}
+
+.form-control,
+.form-select,
+.chat-input,
+.input-group-text {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(124, 78, 36, 0.22);
+  color: var(--sunrise-ink);
+}
+
+.btn-primary,
+.btn-gold,
+.chat-send,
+.chat-widget-btn {
+  background: linear-gradient(135deg, #ffe66d 0%, #ff9f43 48%, #ff5f57 100%) !important;
+  border-color: rgba(255, 95, 87, 0.54) !important;
+  color: #2d1710 !important;
+}
+
+.btn-primary:hover,
+.btn-gold:hover,
+.chat-send:hover,
+.chat-widget-btn:hover {
+  background: linear-gradient(135deg, #00b894 0%, #ff9f43 50%, #ff5f57 100%) !important;
+  color: #fffdf8 !important;
+}
+
+.food-float {
+  opacity: 0.36;
+  filter: saturate(1.42) brightness(1.18) contrast(1.05);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
 }

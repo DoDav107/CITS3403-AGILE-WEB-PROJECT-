@@ -30,6 +30,7 @@ class Restaurant(db.Model):
     blurb = db.Column(db.Text, nullable=False)
     address = db.Column(db.String(255), nullable=False)
     tags = db.Column(db.Text, default="")
+    photo_name = db.Column(db.Text, default="")
 
     dishes = db.relationship('Dish', backref='restaurant', cascade='all, delete-orphan', lazy=True)
     reviews = db.relationship('Review', backref='restaurant', cascade='all, delete-orphan', lazy=True)

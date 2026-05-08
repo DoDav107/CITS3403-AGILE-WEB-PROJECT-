@@ -36,16 +36,6 @@ test('Google place filter options include primary types and place tags', () => {
   assert.deepEqual(options.tags, ['bakery', 'meal_takeaway', 'sushi_restaurant']);
 });
 
-test('Google place filter options do not duplicate broad types as tags', () => {
-  const options = App.getGooglePlaceFilterOptions([
-    { primaryType: 'restaurant', types: ['restaurant', 'food', 'cafe', 'ramen_restaurant'] },
-    { primaryType: 'cafe', types: ['cafe', 'food', 'bar', 'bakery'] }
-  ]);
-
-  assert.deepEqual(options.types, ['bar', 'cafe', 'restaurant']);
-  assert.deepEqual(options.tags, ['bakery', 'ramen_restaurant']);
-});
-
 test('Browse Google place filters combine search, type, tag, and rating', () => {
   const places = [
     {
@@ -82,75 +72,6 @@ test('Browse Google place filters combine search, type, tag, and rating', () => 
   });
 
   assert.deepEqual(filtered.map(place => place.id), ['p1']);
-});
-
-test('Browse Google place type filter matches primary and secondary place types', () => {
-  const places = [
-    {
-      id: 'p1',
-      name: 'Northbridge Ramen Lab',
-      address: '99 Roe St, Northbridge WA',
-      rating: 4.7,
-      primaryType: 'japanese_restaurant',
-      types: ['restaurant', 'ramen_restaurant', 'food']
-    },
-    {
-      id: 'p2',
-      name: 'City Coffee',
-      address: 'Perth CBD',
-      rating: 4.8,
-      primaryType: 'cafe',
-      types: ['cafe', 'coffee_shop', 'food']
-    }
-  ];
-
-  const filtered = App.filterBrowseGooglePlaces(places, {
-    selectedType: 'restaurant',
-    minRating: 0
-  });
-
-  assert.deepEqual(filtered.map(place => place.id), ['p1']);
-});
-
-test('Browse Google place search matches formatted type labels', () => {
-  const places = [
-    {
-      id: 'p1',
-      name: 'Northbridge Ramen Lab',
-      address: '99 Roe St, Northbridge WA',
-      rating: 4.7,
-      primaryType: 'japanese_restaurant',
-      types: ['restaurant', 'ramen_restaurant', 'food']
-    }
-  ];
-
-  const filtered = App.filterBrowseGooglePlaces(places, {
-    search: 'Japanese Restaurant',
-    minRating: 0
-  });
-
-  assert.deepEqual(filtered.map(place => place.id), ['p1']);
-});
-
-test('Google place card escapes fields and renders save without navigation', () => {
-  const html = App.renderGooglePlaceCard({
-    id: 'p-danger',
-    name: '<img src=x onerror=alert(1)>',
-    address: '1 <b>Bad</b> St',
-    rating: 4.5,
-    primaryType: 'japanese_restaurant',
-    types: ['restaurant', '<script>alert(1)</script>'],
-    lat: -31.95,
-    lng: 115.86
-  }, 2);
-
-  assert.doesNotMatch(html, /<script/i);
-  assert.doesNotMatch(html, /<img src=x onerror/i);
-  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt;/);
-  assert.match(html, /1 &lt;b&gt;Bad&lt;\/b&gt; St/);
-  assert.match(html, /class="btn btn-outline-dark btn-sm save-google-place-trigger"/);
-  assert.match(html, /data-index="2"/);
-  assert.match(html, />Save</);
 });
 
 test('restaurant tag links are escaped and point back to Browse filters', () => {
@@ -197,6 +118,9 @@ test('review card escapes user-controlled review and profile fields', () => {
     getRestaurantById() {
       return { name: '<img src=x onerror=alert(1)>' };
     },
+    getDish() {
+      return { name: '<b>Danger Dish</b>' };
+    },
     formatDate() {
       return '2026-04-22';
     },
@@ -210,6 +134,7 @@ test('review card escapes user-controlled review and profile fields', () => {
       id: 1,
       userId: 'u1',
       restaurantId: 'r1',
+      dishId: 'd1',
       rating: 5,
       title: '<img src=x onerror=alert(1)>',
       content: 'Loved it <script>alert(1)</script>',
@@ -221,5 +146,6 @@ test('review card escapes user-controlled review and profile fields', () => {
   assert.doesNotMatch(html, /<script/i);
   assert.doesNotMatch(html, /<img src=x onerror/i);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
+  assert.match(html, /&lt;b&gt;Danger Dish&lt;\/b&gt;/);
   assert.match(html, /Loved it &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
 });

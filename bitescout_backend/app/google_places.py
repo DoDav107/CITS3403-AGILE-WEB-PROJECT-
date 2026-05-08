@@ -9,6 +9,7 @@ load_dotenv(BASE_DIR / ".env")
 
 PLACES_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
+PLACE_PHOTO_MEDIA_URL = "https://places.googleapis.com/v1/{photo_name}/media"
 
 
 class GooglePlacesError(Exception):
@@ -67,7 +68,8 @@ def search_nearby_places(api_key, lat, lng, radius=8000, included_types=None, ma
             "places.location,"
             "places.rating,"
             "places.primaryType,"
-            "places.types"
+            "places.types,"
+            "places.photos"
         ),
     }
 
@@ -123,7 +125,38 @@ def search_nearby_places(api_key, lat, lng, radius=8000, included_types=None, ma
             "rating": rating,
             "primaryType": primary_type,
             "types": place.get("types", []),
+            "photoName": ((place.get("photos") or [{}])[0].get("name") or ""),
+            "photoAttributions": ((place.get("photos") or [{}])[0].get("authorAttributions") or []),
             "source": "google_places",
         })
 
     return results
+
+
+def get_photo_media_uri(api_key, photo_name, max_width=900, max_height=650):
+    api_key = get_api_key(api_key)
+    safe_photo_name = str(photo_name or "").strip().strip("/")
+
+    if not safe_photo_name.startswith("places/") or "/photos/" not in safe_photo_name:
+        raise GooglePlacesError("Invalid Google place photo name", 400)
+
+    response = requests.get(
+        PLACE_PHOTO_MEDIA_URL.format(photo_name=safe_photo_name),
+        params={
+            "maxWidthPx": int(max_width),
+            "maxHeightPx": int(max_height),
+            "skipHttpRedirect": "true",
+            "key": api_key,
+        },
+        timeout=15,
+    )
+
+    if not response.ok:
+        raise GooglePlacesError(f"Google Place Photo error {response.status_code}: {response.text}", response.status_code)
+
+    payload = response.json()
+    photo_uri = payload.get("photoUri")
+    if not photo_uri:
+        raise GooglePlacesError("Google Place Photo did not return an image URI", 502)
+
+    return photo_uri
