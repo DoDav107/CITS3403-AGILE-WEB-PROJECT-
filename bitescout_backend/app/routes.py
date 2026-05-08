@@ -85,9 +85,9 @@ def restaurant_to_dict(restaurant, include_dishes=False):
         'address': restaurant.address,
         'tags': [tag.strip() for tag in restaurant.tags.split(',') if tag.strip()],
         'photoName': restaurant.photo_name or '',
+        'websiteUri': restaurant.website_uri or '',
+        'googleMapsUri': restaurant.google_maps_uri or '',
     }
-    if include_dishes:
-        data['dishes'] = [dish_to_dict(d) for d in restaurant.dishes]
     return data
 
 
@@ -96,7 +96,7 @@ def review_to_dict(review):
         'id': review.id,
         'userId': review.user_id,
         'restaurantId': review.restaurant_id,
-        'dishId': review.dish_id or '',
+        'dishId': '',
         'rating': review.rating,
         'title': review.title,
         'content': review.content,
@@ -217,7 +217,7 @@ def restaurants():
 @bp.get('/api/restaurants/<restaurant_id>')
 def restaurant_detail(restaurant_id):
     restaurant = Restaurant.query.get_or_404(restaurant_id)
-    return jsonify(restaurant_to_dict(restaurant, include_dishes=True))
+    return jsonify(restaurant_to_dict(restaurant))
 
 
 @bp.post('/api/restaurants/from-google')
@@ -262,9 +262,11 @@ def restaurant_from_google():
     restaurant.address = address or 'Address unavailable'
     restaurant.tags = ','.join(tags)
     restaurant.photo_name = (payload.get('photoName') or '').strip()
+    restaurant.website_uri = (payload.get('websiteUri') or '').strip()
+    restaurant.google_maps_uri = (payload.get('googleMapsUri') or '').strip()
 
     db.session.commit()
-    return jsonify({'message': 'Restaurant synced', 'restaurant': restaurant_to_dict(restaurant, include_dishes=True)}), status_code
+    return jsonify({'message': 'Restaurant synced', 'restaurant': restaurant_to_dict(restaurant)}), status_code
 
 
 @bp.get('/api/restaurants/<restaurant_id>/reviews')
@@ -275,8 +277,7 @@ def restaurant_reviews(restaurant_id):
 
 @bp.get('/api/dishes/<restaurant_id>/<dish_id>')
 def dish_detail(restaurant_id, dish_id):
-    dish = Dish.query.filter_by(id=dish_id, restaurant_id=restaurant_id).first_or_404()
-    return jsonify(dish_to_dict(dish))
+    return jsonify({'error': 'BiteScout now reviews places only. Dish pages have been removed.'}), 410
 
 
 @bp.get('/api/users/<int:user_id>')
@@ -461,16 +462,28 @@ def google_nearby():
 
     radius = payload.get('radius', 8000)
     included_types = payload.get('includedTypes') or ['restaurant', 'cafe']
-    max_result_count = payload.get('maxResultCount', 12)
+    max_result_count = payload.get('maxResultCount', 40)
+    query = (payload.get('query') or payload.get('search') or '').strip()
 
     try:
-        results = google_places.search_nearby_places(
+        nearby_results = google_places.search_nearby_places(
             api_key, lat, lng, radius, included_types, max_result_count
         )
+        text_results = []
+        if query:
+            text_results = google_places.search_text_places(api_key, query, lat, lng, radius, max_result_count)
+        results = []
+        seen = set()
+        for place in [*text_results, *nearby_results]:
+            place_id = place.get('id')
+            if not place_id or place_id in seen:
+                continue
+            seen.add(place_id)
+            results.append(place)
     except google_places.GooglePlacesError as error:
         return jsonify({'error': str(error)}), error.status_code
 
-    return jsonify({'results': results})
+    return jsonify({'results': results, 'queryResults': len(text_results)})
 
 
 @bp.post('/api/google/search-location')
@@ -486,11 +499,12 @@ def google_search_location():
 
     radius = payload.get('radius', 8000)
     included_types = payload.get('includedTypes') or ['restaurant', 'cafe']
-    max_result_count = payload.get('maxResultCount', 12)
+    max_result_count = payload.get('maxResultCount', 40)
+    query = (payload.get('query') or payload.get('search') or '').strip()
 
     try:
         search_location = google_places.geocode_address(api_key, address)
-        results = google_places.search_nearby_places(
+        nearby_results = google_places.search_nearby_places(
             api_key,
             search_location['lat'],
             search_location['lng'],
@@ -498,10 +512,28 @@ def google_search_location():
             included_types,
             max_result_count,
         )
+        text_results = []
+        if query:
+            text_results = google_places.search_text_places(
+                api_key,
+                query,
+                search_location['lat'],
+                search_location['lng'],
+                radius,
+                max_result_count,
+            )
+        results = []
+        seen = set()
+        for place in [*text_results, *nearby_results]:
+            place_id = place.get('id')
+            if not place_id or place_id in seen:
+                continue
+            seen.add(place_id)
+            results.append(place)
     except google_places.GooglePlacesError as error:
         return jsonify({'error': str(error)}), error.status_code
 
-    return jsonify({'searchLocation': search_location, 'results': results})
+    return jsonify({'searchLocation': search_location, 'results': results, 'queryResults': len(text_results)})
 
 
 @bp.get('/api/google/photo')
@@ -537,9 +569,6 @@ def create_review():
     restaurant = db.session.get(Restaurant, payload['restaurantId'])
     if not restaurant:
         return jsonify({'error': 'Restaurant not found'}), 404
-    dish_id = payload.get('dishId') or None
-    if dish_id and not Dish.query.filter_by(id=dish_id, restaurant_id=payload['restaurantId']).first():
-        return jsonify({'error': 'Dish not found for restaurant'}), 404
     rating = parse_review_rating(payload.get('rating'))
     if rating is None:
         return jsonify({'error': 'Rating must be an integer between 1 and 5.'}), 400
@@ -547,7 +576,7 @@ def create_review():
     review = Review(
         user_id=current_user().id,
         restaurant_id=payload['restaurantId'],
-        dish_id=dish_id,
+        dish_id=None,
         rating=rating,
         title=payload['title'],
         content=payload['content'],
@@ -601,14 +630,7 @@ def delete_review(review_id):
 def favourites():
     user = current_user()
     restaurants = [restaurant_to_dict(f.restaurant) for f in user.favourite_restaurants if getattr(f, 'restaurant', None)]
-    dishes = [
-        {
-            'dish': dish_to_dict(f.dish),
-            'restaurant': restaurant_to_dict(f.dish.restaurant)
-        }
-        for f in user.favourite_dishes if getattr(f, 'dish', None)
-    ]
-    return jsonify({'restaurants': restaurants, 'dishes': dishes})
+    return jsonify({'restaurants': restaurants, 'dishes': []})
 
 
 @bp.post('/api/favourites/restaurants/<restaurant_id>')
@@ -637,27 +659,13 @@ def remove_favourite_restaurant(restaurant_id):
 @bp.post('/api/favourites/dishes')
 @login_required
 def save_favourite_dish():
-    payload = request.get_json(silent=True) or request.form.to_dict()
-    dish_id = payload.get('dishId')
-    dish = db.session.get(Dish, dish_id)
-    if not dish:
-        return jsonify({'error': 'Dish not found'}), 404
-    user = current_user()
-    existing = FavouriteDish.query.filter_by(user_id=user.id, dish_id=dish_id).first()
-    if not existing:
-        db.session.add(FavouriteDish(user_id=user.id, dish_id=dish_id))
-        db.session.commit()
-    return jsonify({'message': 'Dish saved'})
+    return jsonify({'error': 'BiteScout now saves places only.'}), 410
 
 
 @bp.delete('/api/favourites/dishes/<dish_id>')
 @login_required
 def remove_favourite_dish(dish_id):
-    user = current_user()
-    item = FavouriteDish.query.filter_by(user_id=user.id, dish_id=dish_id).first_or_404()
-    db.session.delete(item)
-    db.session.commit()
-    return jsonify({'message': 'Dish removed'})
+    return jsonify({'error': 'BiteScout now saves places only.'}), 410
 
 
 @bp.post('/api/chat')
@@ -705,11 +713,9 @@ def chat():
     
     restaurant_context = []
     for r in restaurants:
-        dish_list = ", ".join([d.name for d in r.dishes])
         restaurant_context.append(
             f"[BiteScout] ID: {r.id}, Name: {r.name}, Suburb: {r.suburb}, Cuisine: {r.cuisine}, "
-            f"Price: {r.price}, Rating: {r.rating}, Dishes: {dish_list}, "
-            f"Tags: {r.tags}, Blurb: {r.blurb}"
+            f"Price: {r.price}, Rating: {r.rating}, Tags: {r.tags}, Blurb: {r.blurb}"
         )
     
     local_context_str = "\n".join(restaurant_context) if restaurant_context else "No restaurants in the local database yet."
@@ -781,6 +787,10 @@ def chat():
                             restaurant.tags = ','.join(google_place_tags(p.get('types') or [], p.get('primaryType')))
                         if p.get('photoName'):
                             restaurant.photo_name = p.get('photoName') or ''
+                        if p.get('websiteUri'):
+                            restaurant.website_uri = p.get('websiteUri') or ''
+                        if p.get('googleMapsUri'):
+                            restaurant.google_maps_uri = p.get('googleMapsUri') or ''
                         db.session.commit()
                             
                         google_lines.append(

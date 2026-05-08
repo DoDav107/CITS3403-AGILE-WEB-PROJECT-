@@ -175,6 +175,8 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "primaryType": "japanese_restaurant",
                 "types": ["restaurant", "food", "ramen_restaurant"],
                 "photoName": "places/google-ramen-1/photos/photo-123",
+                "websiteUri": "https://ramen.example.com",
+                "googleMapsUri": "https://maps.google.com/?cid=123",
             },
         )
 
@@ -184,11 +186,13 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(restaurant["cuisine"], "Japanese Restaurant")
         self.assertIn("ramen_restaurant", restaurant["tags"])
         self.assertEqual(restaurant["photoName"], "places/google-ramen-1/photos/photo-123")
+        self.assertEqual(restaurant["websiteUri"], "https://ramen.example.com")
 
         detail_response = self.client.get(f"/api/restaurants/{restaurant['id']}")
         self.assertEqual(detail_response.status_code, 200)
         self.assertEqual(detail_response.get_json()["address"], "99 Roe St, Northbridge WA")
         self.assertEqual(detail_response.get_json()["photoName"], "places/google-ramen-1/photos/photo-123")
+        self.assertEqual(detail_response.get_json()["websiteUri"], "https://ramen.example.com")
 
     def test_review_can_be_created(self):
         self.login_demo_user()
@@ -206,6 +210,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.get_json()["review"]["restaurantId"], "r1")
+        self.assertEqual(response.get_json()["review"]["dishId"], "")
 
     def test_invalid_review_rating_is_rejected_on_create(self):
         self.login_demo_user()
@@ -290,6 +295,8 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                     "rating": 4.5,
                     "primaryType": "cafe",
                     "types": ["cafe", "food"],
+                    "websiteUri": "https://test-cafe.example.com",
+                    "googleMapsUri": "https://maps.google.com/?cid=456",
                     "photos": [
                         {
                             "name": "places/place-1/photos/photo-1",
@@ -310,6 +317,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         payload = response.get_json()
         self.assertEqual(payload["results"][0]["name"], "Test Cafe")
         self.assertEqual(payload["results"][0]["photoName"], "places/place-1/photos/photo-1")
+        self.assertEqual(payload["results"][0]["websiteUri"], "https://test-cafe.example.com")
 
     def test_google_photo_redirects_to_photo_uri(self):
         self.app.config["GOOGLE_MAPS_API_KEY"] = "test-google-key"

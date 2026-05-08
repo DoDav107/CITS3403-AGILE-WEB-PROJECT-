@@ -26,9 +26,15 @@ def ensure_restaurant_photo_columns():
         return
 
     columns = {column["name"] for column in inspector.get_columns("restaurant")}
-    if "photo_name" not in columns:
-        db.session.execute(text('ALTER TABLE "restaurant" ADD COLUMN photo_name TEXT DEFAULT ""'))
-        db.session.commit()
+    columns_to_add = {
+        "photo_name": 'ALTER TABLE "restaurant" ADD COLUMN photo_name TEXT DEFAULT ""',
+        "website_uri": 'ALTER TABLE "restaurant" ADD COLUMN website_uri TEXT DEFAULT ""',
+        "google_maps_uri": 'ALTER TABLE "restaurant" ADD COLUMN google_maps_uri TEXT DEFAULT ""',
+    }
+    for column_name, statement in columns_to_add.items():
+        if column_name not in columns:
+            db.session.execute(text(statement))
+    db.session.commit()
 
 
 def create_app(test_config=None):

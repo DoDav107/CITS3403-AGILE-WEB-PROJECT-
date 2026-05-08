@@ -3166,3 +3166,29 @@ body:not([data-page="home"]) main > section:not(.hero-premium) {
     animation: none;
   }
 }
+
+/* Keep auth forms readable on the brighter presentation theme. */
+.auth-card .form-label,
+.auth-form .form-label {
+  color: #3a2016 !important;
+}
+
+.field-hint,
+.auth-card .form-text,
+.auth-card .text-secondary {
+  color: #725143 !important;
+}
+
+.field-error,
+.auth-message.text-danger {
+  color: #9f1f1a !important;
+}
+
+.auth-field.has-error .form-control,
+.auth-field.has-error .form-select,
+.auth-form .form-control.is-invalid,
+.auth-form .form-select.is-invalid {
+  background-color: rgba(255, 243, 232, 0.96);
+  border-color: #e6453f;
+  box-shadow: 0 0 0 0.2rem rgba(255, 95, 87, 0.18);
+}

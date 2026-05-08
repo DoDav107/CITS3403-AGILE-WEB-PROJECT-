@@ -66,7 +66,8 @@
   }
 
   const STORAGE_KEYS = {
-    userLocation: 'bitescout_user_location'
+    userLocation: 'bitescout_user_location',
+    recentSearches: 'bitescout_recent_searches'
   };
 
   const DEFAULT_AVATAR_ID = 'avatar-scout';
@@ -234,6 +235,7 @@
       restaurants: [],
       reviews: [],
       favourites: { restaurants: [], dishes: [] },
+      recentSearches: [],
       chatHistory: []
     },
 
@@ -245,6 +247,7 @@
     },
 
     async bootstrap() {
+      this.state.recentSearches = this.getRecentSearches();
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
     },
 
@@ -298,39 +301,50 @@
         this.state.favourites = { restaurants: [], dishes: [] };
         return this.state.favourites;
       }
-      if ((this.state.favourites.restaurants.length || this.state.favourites.dishes.length) && !force) {
+      if (this.state.favourites.restaurants.length && !force) {
         return this.state.favourites;
       }
       this.state.favourites = await this.api('/api/favourites');
       return this.state.favourites;
     },
 
-    initRecommendations() {
+    async initRecommendations() {
       const target = document.getElementById('recommendationsGrid');
       const title = document.getElementById('recommendationTitle');
       const user = this.getCurrentUser();
       if (!target) return;
 
       if (!user) {
-        if (title) title.textContent = 'A better mix after you log in';
-        this.showMessage('recommendationStatus', 'Log in with a favourite cuisine and BiteScout will shape this page around your taste.', 'info');
-        target.innerHTML = this.emptyState('No profile preference yet. Log in to get personal picks.');
+        const recommendations = this.buildSmartRecommendations(this.state.restaurants, {
+          recentSearches: this.state.recentSearches
+        }, 6);
+        if (title) title.textContent = 'Trending places to start with';
+        this.showMessage('recommendationStatus', 'Log in to unlock recommendations that learn from your favourites and profile cuisine.', 'info');
+        target.innerHTML = recommendations.length
+          ? recommendations.map(restaurant => this.renderRestaurantCard(restaurant)).join('')
+          : this.emptyState('No recommendations are available yet.');
+        this.bindSaveButtons();
         return;
       }
 
+      await this.loadFavourites(true);
       const preferredCuisine = user.preferredCuisine || '';
-      if (!preferredCuisine) {
-        if (title) title.textContent = 'Tell BiteScout what you like';
-        this.showMessage('recommendationStatus', 'Choose a favourite cuisine in your profile details so recommendations can start with food you already enjoy.', 'info');
-        target.innerHTML = this.emptyState('Your recommendation mix will appear once a favourite cuisine is set.');
-        return;
-      }
-
-      const recommendations = this.buildPreferenceRecommendations(this.state.restaurants, preferredCuisine, 6);
-      if (title) title.textContent = `${preferredCuisine} first, with room to explore`;
+      const recentSearches = this.state.recentSearches || [];
+      const favouriteRestaurants = this.state.favourites.restaurants || [];
+      const recommendations = this.buildSmartRecommendations(this.state.restaurants, {
+        preferredCuisine,
+        favourites: favouriteRestaurants,
+        recentSearches
+      }, 6);
+      if (title) title.textContent = preferredCuisine ? `${preferredCuisine} first, with fresh ideas` : 'Picked from your activity';
+      const signalText = [
+        preferredCuisine ? `profile cuisine: ${preferredCuisine}` : '',
+        favouriteRestaurants.length ? `${favouriteRestaurants.length} saved place${favouriteRestaurants.length === 1 ? '' : 's'}` : '',
+        recentSearches.length ? `recent searches: ${recentSearches.slice(0, 3).join(', ')}` : ''
+      ].filter(Boolean).join(' • ');
       this.showMessage(
         'recommendationStatus',
-        `Most picks match ${preferredCuisine}; the rest keep the list from feeling too narrow.`,
+        signalText ? `Recommendations are using ${signalText}.` : 'Save places or search Browse to make this page more personal.',
         'info'
       );
       target.innerHTML = recommendations.length
@@ -593,6 +607,65 @@
       localStorage.removeItem(STORAGE_KEYS.userLocation);
     },
 
+    normalizeSearchText(value = '') {
+      return String(value || '')
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/['’]/g, '')
+        .replace(/[^a-z0-9]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    },
+
+    searchAliases(query = '') {
+      const normalized = this.normalizeSearchText(query);
+      const aliases = new Set(normalized ? normalized.split(' ') : []);
+      const aliasMap = {
+        noodle: ['noodles', 'ramen', 'pho', 'vietnamese', 'asian'],
+        noodles: ['noodle', 'ramen', 'pho', 'vietnamese', 'asian'],
+        ramen: ['noodle', 'noodles', 'japanese', 'asian'],
+        coffee: ['cafe', 'cafes', 'espresso', 'brunch'],
+        cafe: ['coffee', 'espresso', 'brunch', 'bakery'],
+        cafes: ['cafe', 'coffee', 'brunch'],
+        nandos: ['nando', 'nandos', 'chicken', 'peri peri'],
+        nando: ['nandos', 'chicken', 'peri peri'],
+        pizza: ['pizzeria', 'dominos', 'domino', 'italian'],
+        dominos: ['domino', 'pizza', 'pizzeria'],
+        bakery: ['baker', 'cake', 'pastry', 'patisserie'],
+        dessert: ['cake', 'bakery', 'sweet'],
+        sushi: ['japanese', 'sashimi'],
+        burger: ['burgers', 'american', 'fast food'],
+        burgers: ['burger', 'american', 'fast food'],
+        boba: ['bubble tea', 'milk tea', 'tea'],
+        tea: ['boba', 'bubble tea', 'drinks']
+      };
+
+      normalized.split(' ').forEach(token => {
+        (aliasMap[token] || []).forEach(alias => {
+          this.normalizeSearchText(alias).split(' ').forEach(part => aliases.add(part));
+        });
+      });
+
+      return Array.from(aliases).filter(Boolean);
+    },
+
+    getRecentSearches() {
+      try {
+        const items = JSON.parse(localStorage.getItem(STORAGE_KEYS.recentSearches) || '[]');
+        return Array.isArray(items) ? items.filter(Boolean).slice(0, 10) : [];
+      } catch (error) {
+        return [];
+      }
+    },
+
+    rememberSearch(query = '') {
+      const value = String(query || '').trim();
+      if (!value) return;
+      const next = [value, ...this.getRecentSearches().filter(item => this.normalizeSearchText(item) !== this.normalizeSearchText(value))].slice(0, 10);
+      this.state.recentSearches = next;
+      localStorage.setItem(STORAGE_KEYS.recentSearches, JSON.stringify(next));
+    },
+
     formatDate(dateStr) {
       return new Date(dateStr).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
     },
@@ -642,6 +715,49 @@
       const preferredLimit = Math.min(preferredRestaurants.length, Math.ceil(limit * 0.8));
       const chosen = preferredRestaurants.slice(0, preferredLimit);
       return [...chosen, ...otherRestaurants.slice(0, limit - chosen.length)];
+    },
+
+    buildSmartRecommendations(restaurants, options = {}, limit = 6) {
+      const preferredCuisine = this.normalizeSearchText(options.preferredCuisine || '');
+      const favouriteRestaurants = options.favourites || [];
+      const recentSearches = options.recentSearches || [];
+      const favouriteSignals = favouriteRestaurants.flatMap(restaurant => [
+        restaurant.name,
+        restaurant.cuisine,
+        restaurant.primaryType,
+        ...(restaurant.tags || [])
+      ]);
+      const searchSignals = recentSearches.flatMap(query => this.searchAliases(query));
+      const signals = [
+        ...this.searchAliases(preferredCuisine),
+        ...favouriteSignals.flatMap(value => this.searchAliases(value)),
+        ...searchSignals
+      ].filter(Boolean);
+      const favouriteIds = new Set(favouriteRestaurants.map(restaurant => restaurant.id));
+
+      return [...restaurants]
+        .map(restaurant => {
+          const haystack = this.normalizeSearchText([
+            restaurant.name,
+            restaurant.cuisine,
+            restaurant.primaryType,
+            restaurant.blurb,
+            restaurant.description,
+            (restaurant.tags || []).join(' ')
+          ].filter(Boolean).join(' '));
+          const cuisine = this.normalizeSearchText(restaurant.cuisine || '');
+          const signalScore = signals.reduce((score, signal) => score + (haystack.includes(this.normalizeSearchText(signal)) ? 1 : 0), 0);
+          const preferredScore = preferredCuisine && cuisine.includes(preferredCuisine) ? 8 : 0;
+          const favouritePenalty = favouriteIds.has(restaurant.id) ? -2 : 0;
+          const ratingScore = Number(restaurant.rating || 0);
+          return {
+            restaurant,
+            score: preferredScore + signalScore * 2 + ratingScore + favouritePenalty
+          };
+        })
+        .sort((left, right) => right.score - left.score || Number(right.restaurant.rating || 0) - Number(left.restaurant.rating || 0))
+        .slice(0, limit)
+        .map(item => item.restaurant);
     },
 
     hashString(value = '') {
@@ -700,23 +816,26 @@
     getGooglePlaceFilterOptions(places = []) {
       const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store']);
       const typeSet = new Set();
-      const tagSet = new Set();
 
       places.forEach(place => {
         const primaryType = String(place.primaryType || '').trim();
         if (primaryType) typeSet.add(primaryType);
+        if (place.cuisine) typeSet.add(String(place.cuisine).trim());
 
         (place.types || []).forEach(type => {
           const normalizedType = String(type || '').trim();
           if (!normalizedType || ignoredTags.has(normalizedType)) return;
-          if (primaryType && normalizedType === primaryType) return;
-          tagSet.add(normalizedType);
+          typeSet.add(normalizedType);
+        });
+        (place.tags || []).forEach(tag => {
+          const normalizedTag = String(tag || '').trim();
+          if (!normalizedTag || ignoredTags.has(normalizedTag)) return;
+          typeSet.add(normalizedTag);
         });
       });
 
       return {
-        types: Array.from(typeSet).sort(),
-        tags: Array.from(tagSet).sort()
+        types: Array.from(typeSet).sort()
       };
     },
 
@@ -749,6 +868,9 @@
       const imageUrl = this.getRestaurantImage(restaurant);
       const imageHtml = `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" />`;
       const restaurantId = encodeRouteValue(restaurant.id);
+      const websiteButton = restaurant.websiteUri
+        ? `<a class="btn btn-outline-dark btn-sm" href="${escapeHtml(restaurant.websiteUri)}" target="_blank" rel="noopener noreferrer">Website</a>`
+        : '';
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3 d-flex flex-column">
@@ -762,9 +884,10 @@
             <h3 class="h5 fw-bold">${escapeHtml(restaurant.name)}</h3>
             <p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.address)}</p>
             <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
-            <div class="d-flex gap-2 mt-auto pt-2">
+            <div class="d-flex flex-wrap gap-2 mt-auto pt-2">
               <a class="btn btn-primary btn-sm" href="restaurant.html?id=${restaurantId}">View details</a>
               <button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurantId}">Save</button>
+              ${websiteButton}
             </div>
           </div>
         </div>
@@ -772,30 +895,12 @@
     },
 
     renderDishCard(restaurant, dish) {
-      const restaurantId = encodeRouteValue(restaurant.id);
-      const dishId = encodeRouteValue(dish.id);
-      return `
-        <div class="col-md-6">
-          <div class="dish-card p-3">
-            <h3 class="h5 fw-bold mb-2">${escapeHtml(dish.name)}</h3>
-            <div class="d-flex flex-wrap mb-2">
-              ${this.renderRatingStars(dish.rating)}
-              <span class="price-pill">$${dish.price}</span>
-            </div>
-            <p class="text-secondary">${escapeHtml(dish.description)}</p>
-            <div class="d-flex gap-2">
-              <a class="btn btn-primary btn-sm" href="dish.html?restaurant=${restaurantId}&dish=${dishId}">View dish</a>
-              <button class="btn btn-outline-dark btn-sm save-dish-trigger" data-id="${dishId}" data-restaurant="${restaurantId}">Save</button>
-            </div>
-          </div>
-        </div>
-      `;
+      return '';
     },
 
     renderReviewCard(review, own = false) {
       const user = this.getDisplayUser(review.userId, review.user);
       const restaurant = this.getRestaurantById(review.restaurantId);
-      const dish = review.dishId ? this.getDish(review.restaurantId, review.dishId) : null;
       const editable = own && !String(review.id).startsWith('sr');
       const manageButton = editable ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${encodeRouteValue(review.id)}">Edit</a>` : '';
       const reviewMeta = [
@@ -803,7 +908,6 @@
         escapeHtml(this.formatDate(review.createdAt))
       ];
       if (restaurant) reviewMeta.push(escapeHtml(restaurant.name));
-      if (dish) reviewMeta.push(escapeHtml(dish.name));
       return `
         <div class="review-card p-3 mb-3">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
@@ -832,18 +936,20 @@
     },
 
     googleMapsUrl(place) {
+      if (place.googleMapsUri) return place.googleMapsUri;
       if (place.lat == null || place.lng == null) return '#';
       return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.lat},${place.lng}`)}`;
     },
 
-    async searchGooglePlacesByAddress(address, radius = 8000, includedTypes = ['restaurant', 'cafe'], maxResultCount = 12) {
+    async searchGooglePlacesByAddress(address, radius = 8000, includedTypes = ['restaurant', 'cafe'], maxResultCount = 12, query = '') {
       const payload = await this.api('/api/google/search-location', {
         method: 'POST',
         body: {
           address,
           radius,
           includedTypes,
-          maxResultCount
+          maxResultCount,
+          query
         }
       });
     
@@ -856,6 +962,9 @@
         .slice(0, 3)
         .map(type => `<span class="badge badge-soft">${escapeHtml(this.formatPlaceType(type))}</span>`)
         .join('');
+      const websiteButton = place.websiteUri
+        ? `<a class="btn btn-outline-dark btn-sm" href="${escapeHtml(place.websiteUri)}" target="_blank" rel="noopener noreferrer">Website</a>`
+        : '';
 
       return `
         <div class="col-md-6 col-xl-4">
@@ -868,8 +977,10 @@
             <h3 class="h5 fw-bold">${escapeHtml(place.name || 'Unnamed place')}</h3>
             <p class="text-secondary mb-2">${escapeHtml(place.address || 'Address unavailable')}</p>
             <div class="d-flex flex-wrap gap-2 mb-3">${tagHtml}</div>
-            <div class="d-flex gap-2">
+            <div class="d-flex flex-wrap gap-2">
               <button class="btn btn-primary btn-sm open-google-place-trigger" data-index="${index}">View details</button>
+              <button class="btn btn-outline-dark btn-sm save-google-place-trigger" data-index="${index}">Save</button>
+              ${websiteButton}
               <a class="btn btn-outline-dark btn-sm" href="${this.googleMapsUrl(place)}" target="_blank" rel="noopener noreferrer">Open map</a>
             </div>
           </div>
@@ -889,7 +1000,9 @@
           rating: place.rating,
           primaryType: place.primaryType,
           types: place.types || [],
-          photoName: place.photoName || ''
+          photoName: place.photoName || '',
+          websiteUri: place.websiteUri || '',
+          googleMapsUri: place.googleMapsUri || ''
         }
       });
     },
@@ -911,9 +1024,30 @@
           }
         };
       });
+      document.querySelectorAll('.save-google-place-trigger').forEach(button => {
+        button.onclick = async () => {
+          const place = places[Number(button.dataset.index)];
+          if (!place) return;
+          if (!this.getCurrentUser()) {
+            this.showMessage('browseLocationMessage', 'Please log in before saving favourites.', 'error');
+            return;
+          }
+          button.disabled = true;
+          button.textContent = 'Saving...';
+          try {
+            const payload = await this.mirrorGooglePlace(place);
+            await this.saveRestaurant(payload.restaurant.id, 'browseLocationMessage');
+            button.textContent = 'Saved';
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = 'Save';
+            this.showMessage('browseLocationMessage', error.message, 'error');
+          }
+        };
+      });
     },
 
-    async fetchNearbyGooglePlaces(coords, radius = 8000, includedTypes = ['restaurant', 'cafe'], maxResultCount = 12) {
+    async fetchNearbyGooglePlaces(coords, radius = 8000, includedTypes = ['restaurant', 'cafe'], maxResultCount = 12, query = '') {
       const payload = await this.api('/api/google/nearby', {
         method: 'POST',
         body: {
@@ -921,7 +1055,8 @@
           lng: coords.lng,
           radius,
           includedTypes,
-          maxResultCount
+          maxResultCount,
+          query
         }
       });
 
@@ -950,14 +1085,21 @@
     filterBrowseGooglePlaces(places, filters = {}) {
       const search = String(filters.search || '').trim().toLowerCase();
       const selectedType = String(filters.selectedType || '');
-      const selectedTag = String(filters.selectedTag || '');
       const minRating = parseFloat(filters.minRating || '0');
+      const searchTerms = this.searchAliases(search);
 
       return this.filterGooglePlaces(places, Number.isFinite(minRating) ? minRating : 0).filter(place => {
-        const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')}`.toLowerCase();
-        if (search && !haystack.includes(search)) return false;
-        if (selectedType && place.primaryType !== selectedType) return false;
-        if (selectedTag && !(place.types || []).includes(selectedTag) && !haystack.includes(selectedTag.toLowerCase())) return false;
+        const haystack = this.normalizeSearchText([
+          place.name,
+          place.address,
+          place.primaryType,
+          (place.types || []).join(' '),
+          place.cuisine,
+          place.blurb,
+          place.description
+        ].filter(Boolean).join(' '));
+        if (searchTerms.length && !searchTerms.some(term => haystack.includes(this.normalizeSearchText(term)))) return false;
+        if (selectedType && place.primaryType !== selectedType && place.cuisine !== selectedType && !(place.types || []).includes(selectedType) && !(place.tags || []).includes(selectedType)) return false;
         return true;
       });
     },
@@ -1162,7 +1304,10 @@
       if (heroSearchInput && heroSearchBtn) {
         const doSearch = () => {
           const query = heroSearchInput.value.trim();
-          if (query) window.location.href = `browse.html?search=${encodeURIComponent(query)}`;
+          if (query) {
+            this.rememberSearch(query);
+            window.location.href = `browse.html?search=${encodeURIComponent(query)}`;
+          }
         };
         heroSearchBtn.addEventListener('click', doSearch);
         heroSearchInput.addEventListener('keydown', event => {
@@ -1263,43 +1408,41 @@
       const locationSearchBtn = document.getElementById('searchLocationBrowse');
       const searchInput = document.getElementById('searchInput');
       const typeSelect = document.getElementById('placeTypeFilter');
-      const tagSelect = document.getElementById('tagFilter');
       const ratingSelect = document.getElementById('ratingFilter');
       const resultsTarget = document.getElementById('browseResults');
       const resultsCount = document.getElementById('resultsCount');
       const params = new URLSearchParams(window.location.search);
       const urlSearch = params.get('search');
       const urlTag = params.get('tag');
-      let places = [];
+      let places = [...this.state.restaurants];
+      let activeCoords = null;
 
-      if (!locationForm || !locationInput || !searchInput || !typeSelect || !tagSelect || !ratingSelect || !resultsTarget) return;
+      if (!locationForm || !locationInput || !searchInput || !typeSelect || !ratingSelect || !resultsTarget) return;
       if (urlSearch) searchInput.value = urlSearch;
       if (!urlSearch && urlTag) searchInput.value = urlTag;
 
       const renderFilterOptions = () => {
         const options = this.getGooglePlaceFilterOptions(places);
         const currentType = typeSelect.value;
-        const currentTag = tagSelect.value || urlTag || '';
-        if (currentTag && !options.tags.includes(currentTag)) options.tags.unshift(currentTag);
+        if (urlTag && !options.types.includes(urlTag)) options.types.unshift(urlTag);
         typeSelect.innerHTML = `<option value="">Any</option>${options.types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(this.formatPlaceType(type))}</option>`).join('')}`;
-        tagSelect.innerHTML = `<option value="">Any</option>${options.tags.map(tag => `<option value="${escapeHtml(tag)}">${escapeHtml(this.formatPlaceType(tag))}</option>`).join('')}`;
         if (options.types.includes(currentType)) typeSelect.value = currentType;
-        if (options.tags.includes(currentTag)) tagSelect.value = currentTag;
+        if (urlTag && options.types.includes(urlTag) && !currentType) typeSelect.value = urlTag;
       };
 
       const render = () => {
         const filtered = this.filterBrowseGooglePlaces(places, {
           search: searchInput.value,
           selectedType: typeSelect.value,
-          selectedTag: tagSelect.value,
           minRating: ratingSelect.value
         });
 
         resultsTarget.innerHTML = filtered.length
-          ? filtered.map((place, index) => this.renderGooglePlaceCard(place, index)).join('')
+          ? filtered.map((place, index) => place.source === 'google_places' ? this.renderGooglePlaceCard(place, index) : this.renderRestaurantCard(place)).join('')
           : this.emptyState(places.length ? 'No nearby places matched those filters.' : 'Enter a location to load nearby restaurants.');
         if (resultsCount) resultsCount.textContent = `${filtered.length} place${filtered.length === 1 ? '' : 's'} found`;
         this.bindGooglePlaceButtons(filtered);
+        this.bindSaveButtons();
       };
 
       const setLocationLoading = loading => {
@@ -1318,11 +1461,13 @@
         }
 
         setLocationLoading(true);
+        activeCoords = null;
+        this.rememberSearch(searchInput.value);
         resultsTarget.innerHTML = this.emptyState(`Searching near ${trimmedAddress}...`);
         this.showMessage('browseLocationMessage', 'Loading nearby restaurants from Google Places...', 'info');
 
         try {
-          const payload = await this.searchGooglePlacesByAddress(trimmedAddress, 8000, ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'], 20);
+          const payload = await this.searchGooglePlacesByAddress(trimmedAddress, 12000, ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery'], 60, searchInput.value);
           places = payload.results || [];
           renderFilterOptions();
           render();
@@ -1341,8 +1486,16 @@
       ['input', 'change'].forEach(eventName => {
         searchInput.addEventListener(eventName, render);
         typeSelect.addEventListener(eventName, render);
-        tagSelect.addEventListener(eventName, render);
         ratingSelect.addEventListener(eventName, render);
+      });
+      searchInput.addEventListener('keydown', event => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        if (activeCoords) {
+          loadLocationByCoords(activeCoords.lat, activeCoords.lng, activeCoords.label);
+        } else if (locationInput.value.trim()) {
+          loadLocationSearch(locationInput.value);
+        }
       });
       locationForm.addEventListener('submit', event => {
         event.preventDefault();
@@ -1353,6 +1506,8 @@
 
       const loadLocationByCoords = async (lat, lng, label) => {
         setLocationLoading(true);
+        activeCoords = { lat, lng, label: label || 'My location' };
+        this.rememberSearch(searchInput.value);
         if (useMyLocationBtn) { useMyLocationBtn.disabled = true; useMyLocationBtn.textContent = 'Locating...'; }
         locationInput.value = label || 'My location';
         resultsTarget.innerHTML = this.emptyState('Finding restaurants near you...');
@@ -1361,9 +1516,10 @@
         try {
           const results = await this.fetchNearbyGooglePlaces(
             { lat, lng },
-            8000,
-            ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway'],
-            20
+            12000,
+            ['restaurant', 'cafe', 'bar', 'bakery', 'meal_takeaway', 'meal_delivery'],
+            60,
+            searchInput.value
           );
           places = results;
           renderFilterOptions();
@@ -1429,6 +1585,12 @@
         const average = reviews.length ? (reviews.reduce((sum, review) => sum + Number(review.rating), 0) / reviews.length).toFixed(1) : restaurant.rating.toFixed(1);
         const tagLinks = this.renderRestaurantTagLinks(restaurant.tags || []);
         const reviewHref = `write-review.html?restaurantId=${encodeRouteValue(restaurant.id)}`;
+        const websiteButton = restaurant.websiteUri
+          ? `<a class="btn btn-outline-dark btn-sm" href="${escapeHtml(restaurant.websiteUri)}" target="_blank" rel="noopener noreferrer">Visit website</a>`
+          : '';
+        const mapButton = restaurant.googleMapsUri || (restaurant.lat != null && restaurant.lng != null)
+          ? `<a class="btn btn-outline-dark btn-sm" href="${this.googleMapsUrl(restaurant)}" target="_blank" rel="noopener noreferrer">Open map</a>`
+          : '';
         document.getElementById('restaurantHero').innerHTML = `
           <p class="eyebrow mb-2">Restaurant details</p>
           <div class="row g-4 align-items-center">
@@ -1447,16 +1609,16 @@
         document.getElementById('restaurantAbout').innerHTML = `
           <h2 class="h4 fw-bold mb-3">About this place</h2>
           <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
+          <div class="d-flex flex-wrap gap-2 mb-3">${websiteButton}${mapButton}</div>
           <div class="d-flex flex-wrap gap-2 align-items-center"><strong>Popular tags:</strong> ${tagLinks || '<span class="text-secondary">No tags yet.</span>'}</div>
         `;
-        document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).length ? (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('') : this.emptyState('No dishes are listed yet. You can still review the restaurant.');
         document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
         document.getElementById('restaurantSidebar').innerHTML = `
           <h3 class="h5 fw-bold mb-3">Quick facts</h3>
           <p class="mb-2"><strong>Cuisine:</strong> ${escapeHtml(restaurant.cuisine)}</p>
           <p class="mb-2"><strong>Price range:</strong> ${escapeHtml(restaurant.price)}</p>
           <div class="mb-2 d-flex flex-wrap gap-2 align-items-center"><strong>Average rating:</strong> ${this.renderRatingStars(average)}</div>
-          <p class="mb-0"><strong>Dishes listed:</strong> ${(restaurant.dishes || []).length}</p>
+          <p class="mb-0"><strong>Reviews:</strong> ${reviews.length}</p>
         `;
         document.querySelectorAll('a[href="write-review.html"]').forEach(link => {
           link.href = reviewHref;
@@ -1471,47 +1633,7 @@
     },
 
     async initDishPage() {
-      const params = new URLSearchParams(window.location.search);
-      const restaurantId = params.get('restaurant');
-      const dishId = params.get('dish');
-      if (!restaurantId || !dishId) return;
-      try {
-        const [restaurant, dish, reviews] = await Promise.all([
-          this.api(`/api/restaurants/${restaurantId}`),
-          this.api(`/api/dishes/${restaurantId}/${dishId}`),
-          this.api(`/api/restaurants/${restaurantId}/reviews`)
-        ]);
-        this.upsertRestaurant(restaurant);
-        const dishReviews = reviews.filter(review => review.dishId === dishId);
-        document.getElementById('dishHero').innerHTML = `
-          <p class="eyebrow mb-2">Dish details</p>
-          <div class="row g-4 align-items-center">
-            <div class="col-lg-8">
-              <h1 class="fw-bold mb-3">${escapeHtml(dish.name)}</h1>
-              <p class="text-secondary mb-3">From <a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">${escapeHtml(restaurant.name)}</a></p>
-              <div class="d-flex flex-wrap">
-                ${this.renderRatingStars(dish.rating)}
-                <span class="price-pill">$${dish.price}</span>
-                <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
-              </div>
-            </div>
-            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage({ ...dish, cuisine: restaurant.cuisine, tags: restaurant.tags })}" alt="${escapeHtml(dish.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
-          </div>
-        `;
-        document.getElementById('dishDetails').innerHTML = `
-          <h2 class="h4 fw-bold mb-3">About this dish</h2>
-          <p class="text-secondary">${escapeHtml(dish.description)}</p>
-          <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${escapeHtml(restaurant.name)} • ${escapeHtml(restaurant.suburb)}</p>
-        `;
-        document.getElementById('dishReviews').innerHTML = dishReviews.length ? dishReviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No dish reviews yet.');
-        document.querySelector('a[href="write-review.html"]')?.setAttribute('href', `write-review.html?restaurantId=${encodeRouteValue(restaurant.id)}&dishId=${encodeRouteValue(dish.id)}`);
-        document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${encodeRouteValue(restaurant.id)}`;
-        document.getElementById('saveDishBtn').addEventListener('click', async () => {
-          await this.saveDish(restaurantId, dishId, 'saveDishMessage');
-        });
-      } catch (error) {
-        this.showFullPageNotice(error.message, 'browse.html');
-      }
+      this.showFullPageNotice('BiteScout now reviews places only, so dish pages have been removed.', 'browse.html');
     },
 
     async initWriteReview() {
@@ -1521,30 +1643,15 @@
         return;
       }
       const restaurantSelect = document.getElementById('reviewRestaurantSelect');
-      const dishSelect = document.getElementById('reviewDishSelect');
       restaurantSelect.innerHTML = this.state.restaurants.map(restaurant => `<option value="${escapeHtml(restaurant.id)}">${escapeHtml(restaurant.name)}</option>`).join('');
-      const fillDishes = restaurantId => {
-        const restaurant = this.getRestaurantById(restaurantId);
-        const dishes = restaurant && restaurant.dishes ? restaurant.dishes : [];
-        dishSelect.innerHTML = `<option value="">Restaurant review only</option>${dishes.map(dish => `<option value="${escapeHtml(dish.id)}">${escapeHtml(dish.name)}</option>`).join('')}`;
-      };
-      restaurantSelect.addEventListener('change', async () => {
-        if (!this.getRestaurantById(restaurantSelect.value)?.dishes) {
-          this.upsertRestaurant(await this.api(`/api/restaurants/${restaurantSelect.value}`));
-        }
-        fillDishes(restaurantSelect.value);
-      });
       const params = new URLSearchParams(window.location.search);
       const presetRestaurant = params.get('restaurantId');
-      const presetDish = params.get('dishId');
       if (presetRestaurant) {
-        if (!this.getRestaurantById(presetRestaurant)?.dishes) {
+        if (!this.getRestaurantById(presetRestaurant)) {
           this.upsertRestaurant(await this.api(`/api/restaurants/${presetRestaurant}`));
         }
         restaurantSelect.value = presetRestaurant;
       }
-      fillDishes(restaurantSelect.value);
-      if (presetDish) dishSelect.value = presetDish;
       document.getElementById('writeReviewForm').addEventListener('submit', async event => {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -1742,8 +1849,7 @@
       await Promise.all([this.loadReviews(true), this.loadFavourites(true)]);
       const myReviews = this.getAllReviews().filter(review => review.userId === currentUser.id);
       const favouriteRestaurants = this.state.favourites.restaurants;
-      const favouriteDishes = this.state.favourites.dishes;
-      const favouriteCount = favouriteRestaurants.length + favouriteDishes.length;
+      const favouriteCount = favouriteRestaurants.length;
       const selectedAvatar = currentUser.avatarUrl || `preset:${DEFAULT_AVATAR_ID}`;
       const cuisineOptions = this.getCuisineOptions().map(cuisine => `<option value="${escapeHtml(cuisine)}"${cuisine === currentUser.preferredCuisine ? ' selected' : ''}>${escapeHtml(cuisine)}</option>`).join('');
       document.getElementById('profileHeader').innerHTML = `
@@ -1780,10 +1886,7 @@
       `;
       this.bindProfileEditor(currentUser);
       document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(review => this.renderReviewCard(review, true)).join('') : this.emptyState('You have not written any reviews yet.');
-      const favouriteHtml = [
-        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`),
-        ...favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}" class="btn btn-sm btn-primary">Open</a></div>`)
-      ].join('');
+      const favouriteHtml = favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`).join('');
       document.getElementById('profileFavourites').innerHTML = favouriteHtml || this.emptyState('Nothing saved yet.');
     },
 
@@ -1803,7 +1906,6 @@
 
     async initFavourites() {
       const restaurantContainer = document.getElementById('favouriteRestaurants');
-      const dishContainer = document.getElementById('favouriteDishes');
       if (!this.getCurrentUser()) {
         this.showFullPageNotice('Please log in to view your favourites.', 'login.html');
         return;
@@ -1811,12 +1913,9 @@
       try {
         await this.loadFavourites(true);
         const favouriteRestaurants = this.state.favourites.restaurants;
-        const favouriteDishes = this.state.favourites.dishes;
-        restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
-        dishContainer.innerHTML = favouriteDishes.length ? favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
+        restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">View</a></div>`).join('') : this.emptyState('No saved places yet.');
       } catch (error) {
         restaurantContainer.innerHTML = this.emptyState(error.message);
-        dishContainer.innerHTML = this.emptyState(error.message);
       }
     },
 
@@ -1940,29 +2039,13 @@
     },
 
     async saveDish(restaurantId, dishId, targetId = '') {
-      if (!this.getCurrentUser()) {
-        if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
-        return;
-      }
-      try {
-        await this.api('/api/favourites/dishes', { method: 'POST', body: { restaurantId, dishId } });
-        this.state.favourites = { restaurants: [], dishes: [] };
-        await this.loadFavourites(true);
-        if (targetId) this.showMessage(targetId, 'Dish saved to favourites.', 'success');
-      } catch (error) {
-        if (targetId) this.showMessage(targetId, error.message, 'error');
-      }
+      if (targetId) this.showMessage(targetId, 'BiteScout now saves places only.', 'error');
     },
 
     bindSaveButtons() {
       document.querySelectorAll('.save-restaurant-trigger').forEach(button => {
         button.onclick = async () => {
           await this.saveRestaurant(button.dataset.id);
-        };
-      });
-      document.querySelectorAll('.save-dish-trigger').forEach(button => {
-        button.onclick = async () => {
-          await this.saveDish(button.dataset.restaurant, button.dataset.id);
         };
       });
     },

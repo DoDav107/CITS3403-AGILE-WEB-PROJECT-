@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BiteScout | Dish details</title>
+  <title>BiteScout | Place reviews only</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -15,30 +15,20 @@
   <main>
     
 <section class="py-5 page-banner border-bottom">
-  <div class="container" id="dishHero"></div>
+  <div class="container">
+    <p class="eyebrow mb-2">Place reviews only</p>
+    <h1 class="fw-bold mb-3">BiteScout now reviews places</h1>
+    <p class="text-secondary mb-0">Dish pages have been removed so all reviews, saves, and recommendations focus on restaurants, cafes, and other places.</p>
+  </div>
 </section>
 <section class="py-4">
   <div class="container">
-    <div class="row g-4">
-      <div class="col-lg-8">
-        <div class="glass-card p-4 mb-4" id="dishDetails"></div>
-        <div class="glass-card p-4">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h2 class="h4 fw-bold mb-0">Dish reviews</h2>
-            <a href="write-review.html" class="btn btn-sm btn-primary">Review this dish</a>
-          </div>
-          <div id="dishReviews"></div>
-        </div>
-      </div>
-      <div class="col-lg-4">
-        <div class="glass-card p-4">
-          <h3 class="h5 fw-bold">Quick actions</h3>
-          <div class="d-grid gap-2">
-            <button id="saveDishBtn" class="btn btn-primary">Save dish</button>
-            <a id="backToRestaurantLink" class="btn btn-outline-dark" href="#">Back to restaurant</a>
-          </div>
-          <div id="saveDishMessage" class="small mt-3"></div>
-        </div>
+    <div class="glass-card p-5 text-center">
+      <h2 class="h4 fw-bold mb-3">Find a place instead</h2>
+      <p class="text-secondary mb-4">Browse nearby places, save favourites, and write reviews for the venue itself.</p>
+      <div class="d-flex justify-content-center gap-3 flex-wrap">
+        <a href="browse.html" class="btn btn-primary">Browse places</a>
+        <a href="write-review.html" class="btn btn-outline-dark">Write a place review</a>
       </div>
     </div>
   </div>

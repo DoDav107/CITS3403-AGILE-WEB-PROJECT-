@@ -8,8 +8,29 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 PLACES_NEARBY_URL = "https://places.googleapis.com/v1/places:searchNearby"
+PLACES_TEXT_SEARCH_URL = "https://places.googleapis.com/v1/places:searchText"
 GEOCODE_URL = "https://maps.googleapis.com/maps/api/geocode/json"
 PLACE_PHOTO_MEDIA_URL = "https://places.googleapis.com/v1/{photo_name}/media"
+TEXT_SEARCH_PAGE_SIZE = 20
+PLACES_FIELD_MASK = (
+    "places.id,"
+    "places.displayName,"
+    "places.formattedAddress,"
+    "places.location,"
+    "places.rating,"
+    "places.primaryType,"
+    "places.types,"
+    "places.photos,"
+    "places.websiteUri,"
+    "places.googleMapsUri"
+)
+
+BLOCKED_PRIMARY_TYPES = {
+    "gas_station",
+    "indoor_playground",
+    "playground",
+    "amusement_center",
+}
 
 
 class GooglePlacesError(Exception):
@@ -52,29 +73,77 @@ def geocode_address(api_key, address):
     }
 
 
-def search_nearby_places(api_key, lat, lng, radius=8000, included_types=None, max_result_count=12):
-    api_key = get_api_key(api_key)
+def place_to_result(place):
+    primary_type = place.get("primaryType", "")
+    if primary_type in BLOCKED_PRIMARY_TYPES:
+        return None
 
-    if included_types is None or len(included_types) == 0:
-        included_types = ["restaurant", "cafe"]
+    return {
+        "id": place.get("id"),
+        "name": place.get("displayName", {}).get("text", ""),
+        "address": place.get("formattedAddress", ""),
+        "lat": place.get("location", {}).get("latitude"),
+        "lng": place.get("location", {}).get("longitude"),
+        "rating": place.get("rating", 0),
+        "primaryType": primary_type,
+        "types": place.get("types", []),
+        "photoName": ((place.get("photos") or [{}])[0].get("name") or ""),
+        "photoAttributions": ((place.get("photos") or [{}])[0].get("authorAttributions") or []),
+        "websiteUri": place.get("websiteUri", ""),
+        "googleMapsUri": place.get("googleMapsUri", ""),
+        "source": "google_places",
+    }
 
+
+def dedupe_places(places, limit):
+    deduped = []
+    seen = set()
+    for place in places:
+        if not place or not place.get("id") or place["id"] in seen:
+            continue
+        seen.add(place["id"])
+        deduped.append(place)
+        if len(deduped) >= limit:
+            break
+    return deduped
+
+
+def request_places(url, api_key, payload):
     headers = {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": api_key,
-        "X-Goog-FieldMask": (
-            "places.id,"
-            "places.displayName,"
-            "places.formattedAddress,"
-            "places.location,"
-            "places.rating,"
-            "places.primaryType,"
-            "places.types,"
-            "places.photos"
-        ),
+        "X-Goog-FieldMask": PLACES_FIELD_MASK,
     }
 
+    response = requests.post(url, json=payload, headers=headers, timeout=15)
+
+    if not response.ok:
+        raise GooglePlacesError(f"Google Places error {response.status_code}: {response.text}", response.status_code)
+
+    return [result for result in (place_to_result(place) for place in response.json().get("places", [])) if result]
+
+
+def request_text_places_page(api_key, payload):
+    headers = {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": api_key,
+        "X-Goog-FieldMask": f"{PLACES_FIELD_MASK},nextPageToken",
+    }
+
+    response = requests.post(PLACES_TEXT_SEARCH_URL, json=payload, headers=headers, timeout=15)
+
+    if not response.ok:
+        raise GooglePlacesError(f"Google Places error {response.status_code}: {response.text}", response.status_code)
+
+    data = response.json()
+    return {
+        "places": [result for result in (place_to_result(place) for place in data.get("places", [])) if result],
+        "nextPageToken": data.get("nextPageToken", ""),
+    }
+
+
+def nearby_payload(lat, lng, radius, included_types, max_result_count):
     payload = {
-        "includedTypes": included_types,
         "maxResultCount": int(max_result_count),
         "rankPreference": "DISTANCE",
         "locationRestriction": {
@@ -87,50 +156,73 @@ def search_nearby_places(api_key, lat, lng, radius=8000, included_types=None, ma
             }
         },
     }
+    if included_types:
+        payload["includedTypes"] = included_types
+    return payload
 
-    response = requests.post(
+
+def search_nearby_places(api_key, lat, lng, radius=8000, included_types=None, max_result_count=12):
+    api_key = get_api_key(api_key)
+
+    if included_types is None or len(included_types) == 0:
+        included_types = ["restaurant", "cafe"]
+    included_types = list(dict.fromkeys(str(place_type) for place_type in included_types if place_type))
+
+    requested_total = max(1, min(int(max_result_count), 80))
+    per_request = min(20, requested_total)
+    results = request_places(
         PLACES_NEARBY_URL,
-        json=payload,
-        headers=headers,
-        timeout=15,
+        api_key,
+        nearby_payload(lat, lng, radius, included_types, per_request),
     )
 
-    if not response.ok:
-        raise GooglePlacesError(f"Google Places error {response.status_code}: {response.text}", response.status_code)
+    if requested_total > 20 or len(included_types) > 2:
+        for place_type in included_types[:10]:
+            if len(dedupe_places(results, requested_total)) >= requested_total:
+                break
+            results.extend(request_places(
+                PLACES_NEARBY_URL,
+                api_key,
+                nearby_payload(lat, lng, radius, [place_type], per_request),
+            ))
 
-    data = response.json()
-    places = data.get("places", [])
+    return dedupe_places(results, requested_total)
+
+
+def search_text_places(api_key, query, lat=None, lng=None, radius=10000, max_result_count=20):
+    api_key = get_api_key(api_key)
+    text_query = str(query or "").strip()
+    if not text_query:
+        return []
+
+    requested_total = max(1, min(int(max_result_count), 60))
+    payload = {
+        "textQuery": text_query,
+        "pageSize": min(TEXT_SEARCH_PAGE_SIZE, requested_total),
+    }
+    if lat is not None and lng is not None:
+        payload["locationBias"] = {
+            "circle": {
+                "center": {
+                    "latitude": float(lat),
+                    "longitude": float(lng),
+                },
+                "radius": float(radius),
+            }
+        }
 
     results = []
-    blocked_primary_types = {
-        "gas_station",
-        "indoor_playground",
-        "playground",
-        "amusement_center",
-    }
+    page_payload = dict(payload)
+    while len(dedupe_places(results, requested_total)) < requested_total:
+        page = request_text_places_page(api_key, page_payload)
+        results.extend(page["places"])
+        next_page_token = page.get("nextPageToken")
+        if not next_page_token:
+            break
+        page_payload = dict(payload)
+        page_payload["pageToken"] = next_page_token
 
-    for place in places:
-        primary_type = place.get("primaryType", "")
-        rating = place.get("rating", 0)
-
-        if primary_type in blocked_primary_types:
-            continue
-
-        results.append({
-            "id": place.get("id"),
-            "name": place.get("displayName", {}).get("text", ""),
-            "address": place.get("formattedAddress", ""),
-            "lat": place.get("location", {}).get("latitude"),
-            "lng": place.get("location", {}).get("longitude"),
-            "rating": rating,
-            "primaryType": primary_type,
-            "types": place.get("types", []),
-            "photoName": ((place.get("photos") or [{}])[0].get("name") or ""),
-            "photoAttributions": ((place.get("photos") or [{}])[0].get("authorAttributions") or []),
-            "source": "google_places",
-        })
-
-    return results
+    return dedupe_places(results, requested_total)
 
 
 def get_photo_media_uri(api_key, photo_name, max_width=900, max_height=650):

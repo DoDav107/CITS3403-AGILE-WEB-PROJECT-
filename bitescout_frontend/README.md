@@ -9,7 +9,6 @@ This is a front-end starter for your Agile Web Development food discovery projec
 - Login page
 - Browse/search restaurant page
 - Restaurant details page
-- Dish details page
 - Write review page
 - Edit review page
 - User profile page
@@ -35,5 +34,5 @@ For the geolocation feature, run the site with a local server or localhost for t
 ## Notes
 This is a front-end prototype.
 - Login and signup are mocked with localStorage.
-- Reviews and favourites are stored in localStorage.
+- Place reviews and favourites are stored in localStorage.
 - Real security, account handling, and persistent multi-user data should be implemented later with your Flask backend.

@@ -5,8 +5,8 @@ This is a Flask + SQLite backend starter for the BiteScout frontend.
 ## What it includes
 - Flask app factory structure
 - SQLite database with SQLAlchemy
-- Seed data for users, restaurants, dishes, and reviews
-- JSON API routes for restaurants, dishes, users, auth, reviews, and favourites
+- Seed data for users, restaurants, and place reviews
+- JSON API routes for restaurants, users, auth, reviews, favourites, and Google Places
 - Session-based login/logout
 - Password hashing with Werkzeug
 
@@ -25,7 +25,6 @@ The server will run on `http://127.0.0.1:5000`.
 - `GET /api/restaurants`
 - `GET /api/restaurants/<id>`
 - `GET /api/restaurants/<id>/reviews`
-- `GET /api/dishes/<restaurant_id>/<dish_id>`
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
 - `POST /api/auth/logout`

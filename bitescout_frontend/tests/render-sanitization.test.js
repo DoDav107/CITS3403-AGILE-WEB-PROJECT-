@@ -32,11 +32,10 @@ test('Google place filter options include primary types and place tags', () => {
     { primaryType: 'restaurant', types: ['restaurant', 'meal_takeaway'] }
   ]);
 
-  assert.deepEqual(options.types, ['cafe', 'restaurant']);
-  assert.deepEqual(options.tags, ['bakery', 'meal_takeaway', 'sushi_restaurant']);
+  assert.deepEqual(options.types, ['bakery', 'cafe', 'meal_takeaway', 'restaurant', 'sushi_restaurant']);
 });
 
-test('Browse Google place filters combine search, type, tag, and rating', () => {
+test('Browse Google place filters combine normalized search, type, and rating', () => {
   const places = [
     {
       id: 'p1',
@@ -65,9 +64,8 @@ test('Browse Google place filters combine search, type, tag, and rating', () => 
   ];
 
   const filtered = App.filterBrowseGooglePlaces(places, {
-    search: 'ramen',
+    search: 'noodles',
     selectedType: 'restaurant',
-    selectedTag: 'ramen_restaurant',
     minRating: 4
   });
 
@@ -118,9 +116,6 @@ test('review card escapes user-controlled review and profile fields', () => {
     getRestaurantById() {
       return { name: '<img src=x onerror=alert(1)>' };
     },
-    getDish() {
-      return { name: '<b>Danger Dish</b>' };
-    },
     formatDate() {
       return '2026-04-22';
     },
@@ -146,6 +141,6 @@ test('review card escapes user-controlled review and profile fields', () => {
   assert.doesNotMatch(html, /<script/i);
   assert.doesNotMatch(html, /<img src=x onerror/i);
   assert.match(html, /&lt;script&gt;alert\(1\)&lt;\/script&gt;/);
-  assert.match(html, /&lt;b&gt;Danger Dish&lt;\/b&gt;/);
+  assert.doesNotMatch(html, /Danger Dish/);
   assert.match(html, /Loved it &lt;script&gt;alert\(1\)&lt;\/script&gt;/);
 });
