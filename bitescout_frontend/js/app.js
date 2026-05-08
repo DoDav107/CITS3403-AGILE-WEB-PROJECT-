@@ -85,8 +85,146 @@
     { id: 'avatar-curry', label: 'Curry', initials: 'CU', image: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=240&h=240' }
   ];
 
-  const GOOGLE_PLACE_SYSTEM_TYPES = new Set(['point_of_interest', 'establishment', 'food', 'store']);
-  const GOOGLE_PLACE_BROAD_TYPES = new Set(['restaurant', 'cafe', 'bar']);
+  const RESTAURANT_IMAGE_LIBRARY = {
+    vietnamese: [
+      'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=900'
+    ],
+    cafe: [
+      'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=900'
+    ],
+    bakery: [
+      'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1517433367423-c7e5b0f35086?auto=format&fit=crop&q=80&w=900'
+    ],
+    sushi: [
+      'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&q=80&w=900'
+    ],
+    ramen: [
+      'https://images.unsplash.com/photo-1612929633738-8fe44f7ec841?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1591814468924-caf88d1232e1?auto=format&fit=crop&q=80&w=900'
+    ],
+    burgers: [
+      'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=900'
+    ],
+    italian: [
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1551183053-bf91a1d81141?auto=format&fit=crop&q=80&w=900'
+    ],
+    pizza: [
+      'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=900'
+    ],
+    chicken: [
+      'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1527477396000-e27163b481c2?auto=format&fit=crop&q=80&w=900'
+    ],
+    drinks: [
+      'https://images.unsplash.com/photo-1558857563-b371033873b8?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&q=80&w=900'
+    ],
+    korean: [
+      'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?auto=format&fit=crop&q=80&w=900'
+    ],
+    thai: [
+      'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&q=80&w=900'
+    ],
+    mexican: [
+      'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1565299507177-b0ac66763828?auto=format&fit=crop&q=80&w=900'
+    ],
+    dessert: [
+      'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=900'
+    ],
+    default: [
+      'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=900',
+      'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=900'
+    ]
+  };
+
+  const RESTAURANT_IMAGE_OVERRIDES = {
+    r1: RESTAURANT_IMAGE_LIBRARY.vietnamese[0],
+    r2: RESTAURANT_IMAGE_LIBRARY.cafe[0],
+    r3: RESTAURANT_IMAGE_LIBRARY.sushi[0],
+    r4: RESTAURANT_IMAGE_LIBRARY.burgers[0],
+    r5: RESTAURANT_IMAGE_LIBRARY.italian[0],
+    r6: RESTAURANT_IMAGE_LIBRARY.drinks[0],
+    r7: RESTAURANT_IMAGE_LIBRARY.ramen[0],
+    r8: RESTAURANT_IMAGE_LIBRARY.korean[0],
+    r9: RESTAURANT_IMAGE_LIBRARY.thai[0],
+    r10: RESTAURANT_IMAGE_LIBRARY.mexican[0]
+  };
+
+  const PAGE_AMBIENT_PHOTOS = {
+    browse: [
+      RESTAURANT_IMAGE_LIBRARY.cafe[0],
+      RESTAURANT_IMAGE_LIBRARY.ramen[0],
+      RESTAURANT_IMAGE_LIBRARY.bakery[0],
+      RESTAURANT_IMAGE_LIBRARY.sushi[0],
+      RESTAURANT_IMAGE_LIBRARY.drinks[0]
+    ],
+    recommendations: [
+      RESTAURANT_IMAGE_LIBRARY.vietnamese[0],
+      RESTAURANT_IMAGE_LIBRARY.sushi[1],
+      RESTAURANT_IMAGE_LIBRARY.thai[0],
+      RESTAURANT_IMAGE_LIBRARY.italian[1],
+      RESTAURANT_IMAGE_LIBRARY.drinks[1]
+    ],
+    favourites: [
+      RESTAURANT_IMAGE_LIBRARY.dessert[0],
+      RESTAURANT_IMAGE_LIBRARY.italian[0],
+      RESTAURANT_IMAGE_LIBRARY.mexican[0],
+      RESTAURANT_IMAGE_LIBRARY.cafe[1]
+    ],
+    profile: [
+      RESTAURANT_IMAGE_LIBRARY.vietnamese[0],
+      RESTAURANT_IMAGE_LIBRARY.cafe[0],
+      RESTAURANT_IMAGE_LIBRARY.drinks[0],
+      RESTAURANT_IMAGE_LIBRARY.sushi[0]
+    ],
+    'write-review': [
+      RESTAURANT_IMAGE_LIBRARY.bakery[0],
+      RESTAURANT_IMAGE_LIBRARY.italian[2],
+      RESTAURANT_IMAGE_LIBRARY.burgers[1],
+      RESTAURANT_IMAGE_LIBRARY.cafe[2]
+    ],
+    'edit-review': [
+      RESTAURANT_IMAGE_LIBRARY.bakery[1],
+      RESTAURANT_IMAGE_LIBRARY.italian[1],
+      RESTAURANT_IMAGE_LIBRARY.sushi[0]
+    ],
+    restaurant: [
+      RESTAURANT_IMAGE_LIBRARY.default[0],
+      RESTAURANT_IMAGE_LIBRARY.italian[0],
+      RESTAURANT_IMAGE_LIBRARY.ramen[0]
+    ],
+    dish: [
+      RESTAURANT_IMAGE_LIBRARY.default[0],
+      RESTAURANT_IMAGE_LIBRARY.dessert[0],
+      RESTAURANT_IMAGE_LIBRARY.thai[1]
+    ],
+    about: [
+      RESTAURANT_IMAGE_LIBRARY.cafe[1],
+      RESTAURANT_IMAGE_LIBRARY.drinks[2],
+      RESTAURANT_IMAGE_LIBRARY.default[1]
+    ],
+    default: [
+      RESTAURANT_IMAGE_LIBRARY.default[0],
+      RESTAURANT_IMAGE_LIBRARY.cafe[0],
+      RESTAURANT_IMAGE_LIBRARY.italian[0]
+    ]
+  };
+
 
   const data = root.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
 
@@ -95,7 +233,7 @@
       currentUser: null,
       restaurants: [],
       reviews: [],
-      favourites: { restaurants: [] },
+      favourites: { restaurants: [], dishes: [] },
       chatHistory: []
     },
 
@@ -157,10 +295,10 @@
 
     async loadFavourites(force = false) {
       if (!this.state.currentUser) {
-        this.state.favourites = { restaurants: [] };
+        this.state.favourites = { restaurants: [], dishes: [] };
         return this.state.favourites;
       }
-      if (this.state.favourites.restaurants.length && !force) {
+      if ((this.state.favourites.restaurants.length || this.state.favourites.dishes.length) && !force) {
         return this.state.favourites;
       }
       this.state.favourites = await this.api('/api/favourites');
@@ -209,6 +347,7 @@
         login: () => this.initLogin(),
         browse: () => this.initBrowse(),
         restaurant: () => this.initRestaurantPage(),
+        dish: () => this.initDishPage(),
         'write-review': () => this.initWriteReview(),
         'edit-review': () => this.initEditReview(),
         profile: () => this.initProfile(),
@@ -229,6 +368,7 @@
       const footer = document.getElementById('site-footer');
       const firstName = user ? escapeHtml((user.name || 'User').split(' ')[0]) : '';
       const userAvatar = user ? escapeHtml(this.getUserAvatarUrl(user)) : '';
+      this.renderAmbientMotion();
       if (header) {
         header.innerHTML = `
           <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
@@ -309,6 +449,46 @@
       this.highlightActiveNav();
     },
 
+    renderAmbientMotion() {
+      if (typeof document === 'undefined') return;
+
+      const existingLayer = document.getElementById('pageFoodMotion');
+      if (existingLayer) existingLayer.remove();
+
+      const page = document.body.dataset.page || 'default';
+      if (page === 'home') return;
+
+      const photos = PAGE_AMBIENT_PHOTOS[page] || PAGE_AMBIENT_PHOTOS.default;
+      const layer = document.createElement('div');
+      layer.id = 'pageFoodMotion';
+      layer.className = `page-food-motion page-food-motion-${page}`;
+      layer.setAttribute('aria-hidden', 'true');
+
+      const positions = [
+        { left: '4%', top: '16%', size: '12vw', delay: '-1s', duration: '18s', rotate: '-8deg' },
+        { left: '76%', top: '12%', size: '10vw', delay: '-5s', duration: '21s', rotate: '7deg' },
+        { left: '7%', top: '66%', size: '9vw', delay: '-8s', duration: '23s', rotate: '10deg' },
+        { left: '82%', top: '62%', size: '13vw', delay: '-3s', duration: '20s', rotate: '-6deg' },
+        { left: '50%', top: '78%', size: '8vw', delay: '-11s', duration: '24s', rotate: '4deg' }
+      ];
+
+      photos.slice(0, positions.length).forEach((photo, index) => {
+        const item = document.createElement('span');
+        const position = positions[index];
+        item.className = 'food-float';
+        item.style.setProperty('--float-image', `url("${photo}")`);
+        item.style.setProperty('--float-left', position.left);
+        item.style.setProperty('--float-top', position.top);
+        item.style.setProperty('--float-size', position.size);
+        item.style.setProperty('--float-delay', position.delay);
+        item.style.setProperty('--float-duration', position.duration);
+        item.style.setProperty('--float-rotate', position.rotate);
+        layer.appendChild(item);
+      });
+
+      document.body.appendChild(layer);
+    },
+
     navLink(href, label) {
       return `<li class="nav-item"><a class="nav-link" href="${href}">${label}</a></li>`;
     },
@@ -379,6 +559,12 @@
 
     getRestaurantById(id) {
       return this.state.restaurants.find(r => r.id === id) || data.restaurants.find(r => r.id === id) || null;
+    },
+
+    getDish(restaurantId, dishId) {
+      const restaurant = this.getRestaurantById(restaurantId);
+      if (!restaurant || !restaurant.dishes) return null;
+      return restaurant.dishes.find(dish => dish.id === dishId) || null;
     },
 
     getAllReviews() {
@@ -458,7 +644,61 @@
       return [...chosen, ...otherRestaurants.slice(0, limit - chosen.length)];
     },
 
+    hashString(value = '') {
+      const str = String(value || '');
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash);
+    },
+
+    imageSignature(item) {
+      if (!item || typeof item !== 'object') return String(item || '');
+      const tags = Array.isArray(item.tags) ? item.tags.join(' ') : item.tags;
+      const types = Array.isArray(item.types) ? item.types.join(' ') : item.types;
+      return [
+        item.id,
+        item.name,
+        item.cuisine,
+        item.primaryType,
+        tags,
+        types,
+        item.blurb,
+        item.description,
+        item.address
+      ].filter(Boolean).join(' ');
+    },
+
+    imageCategoryFor(item) {
+      const signature = this.imageSignature(item).toLowerCase();
+      if (/\b(ramen|tonkotsu|gyoza)\b/.test(signature)) return 'ramen';
+      if (/\b(sushi|sashimi|omakase|aburi)\b/.test(signature)) return 'sushi';
+      if (/\b(cafe|coffee|brunch|cold brew|espresso|pastr|bakery|patisserie|sourdough|croissant)\b/.test(signature)) {
+        return /\b(bakery|patisserie|pastr|croissant)\b/.test(signature) ? 'bakery' : 'cafe';
+      }
+      if (/\b(boba|bubble tea|milk tea|fruit tea|tea house|drinks|jasmine|mango)\b/.test(signature)) return 'drinks';
+      if (/\b(vietnamese|pho|banh mi|saigon|noodles|lemongrass)\b/.test(signature)) return 'vietnamese';
+      if (/\b(pizza|domino|domino's|woodfired)\b/.test(signature)) return 'pizza';
+      if (/\b(chicken|nando|nando's|peri peri|tenders)\b/.test(signature)) return 'chicken';
+      if (/\b(pasta|italian|rigatoni|truffle)\b/.test(signature)) return 'italian';
+      if (/\b(burger|burgers|smash|grill)\b/.test(signature)) return 'burgers';
+      if (/\b(korean|bibimbap|kimchi|gochujang|korean bbq|soy garlic)\b/.test(signature)) return 'korean';
+      if (/\b(thai|pad thai|green curry|curry|wok|spicy)\b/.test(signature)) return 'thai';
+      if (/\b(mexican|taco|tacos|birria|elote|quesadilla|cantina)\b/.test(signature)) return 'mexican';
+      if (/\b(cake|dessert|cheesecake|sweet)\b/.test(signature)) return 'dessert';
+      return 'default';
+    },
+
+    getGooglePlacePhotoUrl(place = {}) {
+      const photoName = String(place.photoName || '').trim();
+      if (!photoName) return '';
+      return `/api/google/photo?name=${encodeURIComponent(photoName)}&maxWidthPx=900&maxHeightPx=650`;
+    },
+
     getGooglePlaceFilterOptions(places = []) {
+      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store']);
       const typeSet = new Set();
       const tagSet = new Set();
 
@@ -468,11 +708,7 @@
 
         (place.types || []).forEach(type => {
           const normalizedType = String(type || '').trim();
-          if (!normalizedType || GOOGLE_PLACE_SYSTEM_TYPES.has(normalizedType)) return;
-          if (GOOGLE_PLACE_BROAD_TYPES.has(normalizedType)) {
-            typeSet.add(normalizedType);
-            return;
-          }
+          if (!normalizedType || ignoredTags.has(normalizedType)) return;
           if (primaryType && normalizedType === primaryType) return;
           tagSet.add(normalizedType);
         });
@@ -494,34 +730,23 @@
         .join('');
     },
 
-    getRestaurantImage(identifier) {
-      const RESTAURANT_IMAGES = [
-        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1506354666786-959d6d497f1a?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&q=80&w=900&h=600',
-        'https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&q=80&w=900&h=600'
-      ];
-      const str = String(identifier || '');
-      if (!str) return RESTAURANT_IMAGES[0];
-      let hash = 0;
-      for (let i = 0; i < str.length; i++) {
-        hash = ((hash << 5) - hash) + str.charCodeAt(i);
-        hash |= 0;
+    getRestaurantImage(item) {
+      const googlePhotoUrl = item && typeof item === 'object' ? this.getGooglePlacePhotoUrl(item) : '';
+      if (googlePhotoUrl) return googlePhotoUrl;
+
+      const signature = this.imageSignature(item);
+      if (item && typeof item === 'object' && item.id && RESTAURANT_IMAGE_OVERRIDES[item.id]) {
+        return RESTAURANT_IMAGE_OVERRIDES[item.id];
       }
-      return RESTAURANT_IMAGES[Math.abs(hash) % RESTAURANT_IMAGES.length];
+
+      const category = this.imageCategoryFor(item);
+      const images = RESTAURANT_IMAGE_LIBRARY[category] || RESTAURANT_IMAGE_LIBRARY.default;
+      return images[this.hashString(signature || category) % images.length];
     },
 
     renderRestaurantCard(restaurant) {
       const distanceHtml = restaurant.distanceKm != null ? `<span class="distance-pill">📍 ${restaurant.distanceKm.toFixed(1)} km</span>` : '';
-      const imageUrl = this.getRestaurantImage(restaurant.id || restaurant.name);
+      const imageUrl = this.getRestaurantImage(restaurant);
       const imageHtml = `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" />`;
       const restaurantId = encodeRouteValue(restaurant.id);
       return `
@@ -546,9 +771,31 @@
       `;
     },
 
+    renderDishCard(restaurant, dish) {
+      const restaurantId = encodeRouteValue(restaurant.id);
+      const dishId = encodeRouteValue(dish.id);
+      return `
+        <div class="col-md-6">
+          <div class="dish-card p-3">
+            <h3 class="h5 fw-bold mb-2">${escapeHtml(dish.name)}</h3>
+            <div class="d-flex flex-wrap mb-2">
+              ${this.renderRatingStars(dish.rating)}
+              <span class="price-pill">$${dish.price}</span>
+            </div>
+            <p class="text-secondary">${escapeHtml(dish.description)}</p>
+            <div class="d-flex gap-2">
+              <a class="btn btn-primary btn-sm" href="dish.html?restaurant=${restaurantId}&dish=${dishId}">View dish</a>
+              <button class="btn btn-outline-dark btn-sm save-dish-trigger" data-id="${dishId}" data-restaurant="${restaurantId}">Save</button>
+            </div>
+          </div>
+        </div>
+      `;
+    },
+
     renderReviewCard(review, own = false) {
       const user = this.getDisplayUser(review.userId, review.user);
       const restaurant = this.getRestaurantById(review.restaurantId);
+      const dish = review.dishId ? this.getDish(review.restaurantId, review.dishId) : null;
       const editable = own && !String(review.id).startsWith('sr');
       const manageButton = editable ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${encodeRouteValue(review.id)}">Edit</a>` : '';
       const reviewMeta = [
@@ -556,6 +803,7 @@
         escapeHtml(this.formatDate(review.createdAt))
       ];
       if (restaurant) reviewMeta.push(escapeHtml(restaurant.name));
+      if (dish) reviewMeta.push(escapeHtml(dish.name));
       return `
         <div class="review-card p-3 mb-3">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
@@ -603,15 +851,8 @@
     },
 
     renderGooglePlaceCard(place, index = 0) {
-      const primaryType = String(place.primaryType || '').trim();
       const tagHtml = (place.types || [])
-        .filter(type => {
-          const normalizedType = String(type || '').trim();
-          return normalizedType
-            && normalizedType !== primaryType
-            && !GOOGLE_PLACE_SYSTEM_TYPES.has(normalizedType)
-            && !GOOGLE_PLACE_BROAD_TYPES.has(normalizedType);
-        })
+        .filter(type => !['point_of_interest', 'establishment', 'food', 'store'].includes(type))
         .slice(0, 3)
         .map(type => `<span class="badge badge-soft">${escapeHtml(this.formatPlaceType(type))}</span>`)
         .join('');
@@ -619,7 +860,7 @@
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3 h-100">
-            <div class="restaurant-image mb-3 position-relative overflow-hidden"><img src="${this.getRestaurantImage(place.id || place.name)}" alt="${escapeHtml(place.name || 'Nearby place')}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div>
+            <div class="restaurant-image mb-3 position-relative overflow-hidden"><img src="${this.getRestaurantImage(place)}" alt="${escapeHtml(place.name || 'Nearby place')}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div>
             <div class="d-flex flex-wrap mb-2">
               ${this.renderRatingStars(place.rating)}
               <span class="cuisine-pill">${escapeHtml(this.formatPlaceType(place.primaryType || 'place'))}</span>
@@ -629,7 +870,6 @@
             <div class="d-flex flex-wrap gap-2 mb-3">${tagHtml}</div>
             <div class="d-flex gap-2">
               <button class="btn btn-primary btn-sm open-google-place-trigger" data-index="${index}">View details</button>
-              <button class="btn btn-outline-dark btn-sm save-google-place-trigger" data-index="${index}">Save</button>
               <a class="btn btn-outline-dark btn-sm" href="${this.googleMapsUrl(place)}" target="_blank" rel="noopener noreferrer">Open map</a>
             </div>
           </div>
@@ -648,7 +888,8 @@
           lng: place.lng,
           rating: place.rating,
           primaryType: place.primaryType,
-          types: place.types || []
+          types: place.types || [],
+          photoName: place.photoName || ''
         }
       });
     },
@@ -666,32 +907,6 @@
           } catch (error) {
             button.disabled = false;
             button.textContent = 'View details';
-            this.showMessage('browseLocationMessage', error.message, 'error');
-          }
-        };
-      });
-      document.querySelectorAll('.save-google-place-trigger').forEach(button => {
-        button.onclick = async () => {
-          const place = places[Number(button.dataset.index)];
-          if (!place) return;
-          if (!this.getCurrentUser()) {
-            this.showMessage('browseLocationMessage', 'Please log in before saving favourites.', 'error');
-            return;
-          }
-          button.disabled = true;
-          button.textContent = 'Saving...';
-          try {
-            const payload = await this.mirrorGooglePlace(place);
-            const saved = await this.saveRestaurant(payload.restaurant.id, 'browseLocationMessage');
-            if (!saved) {
-              button.disabled = false;
-              button.textContent = 'Save';
-              return;
-            }
-            button.textContent = 'Saved';
-          } catch (error) {
-            button.disabled = false;
-            button.textContent = 'Save';
             this.showMessage('browseLocationMessage', error.message, 'error');
           }
         };
@@ -739,12 +954,9 @@
       const minRating = parseFloat(filters.minRating || '0');
 
       return this.filterGooglePlaces(places, Number.isFinite(minRating) ? minRating : 0).filter(place => {
-        const typeLabels = [place.primaryType, ...(place.types || [])]
-          .filter(Boolean)
-          .map(type => this.formatPlaceType(String(type)));
-        const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')} ${typeLabels.join(' ')}`.toLowerCase();
+        const haystack = `${place.name || ''} ${place.address || ''} ${place.primaryType || ''} ${(place.types || []).join(' ')}`.toLowerCase();
         if (search && !haystack.includes(search)) return false;
-        if (selectedType && place.primaryType !== selectedType && !(place.types || []).includes(selectedType)) return false;
+        if (selectedType && place.primaryType !== selectedType) return false;
         if (selectedTag && !(place.types || []).includes(selectedTag) && !haystack.includes(selectedTag.toLowerCase())) return false;
         return true;
       });
@@ -1085,7 +1297,7 @@
 
         resultsTarget.innerHTML = filtered.length
           ? filtered.map((place, index) => this.renderGooglePlaceCard(place, index)).join('')
-          : this.emptyState(places.length ? 'No nearby places matched those filters. Try a broader food or place search.' : 'Enter a location or use your current location to load nearby food places.');
+          : this.emptyState(places.length ? 'No nearby places matched those filters.' : 'Enter a location to load nearby restaurants.');
         if (resultsCount) resultsCount.textContent = `${filtered.length} place${filtered.length === 1 ? '' : 's'} found`;
         this.bindGooglePlaceButtons(filtered);
       };
@@ -1229,7 +1441,7 @@
                 <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
               </div>
             </div>
-            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(restaurant.id || restaurant.name)}" alt="${escapeHtml(restaurant.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
+            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(restaurant)}" alt="${escapeHtml(restaurant.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
           </div>
         `;
         document.getElementById('restaurantAbout').innerHTML = `
@@ -1237,12 +1449,14 @@
           <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
           <div class="d-flex flex-wrap gap-2 align-items-center"><strong>Popular tags:</strong> ${tagLinks || '<span class="text-secondary">No tags yet.</span>'}</div>
         `;
+        document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).length ? (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('') : this.emptyState('No dishes are listed yet. You can still review the restaurant.');
         document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
         document.getElementById('restaurantSidebar').innerHTML = `
           <h3 class="h5 fw-bold mb-3">Quick facts</h3>
           <p class="mb-2"><strong>Cuisine:</strong> ${escapeHtml(restaurant.cuisine)}</p>
           <p class="mb-2"><strong>Price range:</strong> ${escapeHtml(restaurant.price)}</p>
-          <div class="mb-0 d-flex flex-wrap gap-2 align-items-center"><strong>Average rating:</strong> ${this.renderRatingStars(average)}</div>
+          <div class="mb-2 d-flex flex-wrap gap-2 align-items-center"><strong>Average rating:</strong> ${this.renderRatingStars(average)}</div>
+          <p class="mb-0"><strong>Dishes listed:</strong> ${(restaurant.dishes || []).length}</p>
         `;
         document.querySelectorAll('a[href="write-review.html"]').forEach(link => {
           link.href = reviewHref;
@@ -1256,6 +1470,50 @@
       }
     },
 
+    async initDishPage() {
+      const params = new URLSearchParams(window.location.search);
+      const restaurantId = params.get('restaurant');
+      const dishId = params.get('dish');
+      if (!restaurantId || !dishId) return;
+      try {
+        const [restaurant, dish, reviews] = await Promise.all([
+          this.api(`/api/restaurants/${restaurantId}`),
+          this.api(`/api/dishes/${restaurantId}/${dishId}`),
+          this.api(`/api/restaurants/${restaurantId}/reviews`)
+        ]);
+        this.upsertRestaurant(restaurant);
+        const dishReviews = reviews.filter(review => review.dishId === dishId);
+        document.getElementById('dishHero').innerHTML = `
+          <p class="eyebrow mb-2">Dish details</p>
+          <div class="row g-4 align-items-center">
+            <div class="col-lg-8">
+              <h1 class="fw-bold mb-3">${escapeHtml(dish.name)}</h1>
+              <p class="text-secondary mb-3">From <a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">${escapeHtml(restaurant.name)}</a></p>
+              <div class="d-flex flex-wrap">
+                ${this.renderRatingStars(dish.rating)}
+                <span class="price-pill">$${dish.price}</span>
+                <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
+              </div>
+            </div>
+            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage({ ...dish, cuisine: restaurant.cuisine, tags: restaurant.tags })}" alt="${escapeHtml(dish.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
+          </div>
+        `;
+        document.getElementById('dishDetails').innerHTML = `
+          <h2 class="h4 fw-bold mb-3">About this dish</h2>
+          <p class="text-secondary">${escapeHtml(dish.description)}</p>
+          <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${escapeHtml(restaurant.name)} • ${escapeHtml(restaurant.suburb)}</p>
+        `;
+        document.getElementById('dishReviews').innerHTML = dishReviews.length ? dishReviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No dish reviews yet.');
+        document.querySelector('a[href="write-review.html"]')?.setAttribute('href', `write-review.html?restaurantId=${encodeRouteValue(restaurant.id)}&dishId=${encodeRouteValue(dish.id)}`);
+        document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${encodeRouteValue(restaurant.id)}`;
+        document.getElementById('saveDishBtn').addEventListener('click', async () => {
+          await this.saveDish(restaurantId, dishId, 'saveDishMessage');
+        });
+      } catch (error) {
+        this.showFullPageNotice(error.message, 'browse.html');
+      }
+    },
+
     async initWriteReview() {
       const currentUser = this.getCurrentUser();
       if (!currentUser) {
@@ -1263,12 +1521,30 @@
         return;
       }
       const restaurantSelect = document.getElementById('reviewRestaurantSelect');
+      const dishSelect = document.getElementById('reviewDishSelect');
       restaurantSelect.innerHTML = this.state.restaurants.map(restaurant => `<option value="${escapeHtml(restaurant.id)}">${escapeHtml(restaurant.name)}</option>`).join('');
+      const fillDishes = restaurantId => {
+        const restaurant = this.getRestaurantById(restaurantId);
+        const dishes = restaurant && restaurant.dishes ? restaurant.dishes : [];
+        dishSelect.innerHTML = `<option value="">Restaurant review only</option>${dishes.map(dish => `<option value="${escapeHtml(dish.id)}">${escapeHtml(dish.name)}</option>`).join('')}`;
+      };
+      restaurantSelect.addEventListener('change', async () => {
+        if (!this.getRestaurantById(restaurantSelect.value)?.dishes) {
+          this.upsertRestaurant(await this.api(`/api/restaurants/${restaurantSelect.value}`));
+        }
+        fillDishes(restaurantSelect.value);
+      });
       const params = new URLSearchParams(window.location.search);
       const presetRestaurant = params.get('restaurantId');
+      const presetDish = params.get('dishId');
       if (presetRestaurant) {
+        if (!this.getRestaurantById(presetRestaurant)?.dishes) {
+          this.upsertRestaurant(await this.api(`/api/restaurants/${presetRestaurant}`));
+        }
         restaurantSelect.value = presetRestaurant;
       }
+      fillDishes(restaurantSelect.value);
+      if (presetDish) dishSelect.value = presetDish;
       document.getElementById('writeReviewForm').addEventListener('submit', async event => {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -1466,7 +1742,8 @@
       await Promise.all([this.loadReviews(true), this.loadFavourites(true)]);
       const myReviews = this.getAllReviews().filter(review => review.userId === currentUser.id);
       const favouriteRestaurants = this.state.favourites.restaurants;
-      const favouriteCount = favouriteRestaurants.length;
+      const favouriteDishes = this.state.favourites.dishes;
+      const favouriteCount = favouriteRestaurants.length + favouriteDishes.length;
       const selectedAvatar = currentUser.avatarUrl || `preset:${DEFAULT_AVATAR_ID}`;
       const cuisineOptions = this.getCuisineOptions().map(cuisine => `<option value="${escapeHtml(cuisine)}"${cuisine === currentUser.preferredCuisine ? ' selected' : ''}>${escapeHtml(cuisine)}</option>`).join('');
       document.getElementById('profileHeader').innerHTML = `
@@ -1504,7 +1781,8 @@
       this.bindProfileEditor(currentUser);
       document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(review => this.renderReviewCard(review, true)).join('') : this.emptyState('You have not written any reviews yet.');
       const favouriteHtml = [
-        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`)
+        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`),
+        ...favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}" class="btn btn-sm btn-primary">Open</a></div>`)
       ].join('');
       document.getElementById('profileFavourites').innerHTML = favouriteHtml || this.emptyState('Nothing saved yet.');
     },
@@ -1525,6 +1803,7 @@
 
     async initFavourites() {
       const restaurantContainer = document.getElementById('favouriteRestaurants');
+      const dishContainer = document.getElementById('favouriteDishes');
       if (!this.getCurrentUser()) {
         this.showFullPageNotice('Please log in to view your favourites.', 'login.html');
         return;
@@ -1532,9 +1811,12 @@
       try {
         await this.loadFavourites(true);
         const favouriteRestaurants = this.state.favourites.restaurants;
+        const favouriteDishes = this.state.favourites.dishes;
         restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
+        dishContainer.innerHTML = favouriteDishes.length ? favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
       } catch (error) {
         restaurantContainer.innerHTML = this.emptyState(error.message);
+        dishContainer.innerHTML = this.emptyState(error.message);
       }
     },
 
@@ -1597,7 +1879,7 @@
         }
       }
       this.state.currentUser = null;
-      this.state.favourites = { restaurants: [] };
+      this.state.favourites = { restaurants: [], dishes: [] };
       this.renderLayout();
     },
 
@@ -1645,17 +1927,30 @@
     async saveRestaurant(restaurantId, targetId = '') {
       if (!this.getCurrentUser()) {
         if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
-        return false;
+        return;
       }
       try {
         await this.api(`/api/favourites/restaurants/${restaurantId}`, { method: 'POST' });
-        this.state.favourites = { restaurants: [] };
+        this.state.favourites = { restaurants: [], dishes: [] };
         await this.loadFavourites(true);
         if (targetId) this.showMessage(targetId, 'Restaurant saved to favourites.', 'success');
-        return true;
       } catch (error) {
         if (targetId) this.showMessage(targetId, error.message, 'error');
-        return false;
+      }
+    },
+
+    async saveDish(restaurantId, dishId, targetId = '') {
+      if (!this.getCurrentUser()) {
+        if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
+        return;
+      }
+      try {
+        await this.api('/api/favourites/dishes', { method: 'POST', body: { restaurantId, dishId } });
+        this.state.favourites = { restaurants: [], dishes: [] };
+        await this.loadFavourites(true);
+        if (targetId) this.showMessage(targetId, 'Dish saved to favourites.', 'success');
+      } catch (error) {
+        if (targetId) this.showMessage(targetId, error.message, 'error');
       }
     },
 
@@ -1663,6 +1958,11 @@
       document.querySelectorAll('.save-restaurant-trigger').forEach(button => {
         button.onclick = async () => {
           await this.saveRestaurant(button.dataset.id);
+        };
+      });
+      document.querySelectorAll('.save-dish-trigger').forEach(button => {
+        button.onclick = async () => {
+          await this.saveDish(button.dataset.restaurant, button.dataset.id);
         };
       });
     },
@@ -1701,6 +2001,33 @@
       const typingEl = document.getElementById('chatTyping');
 
       if (!widgetBtn || !windowEl) return;
+
+      const positionChatWidget = () => {
+        const viewport = window.visualViewport;
+        const gutter = 18;
+
+        if (!viewport) {
+          document.documentElement.style.setProperty('--chat-right', `${gutter}px`);
+          document.documentElement.style.setProperty('--chat-bottom', `${gutter}px`);
+          return;
+        }
+
+        const layoutWidth = document.documentElement.clientWidth || window.innerWidth;
+        const layoutHeight = document.documentElement.clientHeight || window.innerHeight;
+        const right = Math.max(gutter, layoutWidth - viewport.offsetLeft - viewport.width + gutter);
+        const bottom = Math.max(gutter, layoutHeight - viewport.offsetTop - viewport.height + gutter);
+
+        document.documentElement.style.setProperty('--chat-right', `${right}px`);
+        document.documentElement.style.setProperty('--chat-bottom', `${bottom}px`);
+      };
+
+      positionChatWidget();
+      window.addEventListener('resize', positionChatWidget, { passive: true });
+      window.addEventListener('scroll', positionChatWidget, { passive: true });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', positionChatWidget, { passive: true });
+        window.visualViewport.addEventListener('scroll', positionChatWidget, { passive: true });
+      }
       
       try {
         const savedHistory = sessionStorage.getItem('bitescout_chat_history');
@@ -1710,6 +2037,7 @@
       } catch (e) {}
 
       const toggleChat = () => {
+        positionChatWidget();
         windowEl.classList.toggle('open');
         sessionStorage.setItem('bitescout_chat_open', windowEl.classList.contains('open') ? '1' : '0');
         if (windowEl.classList.contains('open')) inputEl.focus();
@@ -1817,7 +2145,9 @@
 
   if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', () => {
-      App.init().catch(error => {
+      App.init().then(() => {
+        observeLuxuryElements();
+      }).catch(error => {
         console.error(error);
       });
 
@@ -1833,7 +2163,7 @@
         });
       }
 
-      // Intersection Observer for scroll reveal
+      // Scroll reveal for the presentation layer
       const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -1842,28 +2172,62 @@
       const revealObserver = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            entry.target.classList.add('revealed');
+            entry.target.classList.add('is-visible');
             revealObserver.unobserve(entry.target);
           }
         });
       }, observerOptions);
 
-      document.querySelectorAll('.section-top-rated, .section-how, .section-testimonials, .section-cta').forEach(section => {
-        section.style.opacity = '0';
-        section.style.transform = 'translateY(30px)';
-        section.style.transition = 'opacity 0.8s ease, transform 0.8s ease';
-        revealObserver.observe(section);
-      });
+      const revealSelectors = [
+        '.section-top-rated',
+        '.section-how',
+        '.section-testimonials',
+        '.section-cta',
+        '.stats-bar',
+        '.glass-card',
+        '.restaurant-card',
+        '.dish-card',
+        '.review-card',
+        '.favorite-card',
+        '.how-card',
+        '.testimonial-card',
+        '.mini-feature',
+        '.auth-card',
+        '.profile-bar'
+      ].join(',');
 
-      // Add revealed class styles dynamically
-      const style = document.createElement('style');
-      style.textContent = `
-        .revealed {
-          opacity: 1 !important;
-          transform: translateY(0) !important;
+      function observeLuxuryElements() {
+        document.querySelectorAll(revealSelectors).forEach((element, index) => {
+          if (element.dataset.luxuryReveal === 'true') return;
+
+          element.dataset.luxuryReveal = 'true';
+          element.classList.add('luxury-reveal');
+          element.style.setProperty('--reveal-delay', `${Math.min(index % 8, 7) * 45}ms`);
+          revealObserver.observe(element);
+        });
+      }
+
+      window.setTimeout(observeLuxuryElements, 450);
+
+      const pointerTarget = document.documentElement;
+      let pointerTicking = false;
+      let latestPointer = { x: 50, y: 18 };
+
+      window.addEventListener('pointermove', (event) => {
+        latestPointer = {
+          x: Math.round((event.clientX / window.innerWidth) * 100),
+          y: Math.round((event.clientY / window.innerHeight) * 100)
+        };
+
+        if (!pointerTicking) {
+          requestAnimationFrame(() => {
+            pointerTarget.style.setProperty('--pointer-x', `${latestPointer.x}%`);
+            pointerTarget.style.setProperty('--pointer-y', `${latestPointer.y}%`);
+            pointerTicking = false;
+          });
+          pointerTicking = true;
         }
-      `;
-      document.head.appendChild(style);
+      }, { passive: true });
 
       // Scroll-Linked Opacity Fade: content above viewport fades out
       const fadeSections = document.querySelectorAll('.scroll-fade-section');

@@ -3,11 +3,12 @@ import os
 import re
 from functools import wraps
 import hashlib
-from flask import Blueprint, abort, current_app, jsonify, request, session
+from flask import Blueprint, current_app, jsonify, redirect, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from . import google_places
-from .models import User, Restaurant, Review, FavouriteRestaurant, MissingPlaceRequest
+from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest
+import google.generativeai as genai
 
 
 bp = Blueprint('main', __name__)
@@ -59,8 +60,19 @@ def normalize_avatar_url(value):
     return None, 'Choose one of the provided avatars or upload a PNG, JPEG, WebP, or GIF image.'
 
 
-def restaurant_to_dict(restaurant):
+def dish_to_dict(dish):
     return {
+        'id': dish.id,
+        'restaurantId': dish.restaurant_id,
+        'name': dish.name,
+        'price': dish.price,
+        'rating': dish.rating,
+        'description': dish.description,
+    }
+
+
+def restaurant_to_dict(restaurant, include_dishes=False):
+    data = {
         'id': restaurant.id,
         'name': restaurant.name,
         'suburb': restaurant.suburb,
@@ -72,7 +84,11 @@ def restaurant_to_dict(restaurant):
         'blurb': restaurant.blurb,
         'address': restaurant.address,
         'tags': [tag.strip() for tag in restaurant.tags.split(',') if tag.strip()],
+        'photoName': restaurant.photo_name or '',
     }
+    if include_dishes:
+        data['dishes'] = [dish_to_dict(d) for d in restaurant.dishes]
+    return data
 
 
 def review_to_dict(review):
@@ -80,6 +96,7 @@ def review_to_dict(review):
         'id': review.id,
         'userId': review.user_id,
         'restaurantId': review.restaurant_id,
+        'dishId': review.dish_id or '',
         'rating': review.rating,
         'title': review.title,
         'content': review.content,
@@ -120,7 +137,7 @@ def google_restaurant_id(place_id):
 
 
 def google_place_tags(types, primary_type=''):
-    ignored = {'point_of_interest', 'establishment', 'food', 'store', 'restaurant', 'cafe', 'bar'}
+    ignored = {'point_of_interest', 'establishment', 'food', 'store'}
     primary = str(primary_type or '').strip()
     tags = []
     for place_type in types or []:
@@ -200,7 +217,7 @@ def restaurants():
 @bp.get('/api/restaurants/<restaurant_id>')
 def restaurant_detail(restaurant_id):
     restaurant = Restaurant.query.get_or_404(restaurant_id)
-    return jsonify(restaurant_to_dict(restaurant))
+    return jsonify(restaurant_to_dict(restaurant, include_dishes=True))
 
 
 @bp.post('/api/restaurants/from-google')
@@ -244,15 +261,22 @@ def restaurant_from_google():
     restaurant.blurb = payload.get('blurb') or f"Live Google Places listing for {name}."
     restaurant.address = address or 'Address unavailable'
     restaurant.tags = ','.join(tags)
+    restaurant.photo_name = (payload.get('photoName') or '').strip()
 
     db.session.commit()
-    return jsonify({'message': 'Restaurant synced', 'restaurant': restaurant_to_dict(restaurant)}), status_code
+    return jsonify({'message': 'Restaurant synced', 'restaurant': restaurant_to_dict(restaurant, include_dishes=True)}), status_code
 
 
 @bp.get('/api/restaurants/<restaurant_id>/reviews')
 def restaurant_reviews(restaurant_id):
     reviews = Review.query.filter_by(restaurant_id=restaurant_id).order_by(Review.created_at.desc()).all()
     return jsonify([review_to_dict(r) for r in reviews])
+
+
+@bp.get('/api/dishes/<restaurant_id>/<dish_id>')
+def dish_detail(restaurant_id, dish_id):
+    dish = Dish.query.filter_by(id=dish_id, restaurant_id=restaurant_id).first_or_404()
+    return jsonify(dish_to_dict(dish))
 
 
 @bp.get('/api/users/<int:user_id>')
@@ -480,6 +504,27 @@ def google_search_location():
     return jsonify({'searchLocation': search_location, 'results': results})
 
 
+@bp.get('/api/google/photo')
+def google_photo():
+    api_key = google_maps_api_key()
+    if not api_key:
+        return jsonify({'error': 'Google Maps API key is not configured on the server.'}), 500
+
+    photo_name = request.args.get('name') or ''
+    try:
+        max_width = int(request.args.get('maxWidthPx') or 900)
+        max_height = int(request.args.get('maxHeightPx') or 650)
+    except ValueError:
+        return jsonify({'error': 'Photo width and height must be numbers.'}), 400
+
+    try:
+        photo_uri = google_places.get_photo_media_uri(api_key, photo_name, max_width, max_height)
+    except google_places.GooglePlacesError as error:
+        return jsonify({'error': str(error)}), error.status_code
+
+    return redirect(photo_uri, code=302)
+
+
 @bp.post('/api/reviews')
 @login_required
 def create_review():
@@ -492,8 +537,9 @@ def create_review():
     restaurant = db.session.get(Restaurant, payload['restaurantId'])
     if not restaurant:
         return jsonify({'error': 'Restaurant not found'}), 404
-    if payload.get('dishId'):
-        return jsonify({'error': 'Dish reviews are no longer supported.'}), 400
+    dish_id = payload.get('dishId') or None
+    if dish_id and not Dish.query.filter_by(id=dish_id, restaurant_id=payload['restaurantId']).first():
+        return jsonify({'error': 'Dish not found for restaurant'}), 404
     rating = parse_review_rating(payload.get('rating'))
     if rating is None:
         return jsonify({'error': 'Rating must be an integer between 1 and 5.'}), 400
@@ -501,7 +547,7 @@ def create_review():
     review = Review(
         user_id=current_user().id,
         restaurant_id=payload['restaurantId'],
-        dish_id=None,
+        dish_id=dish_id,
         rating=rating,
         title=payload['title'],
         content=payload['content'],
@@ -555,7 +601,14 @@ def delete_review(review_id):
 def favourites():
     user = current_user()
     restaurants = [restaurant_to_dict(f.restaurant) for f in user.favourite_restaurants if getattr(f, 'restaurant', None)]
-    return jsonify({'restaurants': restaurants})
+    dishes = [
+        {
+            'dish': dish_to_dict(f.dish),
+            'restaurant': restaurant_to_dict(f.dish.restaurant)
+        }
+        for f in user.favourite_dishes if getattr(f, 'dish', None)
+    ]
+    return jsonify({'restaurants': restaurants, 'dishes': dishes})
 
 
 @bp.post('/api/favourites/restaurants/<restaurant_id>')
@@ -581,10 +634,30 @@ def remove_favourite_restaurant(restaurant_id):
     return jsonify({'message': 'Restaurant removed'})
 
 
-@bp.route('/api/favourites/dishes', methods=['POST', 'DELETE'])
-@bp.route('/api/favourites/dishes/<path:_removed_id>', methods=['POST', 'DELETE'])
-def removed_favourite_dish_routes(_removed_id=None):
-    abort(404)
+@bp.post('/api/favourites/dishes')
+@login_required
+def save_favourite_dish():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    dish_id = payload.get('dishId')
+    dish = db.session.get(Dish, dish_id)
+    if not dish:
+        return jsonify({'error': 'Dish not found'}), 404
+    user = current_user()
+    existing = FavouriteDish.query.filter_by(user_id=user.id, dish_id=dish_id).first()
+    if not existing:
+        db.session.add(FavouriteDish(user_id=user.id, dish_id=dish_id))
+        db.session.commit()
+    return jsonify({'message': 'Dish saved'})
+
+
+@bp.delete('/api/favourites/dishes/<dish_id>')
+@login_required
+def remove_favourite_dish(dish_id):
+    user = current_user()
+    item = FavouriteDish.query.filter_by(user_id=user.id, dish_id=dish_id).first_or_404()
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({'message': 'Dish removed'})
 
 
 @bp.post('/api/chat')
@@ -623,11 +696,6 @@ def chat():
     api_key = os.environ.get('GEMINI_API_KEY')
     if not api_key:
         return jsonify({'error': 'GEMINI_API_KEY is not configured on the server.'}), 500
-
-    try:
-        import google.generativeai as genai
-    except ModuleNotFoundError:
-        return jsonify({'error': 'google-generativeai is not installed on the server.'}), 500
         
     genai.configure(api_key=api_key)
     
@@ -637,9 +705,11 @@ def chat():
     
     restaurant_context = []
     for r in restaurants:
+        dish_list = ", ".join([d.name for d in r.dishes])
         restaurant_context.append(
             f"[BiteScout] ID: {r.id}, Name: {r.name}, Suburb: {r.suburb}, Cuisine: {r.cuisine}, "
-            f"Price: {r.price}, Rating: {r.rating}, Tags: {r.tags}, Blurb: {r.blurb}"
+            f"Price: {r.price}, Rating: {r.rating}, Dishes: {dish_list}, "
+            f"Tags: {r.tags}, Blurb: {r.blurb}"
         )
     
     local_context_str = "\n".join(restaurant_context) if restaurant_context else "No restaurants in the local database yet."
@@ -709,7 +779,9 @@ def chat():
                             restaurant.blurb = f"Live Google Places listing for {p['name']}."
                             restaurant.address = p['address'] or 'Address unavailable'
                             restaurant.tags = ','.join(google_place_tags(p.get('types') or [], p.get('primaryType')))
-                            db.session.commit()
+                        if p.get('photoName'):
+                            restaurant.photo_name = p.get('photoName') or ''
+                        db.session.commit()
                             
                         google_lines.append(
                             f"[BiteScout] ID: {r_id}, Name: {restaurant.name}, Suburb: {restaurant.suburb}, "

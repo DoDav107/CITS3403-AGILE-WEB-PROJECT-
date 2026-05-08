@@ -153,7 +153,6 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(save_response.status_code, 200)
         payload = list_response.get_json()
-        self.assertEqual(set(payload.keys()), {"restaurants"})
         self.assertEqual(payload["restaurants"][0]["id"], "r1")
 
     def test_restaurants_can_be_filtered_by_tag(self):
@@ -175,6 +174,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "rating": 4.7,
                 "primaryType": "japanese_restaurant",
                 "types": ["restaurant", "food", "ramen_restaurant"],
+                "photoName": "places/google-ramen-1/photos/photo-123",
             },
         )
 
@@ -183,13 +183,12 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(restaurant["name"], "Northbridge Ramen Lab")
         self.assertEqual(restaurant["cuisine"], "Japanese Restaurant")
         self.assertIn("ramen_restaurant", restaurant["tags"])
-        self.assertNotIn("restaurant", restaurant["tags"])
+        self.assertEqual(restaurant["photoName"], "places/google-ramen-1/photos/photo-123")
 
         detail_response = self.client.get(f"/api/restaurants/{restaurant['id']}")
         self.assertEqual(detail_response.status_code, 200)
-        detail_payload = detail_response.get_json()
-        self.assertEqual(detail_payload["address"], "99 Roe St, Northbridge WA")
-        self.assertNotIn("dishes", detail_payload)
+        self.assertEqual(detail_response.get_json()["address"], "99 Roe St, Northbridge WA")
+        self.assertEqual(detail_response.get_json()["photoName"], "places/google-ramen-1/photos/photo-123")
 
     def test_review_can_be_created(self):
         self.login_demo_user()
@@ -198,6 +197,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             "/api/reviews",
             json={
                 "restaurantId": "r1",
+                "dishId": "d1",
                 "rating": 5,
                 "title": "Great bowl",
                 "content": "Would order again.",
@@ -205,37 +205,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 201)
-        review = response.get_json()["review"]
-        self.assertEqual(review["restaurantId"], "r1")
-        self.assertNotIn("dishId", review)
-
-    def test_dish_review_fields_are_rejected(self):
-        self.login_demo_user()
-
-        response = self.client.post(
-            "/api/reviews",
-            json={
-                "restaurantId": "r1",
-                "dishId": "d1",
-                "rating": 5,
-                "title": "Dish review",
-                "content": "Dish-specific reviews are no longer supported.",
-            },
-        )
-
-        self.assertEqual(response.status_code, 400)
-        self.assertEqual(response.get_json()["error"], "Dish reviews are no longer supported.")
-
-    def test_dish_endpoints_are_removed(self):
-        self.login_demo_user()
-
-        dish_response = self.client.get("/api/dishes/r1/d1")
-        save_response = self.client.post("/api/favourites/dishes", json={"dishId": "d1"})
-        delete_response = self.client.delete("/api/favourites/dishes/d1")
-
-        self.assertEqual(dish_response.status_code, 404)
-        self.assertEqual(save_response.status_code, 404)
-        self.assertEqual(delete_response.status_code, 404)
+        self.assertEqual(response.get_json()["review"]["restaurantId"], "r1")
 
     def test_invalid_review_rating_is_rejected_on_create(self):
         self.login_demo_user()
@@ -244,6 +214,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             "/api/reviews",
             json={
                 "restaurantId": "r1",
+                "dishId": "d1",
                 "rating": "bad",
                 "title": "Bad input",
                 "content": "Should be rejected.",
@@ -259,6 +230,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             "/api/reviews",
             json={
                 "restaurantId": "r1",
+                "dishId": "d1",
                 "rating": 4,
                 "title": "Editable review",
                 "content": "Created for update validation.",
@@ -281,6 +253,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             "/api/reviews",
             json={
                 "restaurantId": "r1",
+                "dishId": "d1",
                 "rating": 1,
                 "title": "Low rating",
                 "content": "Forcing a rating recalculation.",
@@ -317,6 +290,12 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                     "rating": 4.5,
                     "primaryType": "cafe",
                     "types": ["cafe", "food"],
+                    "photos": [
+                        {
+                            "name": "places/place-1/photos/photo-1",
+                            "authorAttributions": [{"displayName": "Test photographer"}],
+                        }
+                    ],
                 }
             ]
         }
@@ -330,6 +309,19 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         payload = response.get_json()
         self.assertEqual(payload["results"][0]["name"], "Test Cafe")
+        self.assertEqual(payload["results"][0]["photoName"], "places/place-1/photos/photo-1")
+
+    def test_google_photo_redirects_to_photo_uri(self):
+        self.app.config["GOOGLE_MAPS_API_KEY"] = "test-google-key"
+        google_response = Mock()
+        google_response.ok = True
+        google_response.json.return_value = {"photoUri": "https://lh3.googleusercontent.com/test-photo"}
+
+        with patch("app.google_places.requests.get", return_value=google_response):
+            response = self.client.get("/api/google/photo?name=places/place-1/photos/photo-1")
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.headers["Location"], "https://lh3.googleusercontent.com/test-photo")
 
 
 if __name__ == "__main__":

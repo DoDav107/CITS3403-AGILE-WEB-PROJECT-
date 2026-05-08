@@ -20,6 +20,17 @@ def ensure_user_profile_columns():
         db.session.commit()
 
 
+def ensure_restaurant_photo_columns():
+    inspector = inspect(db.engine)
+    if "restaurant" not in inspector.get_table_names():
+        return
+
+    columns = {column["name"] for column in inspector.get_columns("restaurant")}
+    if "photo_name" not in columns:
+        db.session.execute(text('ALTER TABLE "restaurant" ADD COLUMN photo_name TEXT DEFAULT ""'))
+        db.session.commit()
+
+
 def create_app(test_config=None):
     backend_dir = Path(__file__).resolve().parents[1]
     load_dotenv(backend_dir / ".env")
@@ -49,6 +60,7 @@ def create_app(test_config=None):
     with app.app_context():
         db.create_all()
         ensure_user_profile_columns()
+        ensure_restaurant_photo_columns()
         from .seed import seed_if_empty
         seed_if_empty()
 
