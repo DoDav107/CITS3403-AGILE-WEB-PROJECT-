@@ -438,7 +438,6 @@ h1, h2, .section-title, .hero-title, .cta-title {
 }
 
 .restaurant-card,
-.dish-card,
 .review-card,
 .favorite-card {
   border: 1px solid rgba(255,255,255,0.08);
@@ -451,8 +450,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
   overflow: hidden;
 }
 
-.restaurant-card::before,
-.dish-card::before {
+.restaurant-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -464,23 +462,22 @@ h1, h2, .section-title, .hero-title, .cta-title {
   transition: opacity 0.3s ease;
 }
 
-.restaurant-card:hover,
-.dish-card:hover {
+.restaurant-card:hover {
   transform: translateY(-6px) scale(1.01);
   box-shadow: 0 24px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(212,175,55,0.15);
   border-color: rgba(212,175,55,0.25);
 }
 
-.restaurant-card:hover::before,
-.dish-card:hover::before {
+.restaurant-card:hover::before {
   opacity: 1;
 }
 
 .restaurant-image,
 .detail-image {
   background: linear-gradient(135deg, var(--charcoal-800), var(--charcoal-950));
-  min-height: 180px;
-  height: 260px;
+  aspect-ratio: 3 / 2;
+  min-height: 0;
+  height: auto;
   border-radius: 1rem;
   display: grid;
   place-items: center;
@@ -512,7 +509,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
 }
 
 .detail-image {
-  min-height: 220px;
+  aspect-ratio: 4 / 3;
 }
 
 /* ── Pills ── */

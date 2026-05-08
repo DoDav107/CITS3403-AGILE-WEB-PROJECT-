@@ -85,6 +85,8 @@
     { id: 'avatar-curry', label: 'Curry', initials: 'CU', image: 'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=240&h=240' }
   ];
 
+  const GOOGLE_PLACE_SYSTEM_TYPES = new Set(['point_of_interest', 'establishment', 'food', 'store']);
+  const GOOGLE_PLACE_BROAD_TYPES = new Set(['restaurant', 'cafe', 'bar']);
 
   const data = root.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
 
@@ -93,7 +95,7 @@
       currentUser: null,
       restaurants: [],
       reviews: [],
-      favourites: { restaurants: [], dishes: [] },
+      favourites: { restaurants: [] },
       chatHistory: []
     },
 
@@ -155,10 +157,10 @@
 
     async loadFavourites(force = false) {
       if (!this.state.currentUser) {
-        this.state.favourites = { restaurants: [], dishes: [] };
+        this.state.favourites = { restaurants: [] };
         return this.state.favourites;
       }
-      if ((this.state.favourites.restaurants.length || this.state.favourites.dishes.length) && !force) {
+      if (this.state.favourites.restaurants.length && !force) {
         return this.state.favourites;
       }
       this.state.favourites = await this.api('/api/favourites');
@@ -207,7 +209,6 @@
         login: () => this.initLogin(),
         browse: () => this.initBrowse(),
         restaurant: () => this.initRestaurantPage(),
-        dish: () => this.initDishPage(),
         'write-review': () => this.initWriteReview(),
         'edit-review': () => this.initEditReview(),
         profile: () => this.initProfile(),
@@ -380,12 +381,6 @@
       return this.state.restaurants.find(r => r.id === id) || data.restaurants.find(r => r.id === id) || null;
     },
 
-    getDish(restaurantId, dishId) {
-      const restaurant = this.getRestaurantById(restaurantId);
-      if (!restaurant || !restaurant.dishes) return null;
-      return restaurant.dishes.find(dish => dish.id === dishId) || null;
-    },
-
     getAllReviews() {
       return [...this.state.reviews].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     },
@@ -464,22 +459,21 @@
     },
 
     getGooglePlaceFilterOptions(places = []) {
-      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store', 'restaurant', 'cafe', 'bar']);
       const typeSet = new Set();
       const tagSet = new Set();
 
       places.forEach(place => {
         const primaryType = String(place.primaryType || '').trim();
         if (primaryType) typeSet.add(primaryType);
-      });
 
-      places.forEach(place => {
-        const primaryType = String(place.primaryType || '').trim();
         (place.types || []).forEach(type => {
           const normalizedType = String(type || '').trim();
-          if (!normalizedType || ignoredTags.has(normalizedType)) return;
+          if (!normalizedType || GOOGLE_PLACE_SYSTEM_TYPES.has(normalizedType)) return;
+          if (GOOGLE_PLACE_BROAD_TYPES.has(normalizedType)) {
+            typeSet.add(normalizedType);
+            return;
+          }
           if (primaryType && normalizedType === primaryType) return;
-          if (typeSet.has(normalizedType)) return;
           tagSet.add(normalizedType);
         });
       });
@@ -502,49 +496,21 @@
 
     getRestaurantImage(identifier) {
       const RESTAURANT_IMAGES = [
-        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1482049016688-2d3e1b311543?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1484723091739-30a097e8f929?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1432139509613-5c4255a1d0f7?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1455619452474-d2be8b1e70cd?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1467003909585-2f8a72700288?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1539136788836-5699e78bfc75?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1606787366850-de6330128bfc?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1515669097368-22e68427d265?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1550547660-d9450f859349?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1563379926898-05f4575a45d8?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1569058242567-93de6f36f8e6?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1574484284002-952d92456975?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1493770348161-369560ae357d?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1506354666786-959d6d497f1a?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1560717789-0ac7c58ac90a?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&q=80&w=600',
-        'https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&q=80&w=600'
+        'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1551218808-94e220e084d2?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1506354666786-959d6d497f1a?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1571091718767-18b5b1457add?auto=format&fit=crop&q=80&w=900&h=600',
+        'https://images.unsplash.com/photo-1592417817098-8fd3d9eb14a5?auto=format&fit=crop&q=80&w=900&h=600'
       ];
       const str = String(identifier || '');
-      if (!str) return RESTAURANT_IMAGES[Math.floor(Math.random() * RESTAURANT_IMAGES.length)];
+      if (!str) return RESTAURANT_IMAGES[0];
       let hash = 0;
       for (let i = 0; i < str.length; i++) {
         hash = ((hash << 5) - hash) + str.charCodeAt(i);
@@ -580,31 +546,9 @@
       `;
     },
 
-    renderDishCard(restaurant, dish) {
-      const restaurantId = encodeRouteValue(restaurant.id);
-      const dishId = encodeRouteValue(dish.id);
-      return `
-        <div class="col-md-6">
-          <div class="dish-card p-3">
-            <h3 class="h5 fw-bold mb-2">${escapeHtml(dish.name)}</h3>
-            <div class="d-flex flex-wrap mb-2">
-              ${this.renderRatingStars(dish.rating)}
-              <span class="price-pill">$${dish.price}</span>
-            </div>
-            <p class="text-secondary">${escapeHtml(dish.description)}</p>
-            <div class="d-flex gap-2">
-              <a class="btn btn-primary btn-sm" href="dish.html?restaurant=${restaurantId}&dish=${dishId}">View dish</a>
-              <button class="btn btn-outline-dark btn-sm save-dish-trigger" data-id="${dishId}" data-restaurant="${restaurantId}">Save</button>
-            </div>
-          </div>
-        </div>
-      `;
-    },
-
     renderReviewCard(review, own = false) {
       const user = this.getDisplayUser(review.userId, review.user);
       const restaurant = this.getRestaurantById(review.restaurantId);
-      const dish = review.dishId ? this.getDish(review.restaurantId, review.dishId) : null;
       const editable = own && !String(review.id).startsWith('sr');
       const manageButton = editable ? `<a class="btn btn-outline-dark btn-sm" href="edit-review.html?id=${encodeRouteValue(review.id)}">Edit</a>` : '';
       const reviewMeta = [
@@ -612,7 +556,6 @@
         escapeHtml(this.formatDate(review.createdAt))
       ];
       if (restaurant) reviewMeta.push(escapeHtml(restaurant.name));
-      if (dish) reviewMeta.push(escapeHtml(dish.name));
       return `
         <div class="review-card p-3 mb-3">
           <div class="d-flex justify-content-between align-items-start gap-3 mb-2">
@@ -661,13 +604,13 @@
 
     renderGooglePlaceCard(place, index = 0) {
       const primaryType = String(place.primaryType || '').trim();
-      const ignoredTags = new Set(['point_of_interest', 'establishment', 'food', 'store', 'restaurant', 'cafe', 'bar']);
       const tagHtml = (place.types || [])
         .filter(type => {
           const normalizedType = String(type || '').trim();
           return normalizedType
             && normalizedType !== primaryType
-            && !ignoredTags.has(normalizedType);
+            && !GOOGLE_PLACE_SYSTEM_TYPES.has(normalizedType)
+            && !GOOGLE_PLACE_BROAD_TYPES.has(normalizedType);
         })
         .slice(0, 3)
         .map(type => `<span class="badge badge-soft">${escapeHtml(this.formatPlaceType(type))}</span>`)
@@ -686,6 +629,7 @@
             <div class="d-flex flex-wrap gap-2 mb-3">${tagHtml}</div>
             <div class="d-flex gap-2">
               <button class="btn btn-primary btn-sm open-google-place-trigger" data-index="${index}">View details</button>
+              <button class="btn btn-outline-dark btn-sm save-google-place-trigger" data-index="${index}">Save</button>
               <a class="btn btn-outline-dark btn-sm" href="${this.googleMapsUrl(place)}" target="_blank" rel="noopener noreferrer">Open map</a>
             </div>
           </div>
@@ -722,6 +666,32 @@
           } catch (error) {
             button.disabled = false;
             button.textContent = 'View details';
+            this.showMessage('browseLocationMessage', error.message, 'error');
+          }
+        };
+      });
+      document.querySelectorAll('.save-google-place-trigger').forEach(button => {
+        button.onclick = async () => {
+          const place = places[Number(button.dataset.index)];
+          if (!place) return;
+          if (!this.getCurrentUser()) {
+            this.showMessage('browseLocationMessage', 'Please log in before saving favourites.', 'error');
+            return;
+          }
+          button.disabled = true;
+          button.textContent = 'Saving...';
+          try {
+            const payload = await this.mirrorGooglePlace(place);
+            const saved = await this.saveRestaurant(payload.restaurant.id, 'browseLocationMessage');
+            if (!saved) {
+              button.disabled = false;
+              button.textContent = 'Save';
+              return;
+            }
+            button.textContent = 'Saved';
+          } catch (error) {
+            button.disabled = false;
+            button.textContent = 'Save';
             this.showMessage('browseLocationMessage', error.message, 'error');
           }
         };
@@ -1115,7 +1085,7 @@
 
         resultsTarget.innerHTML = filtered.length
           ? filtered.map((place, index) => this.renderGooglePlaceCard(place, index)).join('')
-          : this.emptyState(places.length ? 'No nearby places matched those filters.' : 'Enter a location to load nearby restaurants.');
+          : this.emptyState(places.length ? 'No nearby places matched those filters. Try a broader food or place search.' : 'Enter a location or use your current location to load nearby food places.');
         if (resultsCount) resultsCount.textContent = `${filtered.length} place${filtered.length === 1 ? '' : 's'} found`;
         this.bindGooglePlaceButtons(filtered);
       };
@@ -1267,14 +1237,12 @@
           <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
           <div class="d-flex flex-wrap gap-2 align-items-center"><strong>Popular tags:</strong> ${tagLinks || '<span class="text-secondary">No tags yet.</span>'}</div>
         `;
-        document.getElementById('restaurantDishes').innerHTML = (restaurant.dishes || []).length ? (restaurant.dishes || []).map(dish => this.renderDishCard(restaurant, dish)).join('') : this.emptyState('No dishes are listed yet. You can still review the restaurant.');
         document.getElementById('restaurantReviews').innerHTML = reviews.length ? reviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No reviews yet. Be the first to share your experience.');
         document.getElementById('restaurantSidebar').innerHTML = `
           <h3 class="h5 fw-bold mb-3">Quick facts</h3>
           <p class="mb-2"><strong>Cuisine:</strong> ${escapeHtml(restaurant.cuisine)}</p>
           <p class="mb-2"><strong>Price range:</strong> ${escapeHtml(restaurant.price)}</p>
-          <div class="mb-2 d-flex flex-wrap gap-2 align-items-center"><strong>Average rating:</strong> ${this.renderRatingStars(average)}</div>
-          <p class="mb-0"><strong>Dishes listed:</strong> ${(restaurant.dishes || []).length}</p>
+          <div class="mb-0 d-flex flex-wrap gap-2 align-items-center"><strong>Average rating:</strong> ${this.renderRatingStars(average)}</div>
         `;
         document.querySelectorAll('a[href="write-review.html"]').forEach(link => {
           link.href = reviewHref;
@@ -1288,50 +1256,6 @@
       }
     },
 
-    async initDishPage() {
-      const params = new URLSearchParams(window.location.search);
-      const restaurantId = params.get('restaurant');
-      const dishId = params.get('dish');
-      if (!restaurantId || !dishId) return;
-      try {
-        const [restaurant, dish, reviews] = await Promise.all([
-          this.api(`/api/restaurants/${restaurantId}`),
-          this.api(`/api/dishes/${restaurantId}/${dishId}`),
-          this.api(`/api/restaurants/${restaurantId}/reviews`)
-        ]);
-        this.upsertRestaurant(restaurant);
-        const dishReviews = reviews.filter(review => review.dishId === dishId);
-        document.getElementById('dishHero').innerHTML = `
-          <p class="eyebrow mb-2">Dish details</p>
-          <div class="row g-4 align-items-center">
-            <div class="col-lg-8">
-              <h1 class="fw-bold mb-3">${escapeHtml(dish.name)}</h1>
-              <p class="text-secondary mb-3">From <a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">${escapeHtml(restaurant.name)}</a></p>
-              <div class="d-flex flex-wrap">
-                ${this.renderRatingStars(dish.rating)}
-                <span class="price-pill">$${dish.price}</span>
-                <span class="cuisine-pill">${escapeHtml(restaurant.cuisine)}</span>
-              </div>
-            </div>
-            <div class="col-lg-4"><div class="detail-image position-relative overflow-hidden"><img src="${this.getRestaurantImage(dish.id || dish.name)}" alt="${escapeHtml(dish.name)}" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" /></div></div>
-          </div>
-        `;
-        document.getElementById('dishDetails').innerHTML = `
-          <h2 class="h4 fw-bold mb-3">About this dish</h2>
-          <p class="text-secondary">${escapeHtml(dish.description)}</p>
-          <p class="mb-0 text-secondary"><strong>Restaurant:</strong> ${escapeHtml(restaurant.name)} • ${escapeHtml(restaurant.suburb)}</p>
-        `;
-        document.getElementById('dishReviews').innerHTML = dishReviews.length ? dishReviews.map(review => this.renderReviewCard(review, this.getCurrentUser() && this.getCurrentUser().id === review.userId)).join('') : this.emptyState('No dish reviews yet.');
-        document.querySelector('a[href="write-review.html"]')?.setAttribute('href', `write-review.html?restaurantId=${encodeRouteValue(restaurant.id)}&dishId=${encodeRouteValue(dish.id)}`);
-        document.getElementById('backToRestaurantLink').href = `restaurant.html?id=${encodeRouteValue(restaurant.id)}`;
-        document.getElementById('saveDishBtn').addEventListener('click', async () => {
-          await this.saveDish(restaurantId, dishId, 'saveDishMessage');
-        });
-      } catch (error) {
-        this.showFullPageNotice(error.message, 'browse.html');
-      }
-    },
-
     async initWriteReview() {
       const currentUser = this.getCurrentUser();
       if (!currentUser) {
@@ -1339,30 +1263,12 @@
         return;
       }
       const restaurantSelect = document.getElementById('reviewRestaurantSelect');
-      const dishSelect = document.getElementById('reviewDishSelect');
       restaurantSelect.innerHTML = this.state.restaurants.map(restaurant => `<option value="${escapeHtml(restaurant.id)}">${escapeHtml(restaurant.name)}</option>`).join('');
-      const fillDishes = restaurantId => {
-        const restaurant = this.getRestaurantById(restaurantId);
-        const dishes = restaurant && restaurant.dishes ? restaurant.dishes : [];
-        dishSelect.innerHTML = `<option value="">Restaurant review only</option>${dishes.map(dish => `<option value="${escapeHtml(dish.id)}">${escapeHtml(dish.name)}</option>`).join('')}`;
-      };
-      restaurantSelect.addEventListener('change', async () => {
-        if (!this.getRestaurantById(restaurantSelect.value)?.dishes) {
-          this.upsertRestaurant(await this.api(`/api/restaurants/${restaurantSelect.value}`));
-        }
-        fillDishes(restaurantSelect.value);
-      });
       const params = new URLSearchParams(window.location.search);
       const presetRestaurant = params.get('restaurantId');
-      const presetDish = params.get('dishId');
       if (presetRestaurant) {
-        if (!this.getRestaurantById(presetRestaurant)?.dishes) {
-          this.upsertRestaurant(await this.api(`/api/restaurants/${presetRestaurant}`));
-        }
         restaurantSelect.value = presetRestaurant;
       }
-      fillDishes(restaurantSelect.value);
-      if (presetDish) dishSelect.value = presetDish;
       document.getElementById('writeReviewForm').addEventListener('submit', async event => {
         event.preventDefault();
         const formData = new FormData(event.target);
@@ -1560,8 +1466,7 @@
       await Promise.all([this.loadReviews(true), this.loadFavourites(true)]);
       const myReviews = this.getAllReviews().filter(review => review.userId === currentUser.id);
       const favouriteRestaurants = this.state.favourites.restaurants;
-      const favouriteDishes = this.state.favourites.dishes;
-      const favouriteCount = favouriteRestaurants.length + favouriteDishes.length;
+      const favouriteCount = favouriteRestaurants.length;
       const selectedAvatar = currentUser.avatarUrl || `preset:${DEFAULT_AVATAR_ID}`;
       const cuisineOptions = this.getCuisineOptions().map(cuisine => `<option value="${escapeHtml(cuisine)}"${cuisine === currentUser.preferredCuisine ? ' selected' : ''}>${escapeHtml(cuisine)}</option>`).join('');
       document.getElementById('profileHeader').innerHTML = `
@@ -1599,8 +1504,7 @@
       this.bindProfileEditor(currentUser);
       document.getElementById('myReviews').innerHTML = myReviews.length ? myReviews.map(review => this.renderReviewCard(review, true)).join('') : this.emptyState('You have not written any reviews yet.');
       const favouriteHtml = [
-        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`),
-        ...favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}" class="btn btn-sm btn-primary">Open</a></div>`)
+        ...favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a href="restaurant.html?id=${encodeRouteValue(restaurant.id)}" class="btn btn-sm btn-primary">Open</a></div>`)
       ].join('');
       document.getElementById('profileFavourites').innerHTML = favouriteHtml || this.emptyState('Nothing saved yet.');
     },
@@ -1621,7 +1525,6 @@
 
     async initFavourites() {
       const restaurantContainer = document.getElementById('favouriteRestaurants');
-      const dishContainer = document.getElementById('favouriteDishes');
       if (!this.getCurrentUser()) {
         this.showFullPageNotice('Please log in to view your favourites.', 'login.html');
         return;
@@ -1629,12 +1532,9 @@
       try {
         await this.loadFavourites(true);
         const favouriteRestaurants = this.state.favourites.restaurants;
-        const favouriteDishes = this.state.favourites.dishes;
         restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">View</a></div>`).join('') : this.emptyState('No saved restaurants yet.');
-        dishContainer.innerHTML = favouriteDishes.length ? favouriteDishes.map(item => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(item.dish.name)}</h3><p class="text-secondary mb-2">${escapeHtml(item.restaurant.name)}</p><a class="btn btn-sm btn-primary" href="dish.html?restaurant=${encodeRouteValue(item.restaurant.id)}&dish=${encodeRouteValue(item.dish.id)}">View</a></div>`).join('') : this.emptyState('No saved dishes yet.');
       } catch (error) {
         restaurantContainer.innerHTML = this.emptyState(error.message);
-        dishContainer.innerHTML = this.emptyState(error.message);
       }
     },
 
@@ -1697,7 +1597,7 @@
         }
       }
       this.state.currentUser = null;
-      this.state.favourites = { restaurants: [], dishes: [] };
+      this.state.favourites = { restaurants: [] };
       this.renderLayout();
     },
 
@@ -1745,30 +1645,17 @@
     async saveRestaurant(restaurantId, targetId = '') {
       if (!this.getCurrentUser()) {
         if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
-        return;
+        return false;
       }
       try {
         await this.api(`/api/favourites/restaurants/${restaurantId}`, { method: 'POST' });
-        this.state.favourites = { restaurants: [], dishes: [] };
+        this.state.favourites = { restaurants: [] };
         await this.loadFavourites(true);
         if (targetId) this.showMessage(targetId, 'Restaurant saved to favourites.', 'success');
+        return true;
       } catch (error) {
         if (targetId) this.showMessage(targetId, error.message, 'error');
-      }
-    },
-
-    async saveDish(restaurantId, dishId, targetId = '') {
-      if (!this.getCurrentUser()) {
-        if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
-        return;
-      }
-      try {
-        await this.api('/api/favourites/dishes', { method: 'POST', body: { restaurantId, dishId } });
-        this.state.favourites = { restaurants: [], dishes: [] };
-        await this.loadFavourites(true);
-        if (targetId) this.showMessage(targetId, 'Dish saved to favourites.', 'success');
-      } catch (error) {
-        if (targetId) this.showMessage(targetId, error.message, 'error');
+        return false;
       }
     },
 
@@ -1776,11 +1663,6 @@
       document.querySelectorAll('.save-restaurant-trigger').forEach(button => {
         button.onclick = async () => {
           await this.saveRestaurant(button.dataset.id);
-        };
-      });
-      document.querySelectorAll('.save-dish-trigger').forEach(button => {
-        button.onclick = async () => {
-          await this.saveDish(button.dataset.restaurant, button.dataset.id);
         };
       });
     },
