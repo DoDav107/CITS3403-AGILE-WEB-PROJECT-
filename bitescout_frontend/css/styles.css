@@ -3167,6 +3167,25 @@ body:not([data-page="home"]) main > section:not(.hero-premium) {
   }
 }
 
-.section-top-rated .section-title {
-    color: #2b1d17 !important;
+.section-top-rated,
+.section-testimonials {
+  opacity: 1 !important;
+  filter: none !important;
+}
+
+.section-top-rated .section-title,
+.section-testimonials .section-title,
+.section-testimonials .testimonial-text,
+.section-testimonials .testimonial-author,
+.section-testimonials .testimonial-author .fw-bold,
+.section-testimonials .testimonial-author .text-secondary,
+.section-testimonials .testimonial-author strong,
+.section-testimonials .testimonial-author span {
+  color: #000000 !important;
+}
+
+.section-how .how-card h3,
+.section-how .how-card .h5,
+.section-how .how-card .fw-bold {
+  color: #000000 !important;
 }
