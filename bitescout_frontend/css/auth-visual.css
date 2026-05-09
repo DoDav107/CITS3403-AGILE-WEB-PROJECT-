@@ -1,0 +1,105 @@
+.auth-shell {
+  min-height: 100vh;
+  background-image: url("../img/hero-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  padding: 48px 0;
+  position: relative;
+}
+
+.auth-card {
+  background: rgba(255, 252, 246, 0.88) !important;
+  border: 1px solid rgba(80, 50, 30, 0.12) !important;
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  color: #2b1d17 !important;
+  backdrop-filter: blur(4px);
+}
+
+.auth-card h1,
+.auth-card h2,
+.auth-card h3 {
+  color: #2b1d17 !important;
+  font-weight: 800;
+}
+
+.auth-card p,
+.auth-card .text-secondary,
+.auth-card .form-text,
+.auth-card small,
+.auth-card .field-hint {
+  color: #6b5b53 !important;
+}
+
+.auth-card .eyebrow {
+  color: #ff7a3d !important;
+}
+
+.auth-card .form-label {
+  color: #2b1d17 !important;
+  font-weight: 700;
+}
+
+.auth-card .form-control,
+.auth-card .form-select {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border: 1px solid rgba(75, 59, 51, 0.25) !important;
+  border-radius: 18px;
+  color: #2b1d17 !important;
+  padding: 14px 18px;
+}
+
+.auth-card .form-control::placeholder {
+  color: #9b8c84 !important;
+}
+
+.auth-card .form-control:focus,
+.auth-card .form-select:focus {
+  border-color: #ff7a3d !important;
+  box-shadow: 0 0 0 0.2rem rgba(255, 122, 61, 0.18) !important;
+}
+
+.auth-card .field-error {
+  color: #d64545 !important;
+  font-weight: 700;
+}
+
+.auth-card .is-invalid,
+.auth-card .form-control.is-invalid,
+.auth-card .form-select.is-invalid {
+  border-color: #d64545 !important;
+  background-color: #fff7f4 !important;
+}
+
+.auth-card .password-rules {
+  color: #6b5b53 !important;
+}
+
+.auth-card .password-rules li {
+  color: #6b5b53 !important;
+}
+
+.auth-card a {
+  color: #e85d24 !important;
+  font-weight: 700;
+}
+
+.auth-card .btn-primary {
+  background: linear-gradient(135deg, #ff7a3d, #ff4f2e) !important;
+  border: none !important;
+  color: #ffffff !important;
+  border-radius: 999px;
+  font-weight: 700;
+  padding: 13px 22px;
+}
+
+.auth-card .btn-primary:hover {
+  background: linear-gradient(135deg, #ff8b50, #ff5d3d) !important;
+  color: #ffffff !important;
+}
+
+.page-food-motion {
+  opacity: 0.45 !important;
+  filter: none !important;
+}

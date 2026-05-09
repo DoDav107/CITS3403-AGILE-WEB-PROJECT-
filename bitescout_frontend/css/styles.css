@@ -3166,3 +3166,7 @@ body:not([data-page="home"]) main > section:not(.hero-premium) {
     animation: none;
   }
 }
+
+.section-top-rated .section-title {
+    color: #2b1d17 !important;
+}
