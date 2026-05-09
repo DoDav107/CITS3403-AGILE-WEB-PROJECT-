@@ -863,7 +863,7 @@
       return images[this.hashString(signature || category) % images.length];
     },
 
-    renderRestaurantCard(restaurant) {
+    renderRestaurantCard(restaurant, options = {}) {
       const distanceHtml = restaurant.distanceKm != null ? `<span class="distance-pill">📍 ${restaurant.distanceKm.toFixed(1)} km</span>` : '';
       const imageUrl = this.getRestaurantImage(restaurant);
       const imageHtml = `<img src="${imageUrl}" alt="${this.escapeHtml(restaurant.name)}" class="restaurant-image-img" style="width:100%;height:100%;object-fit:cover;border-radius:1rem;" loading="lazy" />`;
@@ -871,6 +871,9 @@
       const websiteButton = restaurant.websiteUri
         ? `<a class="btn btn-outline-dark btn-sm" href="${escapeHtml(restaurant.websiteUri)}" target="_blank" rel="noopener noreferrer">Website</a>`
         : '';
+      const saveButton = options.saved
+        ? '<button class="btn btn-primary btn-sm" type="button" disabled title="Saved to favourites" aria-label="Saved to favourites">Saved</button>'
+        : `<button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurantId}">Save</button>`;
       return `
         <div class="col-md-6 col-xl-4">
           <div class="restaurant-card p-3 d-flex flex-column">
@@ -886,7 +889,7 @@
             <p class="text-secondary">${escapeHtml(restaurant.blurb)}</p>
             <div class="d-flex flex-wrap gap-2 mt-auto pt-2">
               <a class="btn btn-primary btn-sm" href="restaurant.html?id=${restaurantId}">View details</a>
-              <button class="btn btn-outline-dark btn-sm save-restaurant-trigger" data-id="${restaurantId}">Save</button>
+              ${saveButton}
               ${websiteButton}
             </div>
           </div>
@@ -1913,9 +1916,11 @@
       try {
         await this.loadFavourites(true);
         const favouriteRestaurants = this.state.favourites.restaurants;
-        restaurantContainer.innerHTML = favouriteRestaurants.length ? favouriteRestaurants.map(restaurant => `<div class="favorite-card p-3 mb-3"><h3 class="h5 fw-bold mb-1">${escapeHtml(restaurant.name)}</h3><p class="text-secondary mb-2">${escapeHtml(restaurant.suburb)} • ${escapeHtml(restaurant.cuisine)}</p><a class="btn btn-sm btn-primary" href="restaurant.html?id=${encodeRouteValue(restaurant.id)}">View</a></div>`).join('') : this.emptyState('No saved places yet.');
+        restaurantContainer.innerHTML = favouriteRestaurants.length
+          ? favouriteRestaurants.map(restaurant => this.renderRestaurantCard(restaurant, { saved: true })).join('')
+          : `<div class="col-12">${this.emptyState('No saved places yet.')}</div>`;
       } catch (error) {
-        restaurantContainer.innerHTML = this.emptyState(error.message);
+        restaurantContainer.innerHTML = `<div class="col-12">${this.emptyState(error.message)}</div>`;
       }
     },
 
@@ -2026,15 +2031,17 @@
     async saveRestaurant(restaurantId, targetId = '') {
       if (!this.getCurrentUser()) {
         if (targetId) this.showMessage(targetId, 'Please log in before saving favourites.', 'error');
-        return;
+        return false;
       }
       try {
         await this.api(`/api/favourites/restaurants/${restaurantId}`, { method: 'POST' });
         this.state.favourites = { restaurants: [], dishes: [] };
         await this.loadFavourites(true);
         if (targetId) this.showMessage(targetId, 'Restaurant saved to favourites.', 'success');
+        return true;
       } catch (error) {
         if (targetId) this.showMessage(targetId, error.message, 'error');
+        return false;
       }
     },
 
@@ -2045,7 +2052,29 @@
     bindSaveButtons() {
       document.querySelectorAll('.save-restaurant-trigger').forEach(button => {
         button.onclick = async () => {
-          await this.saveRestaurant(button.dataset.id);
+          if (!this.getCurrentUser()) {
+            button.textContent = 'Log in to save';
+            window.setTimeout(() => {
+              button.textContent = 'Save';
+            }, 1600);
+            return;
+          }
+
+          const originalText = button.textContent;
+          button.disabled = true;
+          button.textContent = 'Saving...';
+          const saved = await this.saveRestaurant(button.dataset.id);
+
+          if (saved) {
+            button.textContent = 'Saved';
+            button.classList.remove('btn-outline-dark');
+            button.classList.add('btn-primary');
+            button.setAttribute('aria-label', 'Saved to favourites');
+            button.title = 'Saved to favourites';
+          } else {
+            button.disabled = false;
+            button.textContent = originalText || 'Save';
+          }
         };
       });
     },
@@ -2053,7 +2082,7 @@
     showFullPageNotice(message, actionHref) {
       const main = document.querySelector('main');
       main.innerHTML = `
-        <section class="py-5">
+        <section class="py-5 full-page-notice">
           <div class="container">
             <div class="glass-card p-5 text-center">
               <h1 class="h2 fw-bold mb-3">Action required</h1>

@@ -3192,3 +3192,229 @@ body:not([data-page="home"]) main > section:not(.hero-premium) {
   border-color: #e6453f;
   box-shadow: 0 0 0 0.2rem rgba(255, 95, 87, 0.18);
 }
+
+/* Review fixes: keep the bright home sections readable on light panels. */
+body[data-page="home"] .section-top-rated .section-title,
+body[data-page="home"] .section-testimonials .section-title,
+body[data-page="home"] .section-how .how-card h3,
+body[data-page="home"] .section-how .how-card .fw-bold,
+body[data-page="home"] .section-testimonials .testimonial-author .fw-bold {
+  color: var(--sunrise-ink) !important;
+  text-shadow: none;
+}
+
+body[data-page="home"] .stats-bar .stat-label,
+body[data-page="home"] .section-testimonials .testimonial-text,
+body[data-page="home"] .section-testimonials .text-secondary,
+body[data-page="home"] .section-cta .cta-subtitle {
+  color: var(--sunrise-muted) !important;
+  text-shadow: none;
+}
+
+body[data-page="home"] .section-testimonials .testimonial-card {
+  color: var(--sunrise-ink);
+}
+
+body[data-page="home"] .section-cta .cta-title {
+  color: var(--sunrise-ink);
+}
+
+.full-page-notice {
+  background: transparent !important;
+}
+
+.full-page-notice .glass-card {
+  background:
+    linear-gradient(145deg, rgba(255, 252, 244, 0.96), rgba(255, 232, 201, 0.88)),
+    radial-gradient(circle at 100% 0%, rgba(0, 184, 148, 0.08), transparent 32%) !important;
+  color: var(--sunrise-ink);
+}
+
+/* Review fixes: remove card hover motion and visible gradient effects. */
+body {
+  background: #fff3df !important;
+  animation: none !important;
+}
+
+body::after,
+main::after,
+.hero-overlay::after,
+.section-top-rated::before,
+.section-how::before,
+.section-testimonials::before,
+.section-cta::before,
+.hero-section::before,
+.page-banner::before,
+.section-title::after,
+.btn-primary::after,
+.btn-outline-dark::after,
+.btn-outline-light::after,
+.restaurant-card::before,
+.dish-card::before,
+.restaurant-card::after,
+.dish-card::after,
+.review-card::after,
+.favorite-card::after,
+.how-card::before,
+.how-card::after,
+.testimonial-card::before,
+.testimonial-card::after,
+.glass-card::after,
+.auth-card::after,
+.profile-bar::after,
+.restaurant-image::before,
+.restaurant-image::after,
+.detail-image::before,
+.detail-image::after {
+  animation: none !important;
+  background: none !important;
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.stats-bar,
+.section-top-rated,
+.section-how,
+.section-testimonials,
+.section-cta,
+.site-footer,
+body:not([data-page="home"]) main > section:not(.hero-premium),
+.page-banner,
+.hero-section,
+body:not([data-page="home"]) .page-banner,
+body[data-page="write-review"] main > section:first-child,
+body[data-page="edit-review"] main > section:first-child {
+  background-color: rgba(255, 249, 239, 0.9) !important;
+  background-image: none !important;
+}
+
+.restaurant-card,
+.dish-card,
+.review-card,
+.favorite-card,
+.how-card,
+.testimonial-card,
+.glass-card,
+.auth-card,
+.profile-bar,
+.empty-state,
+.card,
+.list-group-item,
+.modal-content,
+#bitescout-chatbot .chat-window {
+  background-color: rgba(255, 252, 244, 0.92) !important;
+  background-image: none !important;
+}
+
+.btn-primary,
+.btn-gold,
+.chat-send,
+.chat-widget-btn {
+  background: #f2b84b !important;
+  background-image: none !important;
+  border-color: #cf9130 !important;
+  color: #2d1710 !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-gold:hover,
+.btn-gold:focus,
+.chat-send:hover,
+.chat-widget-btn:hover {
+  background: #d99a35 !important;
+  background-image: none !important;
+  color: #2d1710 !important;
+}
+
+.btn-outline-dark,
+.btn-outline-light,
+.btn-outline-primary {
+  background: rgba(255, 252, 244, 0.84) !important;
+  background-image: none !important;
+}
+
+.navbar,
+.navbar.scrolled,
+.navbar-collapse.show,
+.navbar-collapse.collapsing,
+.navbar-brand .badge,
+.navbar-nav .nav-link.active,
+.navbar-nav .nav-link:hover,
+.hero-badge,
+.hero-search-bar,
+.chat-header,
+.rating-pill,
+.price-pill,
+.distance-pill,
+.cuisine-pill,
+.badge-soft,
+.profile-bar-meta span,
+.profile-cuisine-link,
+.mini-feature,
+.auth-card::before {
+  background-image: none !important;
+}
+
+.navbar,
+.navbar.scrolled {
+  background-color: rgba(255, 248, 232, 0.96) !important;
+}
+
+.navbar-brand .badge,
+.hero-badge {
+  background-color: #f2b84b !important;
+}
+
+.text-gold {
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  color: #d68028 !important;
+}
+
+.restaurant-card,
+.dish-card,
+.review-card,
+.favorite-card,
+.how-card,
+.testimonial-card,
+.glass-card,
+.auth-card,
+.profile-bar,
+.restaurant-image,
+.detail-image,
+.how-icon,
+.testimonial-avatar {
+  animation: none !important;
+  transform: none !important;
+  transition: none !important;
+}
+
+.restaurant-card:hover,
+.dish-card:hover,
+.review-card:hover,
+.favorite-card:hover,
+.how-card:hover,
+.testimonial-card:hover,
+.glass-card:hover,
+.auth-card:hover,
+.profile-bar:hover,
+.luxury-reveal.is-visible.restaurant-card:hover,
+.luxury-reveal.is-visible.dish-card:hover,
+.luxury-reveal.is-visible.review-card:hover,
+.luxury-reveal.is-visible.favorite-card:hover,
+.luxury-reveal.is-visible.how-card:hover,
+.luxury-reveal.is-visible.testimonial-card:hover,
+.luxury-reveal.is-visible.glass-card:hover,
+.restaurant-card:hover .restaurant-image,
+.how-card:hover .how-icon,
+.testimonial-card:hover .testimonial-avatar {
+  animation: none !important;
+  box-shadow: 0 24px 70px rgba(128, 75, 32, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.7) !important;
+  transform: none !important;
+  transition: none !important;
+}
