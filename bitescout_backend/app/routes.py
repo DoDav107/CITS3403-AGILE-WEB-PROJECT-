@@ -5,6 +5,7 @@ from functools import wraps
 import hashlib
 from flask import Blueprint, current_app, jsonify, redirect, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import generate_csrf
 from . import db
 from . import google_places
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest
@@ -12,6 +13,12 @@ import google.generativeai as genai
 
 
 bp = Blueprint('main', __name__)
+
+
+@bp.get('/api/csrf-token')
+def csrf_token():
+    """Return a CSRF token for the frontend to include in state-changing requests."""
+    return jsonify({'csrfToken': generate_csrf()})
 
 MAX_BIO_LENGTH = 500
 MAX_AVATAR_URL_LENGTH = 1_500_000

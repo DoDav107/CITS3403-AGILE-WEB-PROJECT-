@@ -248,7 +248,18 @@
 
     async bootstrap() {
       this.state.recentSearches = this.getRecentSearches();
+      await this.loadCsrfToken();
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
+    },
+
+    async loadCsrfToken() {
+      try {
+        const response = await fetch('/api/csrf-token', { credentials: 'same-origin' });
+        const data = await response.json();
+        this.state.csrfToken = data.csrfToken || '';
+      } catch {
+        this.state.csrfToken = '';
+      }
     },
 
     async api(path, options = {}) {
@@ -257,6 +268,12 @@
         headers: { Accept: 'application/json' },
         ...options
       };
+
+      // Include CSRF token on state-changing requests
+      const method = (config.method || 'GET').toUpperCase();
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && this.state.csrfToken) {
+        config.headers['X-CSRFToken'] = this.state.csrfToken;
+      }
 
       if (config.body && !(config.body instanceof FormData)) {
         config.headers = { 'Content-Type': 'application/json', ...config.headers };

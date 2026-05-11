@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -7,6 +8,10 @@ from sqlalchemy import inspect, text
 
 
 db = SQLAlchemy()
+csrf = CSRFProtect()
+
+
+
 
 
 def ensure_user_profile_columns():
@@ -44,11 +49,12 @@ def create_app(test_config=None):
     frontend_dir = Path(__file__).resolve().parents[2] / "bitescout_frontend"
     app = Flask(__name__, static_folder=str(frontend_dir), static_url_path="")
     app.config.update(
-        SECRET_KEY="dev-change-me",
+        SECRET_KEY=os.getenv("SECRET_KEY", "dev-change-me"),
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{Path(app.instance_path) / 'bitescout.db'}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JSON_SORT_KEYS=False,
         GOOGLE_MAPS_API_KEY=(os.getenv("GOOGLE_MAPS_API_KEY") or "").strip(),
+        WTF_CSRF_TIME_LIMIT=3600,
     )
 
     if test_config:
@@ -57,6 +63,7 @@ def create_app(test_config=None):
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
+    csrf.init_app(app)
 
     from . import models  # noqa: F401
     from .routes import bp
