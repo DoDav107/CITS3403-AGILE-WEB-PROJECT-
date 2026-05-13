@@ -1057,14 +1057,14 @@ h1, h2, .section-title, .hero-title, .cta-title {
 
 .password-rules li {
   align-items: center;
-  color: rgba(255,255,255,0.5);
+  color: #6f4a3c;
   display: flex;
   font-size: 0.84rem;
   gap: 0.45rem;
 }
 
 .password-rules li::before {
-  border: 1px solid rgba(255,255,255,0.28);
+  border: 1px solid rgba(111, 74, 60, 0.38);
   border-radius: 999px;
   content: "";
   flex: 0 0 0.55rem;
@@ -1073,7 +1073,7 @@ h1, h2, .section-title, .hero-title, .cta-title {
 }
 
 .password-rules li.is-met {
-  color: #9ff0c2;
+  color: #146c43;
   font-weight: 700;
 }
 
@@ -3191,4 +3191,61 @@ body:not([data-page="home"]) main > section:not(.hero-premium) {
   background-color: rgba(255, 243, 232, 0.96);
   border-color: #e6453f;
   box-shadow: 0 0 0 0.2rem rgba(255, 95, 87, 0.18);
+}
+
+/* Keep the bright theme readable: reserve light text for image-backed hero areas. */
+body[data-page="home"] main > section:not(.hero-premium),
+body[data-page="home"] main > section:not(.hero-premium) h1,
+body[data-page="home"] main > section:not(.hero-premium) h2,
+body[data-page="home"] main > section:not(.hero-premium) h3,
+body[data-page="home"] main > section:not(.hero-premium) h4,
+body[data-page="home"] main > section:not(.hero-premium) h5,
+body[data-page="home"] main > section:not(.hero-premium) h6,
+body[data-page="home"] main > section:not(.hero-premium) .fw-bold,
+body[data-page="home"] main > section:not(.hero-premium) strong,
+body[data-page="home"] main > section:not(.hero-premium) b,
+body:not([data-page="home"]) main,
+body:not([data-page="home"]) main h1,
+body:not([data-page="home"]) main h2,
+body:not([data-page="home"]) main h3,
+body:not([data-page="home"]) main h4,
+body:not([data-page="home"]) main h5,
+body:not([data-page="home"]) main h6,
+body:not([data-page="home"]) main .fw-bold,
+body:not([data-page="home"]) main strong,
+body:not([data-page="home"]) main b {
+  color: var(--sunrise-ink) !important;
+}
+
+.restaurant-card .text-secondary,
+.dish-card .text-secondary,
+.review-card .text-secondary,
+.favorite-card .text-secondary,
+.how-card .text-secondary,
+.testimonial-card .text-secondary,
+.testimonial-text,
+.cta-subtitle,
+.stat-label,
+.site-footer,
+.site-footer .footer-note {
+  color: var(--sunrise-muted) !important;
+}
+
+.stat-number,
+.testimonial-stars,
+.link-gold {
+  color: #8a3b1f !important;
+}
+
+.hero-premium,
+.hero-premium .hero-title,
+.hero-premium .hero-subtitle,
+.hero-premium .btn-outline-light,
+.hero-premium .btn-outline-light:hover,
+.hero-premium .btn-outline-light:focus {
+  color: #fffdf8 !important;
+}
+
+.hero-premium .text-gold {
+  color: transparent !important;
 }
