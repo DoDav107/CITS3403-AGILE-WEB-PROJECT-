@@ -571,6 +571,22 @@
       return Array.from(cuisines).sort((left, right) => left.localeCompare(right));
     },
 
+    renderCuisineOptions(selectedValue = '', emptyLabel = 'Not set') {
+      const selected = String(selectedValue || '');
+      const emptySelected = selected ? '' : ' selected';
+      const options = this.getCuisineOptions().map(cuisine => {
+        const value = escapeHtml(cuisine);
+        const selectedAttribute = cuisine === selected ? ' selected' : '';
+        return `<option value="${value}"${selectedAttribute}>${value}</option>`;
+      }).join('');
+      return `<option value=""${emptySelected}>${escapeHtml(emptyLabel)}</option>${options}`;
+    },
+
+    populateCuisineSelect(select, emptyLabel = 'Not set', selectedValue = '') {
+      if (!select) return;
+      select.innerHTML = this.renderCuisineOptions(selectedValue || select.value || '', emptyLabel);
+    },
+
     getRestaurantById(id) {
       return this.state.restaurants.find(r => r.id === id) || data.restaurants.find(r => r.id === id) || null;
     },
@@ -1319,6 +1335,7 @@
     initSignup() {
       const form = document.getElementById('signupForm');
       if (!form) return;
+      this.populateCuisineSelect(form.elements.preferredCuisine, 'Choose one');
       this.bindAuthValidation(form, 'signup');
       form.addEventListener('submit', async event => {
         event.preventDefault();
@@ -1851,7 +1868,6 @@
       const favouriteRestaurants = this.state.favourites.restaurants;
       const favouriteCount = favouriteRestaurants.length;
       const selectedAvatar = currentUser.avatarUrl || `preset:${DEFAULT_AVATAR_ID}`;
-      const cuisineOptions = this.getCuisineOptions().map(cuisine => `<option value="${escapeHtml(cuisine)}"${cuisine === currentUser.preferredCuisine ? ' selected' : ''}>${escapeHtml(cuisine)}</option>`).join('');
       document.getElementById('profileHeader').innerHTML = `
         ${this.renderProfileUserBar(currentUser, { editable: true, reviewCount: myReviews.length, favouriteCount })}
         <div class="profile-editor glass-card p-4 mt-4" id="profileEditor" hidden>
@@ -1864,8 +1880,7 @@
               <div class="col-lg-7">
                 <label class="form-label fw-bold" for="profileCuisineInput">Preferred cuisine</label>
                 <select class="form-select mb-3" id="profileCuisineInput" name="preferredCuisine">
-                  <option value="">Not set</option>
-                  ${cuisineOptions}
+                  ${this.renderCuisineOptions(currentUser.preferredCuisine, 'Not set')}
                 </select>
                 <input type="hidden" id="profileAvatarValue" name="avatarUrl" value="${escapeHtml(selectedAvatar)}">
                 <div class="d-flex flex-wrap gap-2 align-items-center mb-3">
