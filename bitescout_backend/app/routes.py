@@ -7,6 +7,7 @@ from functools import wraps
 import hashlib
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_wtf.csrf import generate_csrf
 from . import db
 from . import google_places
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest

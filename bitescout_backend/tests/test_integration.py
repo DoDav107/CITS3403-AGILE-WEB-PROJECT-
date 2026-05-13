@@ -15,6 +15,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                     "TESTING": True,
                     "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(temp_dir.name) / 'test.db'}",
                     "SECRET_KEY": "test-secret",
+                    "WTF_CSRF_ENABLED": False,
                 }
             )
 
@@ -31,6 +32,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                         "TESTING": True,
                         "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(temp_dir.name) / 'test.db'}",
                         "SECRET_KEY": "test-secret",
+                        "WTF_CSRF_ENABLED": False,
                     }
                 )
 
@@ -60,6 +62,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "TESTING": True,
                 "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(self.temp_dir.name) / 'test.db'}",
                 "SECRET_KEY": "test-secret",
+                "WTF_CSRF_ENABLED": False,
             }
         )
         self.client = self.app.test_client()
@@ -380,6 +383,50 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers["Location"], "https://lh3.googleusercontent.com/test-photo")
+
+
+class CSRFProtectionTests(unittest.TestCase):
+    """Tests that verify CSRF protection is enforced when enabled."""
+
+    def setUp(self):
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.app = create_app(
+            {
+                "TESTING": True,
+                "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(self.temp_dir.name) / 'test.db'}",
+                "SECRET_KEY": "test-secret",
+                "WTF_CSRF_ENABLED": True,
+            }
+        )
+        self.client = self.app.test_client()
+
+    def tearDown(self):
+        from app import db
+        with self.app.app_context():
+            db.session.remove()
+            db.engine.dispose()
+        self.temp_dir.cleanup()
+
+    def test_post_without_csrf_token_is_rejected(self):
+        """State-changing requests without a CSRF token should return 400."""
+        response = self.client.post(
+            "/api/auth/login",
+            json={"email": "demo@bitescout.app", "password": "password123"},
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_post_with_valid_csrf_token_succeeds(self):
+        """State-changing requests with a valid CSRF token should be accepted."""
+        token_response = self.client.get("/api/csrf-token")
+        csrf_token = token_response.get_json()["csrfToken"]
+
+        response = self.client.post(
+            "/api/auth/login",
+            json={"email": "demo@bitescout.app", "password": "password123"},
+            headers={"X-CSRFToken": csrf_token},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.get_json()["user"]["email"], "demo@bitescout.app")
 
 
 if __name__ == "__main__":

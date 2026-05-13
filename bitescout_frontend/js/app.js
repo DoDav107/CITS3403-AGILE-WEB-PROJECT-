@@ -249,6 +249,7 @@
 
     async bootstrap() {
       this.state.recentSearches = this.getRecentSearches();
+      await this.getCsrfToken();
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
     },
 
@@ -275,6 +276,12 @@
       };
       const method = String(config.method || 'GET').toUpperCase();
       const isUnsafeMethod = !['GET', 'HEAD', 'OPTIONS'].includes(method);
+
+      // Include CSRF token on state-changing requests
+      const method = (config.method || 'GET').toUpperCase();
+      if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(method) && this.state.csrfToken) {
+        config.headers['X-CSRFToken'] = this.state.csrfToken;
+      }
 
       if (config.body && !(config.body instanceof FormData)) {
         config.headers = { 'Content-Type': 'application/json', ...config.headers };

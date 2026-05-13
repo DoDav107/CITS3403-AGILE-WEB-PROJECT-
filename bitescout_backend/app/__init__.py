@@ -1,5 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 import os
 from pathlib import Path
 from dotenv import load_dotenv
@@ -7,6 +8,10 @@ from sqlalchemy import inspect, text
 
 
 db = SQLAlchemy()
+csrf = CSRFProtect()
+
+
+
 
 
 def ensure_user_profile_columns():
@@ -54,6 +59,7 @@ def create_app(test_config=None):
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JSON_SORT_KEYS=False,
         GOOGLE_MAPS_API_KEY=(os.getenv("GOOGLE_MAPS_API_KEY") or "").strip(),
+        WTF_CSRF_TIME_LIMIT=3600,
     )
 
     if test_config:
@@ -62,6 +68,7 @@ def create_app(test_config=None):
     Path(app.instance_path).mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
+    csrf.init_app(app)
 
     from . import models  # noqa: F401
     from .routes import bp
