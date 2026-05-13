@@ -26,16 +26,16 @@ class SeleniumTests(unittest.TestCase):
         email_input = self.driver.find_element(By.NAME, "email")
         password_input = self.driver.find_element(By.NAME, "password")
 
-        email_input.send_keys("bryantgu88@gmail.com")
-        password_input.send_keys("123456")
+        email_input.send_keys("demo@bitescout.app")
+        password_input.send_keys("password123")
 
         login_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
         login_button.click()
 
         time.sleep(2)
 
-        self.assertNotIn("Invalid", self.driver.page_source)
-        self.assertIn("BiteScout", self.driver.page_source)
+        self.assertIn("profile.html", self.driver.current_url)
+        self.assertIn("Demo User", self.driver.page_source)
 
     def test_signup_page_loads(self):
         self.driver.get("http://127.0.0.1:5000/signup.html")

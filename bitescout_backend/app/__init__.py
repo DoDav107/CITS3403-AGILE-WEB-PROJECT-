@@ -42,9 +42,14 @@ def create_app(test_config=None):
     load_dotenv(backend_dir / ".env")
 
     frontend_dir = Path(__file__).resolve().parents[2] / "bitescout_frontend"
-    app = Flask(__name__, static_folder=str(frontend_dir), static_url_path="")
+    app = Flask(
+        __name__,
+        static_folder=str(frontend_dir),
+        static_url_path="",
+        template_folder=str(frontend_dir),
+    )
     app.config.update(
-        SECRET_KEY="dev-change-me",
+        SECRET_KEY=os.getenv("SECRET_KEY", "dev-change-me"),
         SQLALCHEMY_DATABASE_URI=f"sqlite:///{Path(app.instance_path) / 'bitescout.db'}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         JSON_SORT_KEYS=False,
