@@ -8,3 +8,7 @@ Project/.venv/
 bitescout_backend/instance/
 run_bitescout_demo.sh
 .env
+instance/
+sample/
+bitescout_frontend/img/avatars/
+/PageImage.jpg
