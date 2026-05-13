@@ -2,12 +2,11 @@ from datetime import datetime
 import os
 import re
 import hmac
-import secrets
 from functools import wraps
 import hashlib
 from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_wtf.csrf import generate_csrf
+from flask_wtf.csrf import CSRFError, generate_csrf
 from . import db
 from . import google_places
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest
@@ -59,11 +58,16 @@ def login_required(fn):
 
 
 def get_csrf_token():
-    token = session.get(CSRF_SESSION_KEY)
-    if not token:
-        token = secrets.token_urlsafe(32)
-        session[CSRF_SESSION_KEY] = token
+    token = generate_csrf()
+    session[CSRF_SESSION_KEY] = token
     return token
+
+
+@bp.app_errorhandler(CSRFError)
+def handle_csrf_error(error):
+    if request.path.startswith('/api/'):
+        return jsonify({'error': error.description or 'Invalid CSRF token.'}), 400
+    return error.description, 400
 
 
 @bp.before_app_request
