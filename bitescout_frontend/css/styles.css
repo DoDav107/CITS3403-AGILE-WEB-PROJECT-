@@ -3179,6 +3179,25 @@ body:not([data-page="home"]) main > section:not(.hero-premium) {
   color: #725143 !important;
 }
 
+.auth-card .password-rules li {
+  color: #6f4b3c !important;
+}
+
+.auth-card .password-rules li::before {
+  border-color: rgba(111, 75, 60, 0.42) !important;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.auth-card .password-rules li.is-met {
+  color: #137a4a !important;
+}
+
+.auth-card .password-rules li.is-met::before {
+  background: #1f9d62 !important;
+  border-color: #1f9d62 !important;
+  box-shadow: 0 0 0 0.16rem rgba(31, 157, 98, 0.16) !important;
+}
+
 .field-error,
 .auth-message.text-danger {
   color: #9f1f1a !important;
