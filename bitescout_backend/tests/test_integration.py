@@ -40,6 +40,21 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         finally:
             temp_dir.cleanup()
 
+    def test_secret_key_is_loaded_from_environment(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        try:
+            with patch.dict("os.environ", {"SECRET_KEY": "env-secret-key"}):
+                app = create_app(
+                    {
+                        "TESTING": True,
+                        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(temp_dir.name) / 'test.db'}",
+                    }
+                )
+
+            self.assertEqual(app.config["SECRET_KEY"], "env-secret-key")
+        finally:
+            temp_dir.cleanup()
+
     def setUp(self):
         self.temp_dir = tempfile.TemporaryDirectory()
         self.app = create_app(
@@ -59,11 +74,35 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             db.engine.dispose()
         self.temp_dir.cleanup()
 
+    def csrf_headers(self):
+        response = self.client.get("/api/csrf-token")
+        self.assertEqual(response.status_code, 200)
+        token = response.get_json()["csrfToken"]
+        return {"X-CSRFToken": token}
+
     def login_demo_user(self):
         return self.client.post(
             "/api/auth/login",
             json={"email": "demo@bitescout.app", "password": "password123"},
+            headers=self.csrf_headers(),
         )
+
+    def test_csrf_token_endpoint_sets_session_token(self):
+        response = self.client.get("/api/csrf-token")
+
+        self.assertEqual(response.status_code, 200)
+        token = response.get_json()["csrfToken"]
+        self.assertIsInstance(token, str)
+        self.assertGreaterEqual(len(token), 32)
+
+    def test_mutating_request_without_csrf_token_is_rejected(self):
+        response = self.client.post(
+            "/api/auth/login",
+            json={"email": "demo@bitescout.app", "password": "password123"},
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["error"], "Invalid CSRF token.")
 
     def test_frontend_home_page_is_served(self):
         response = self.client.get("/")
@@ -115,6 +154,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "preferredCuisine": "Thai",
                 "avatarUrl": "preset:avatar-curry",
             },
+            headers=self.csrf_headers(),
         )
 
         self.assertEqual(response.status_code, 200)
@@ -129,6 +169,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         response = self.client.put(
             "/api/users/me",
             json={"avatarUrl": "javascript:alert(1)"},
+            headers=self.csrf_headers(),
         )
 
         self.assertEqual(response.status_code, 400)
@@ -140,6 +181,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "placeName": "Test Dumpling House",
                 "details": "Northbridge, dumplings, suggested by a user.",
             },
+            headers=self.csrf_headers(),
         )
         list_response = self.client.get("/api/missing-place-requests")
 
@@ -151,7 +193,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
     def test_favourites_can_be_saved_and_listed(self):
         self.login_demo_user()
 
-        save_response = self.client.post("/api/favourites/restaurants/r1")
+        save_response = self.client.post("/api/favourites/restaurants/r1", headers=self.csrf_headers())
         list_response = self.client.get("/api/favourites")
 
         self.assertEqual(save_response.status_code, 200)
@@ -181,6 +223,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "websiteUri": "https://ramen.example.com",
                 "googleMapsUri": "https://maps.google.com/?cid=123",
             },
+            headers=self.csrf_headers(),
         )
 
         self.assertEqual(response.status_code, 201)
@@ -209,6 +252,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "title": "Great bowl",
                 "content": "Would order again.",
             },
+            headers=self.csrf_headers(),
         )
 
         self.assertEqual(response.status_code, 201)
@@ -227,6 +271,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "title": "Bad input",
                 "content": "Should be rejected.",
             },
+            headers=self.csrf_headers(),
         )
 
         self.assertEqual(response.status_code, 400)
@@ -243,12 +288,14 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "title": "Editable review",
                 "content": "Created for update validation.",
             },
+            headers=self.csrf_headers(),
         )
         review_id = create_response.get_json()["review"]["id"]
 
         response = self.client.put(
             f"/api/reviews/{review_id}",
             json={"rating": "bad"},
+            headers=self.csrf_headers(),
         )
 
         self.assertEqual(response.status_code, 400)
@@ -266,6 +313,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 "title": "Low rating",
                 "content": "Forcing a rating recalculation.",
             },
+            headers=self.csrf_headers(),
         )
         review_id = create_response.get_json()["review"]["id"]
         restaurant_after_create = self.client.get("/api/restaurants/r1").get_json()
@@ -274,12 +322,13 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         update_response = self.client.put(
             f"/api/reviews/{review_id}",
             json={"rating": 3, "title": "Updated rating", "content": "Adjusted upward."},
+            headers=self.csrf_headers(),
         )
         self.assertEqual(update_response.status_code, 200)
         restaurant_after_update = self.client.get("/api/restaurants/r1").get_json()
         self.assertEqual(restaurant_after_update["rating"], 4.0)
 
-        delete_response = self.client.delete(f"/api/reviews/{review_id}")
+        delete_response = self.client.delete(f"/api/reviews/{review_id}", headers=self.csrf_headers())
         self.assertEqual(delete_response.status_code, 200)
         restaurant_after_delete = self.client.get("/api/restaurants/r1").get_json()
         self.assertEqual(restaurant_after_delete["rating"], 5.0)
@@ -314,6 +363,7 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             response = self.client.post(
                 "/api/google/nearby",
                 json={"lat": -31.95, "lng": 115.86, "radius": 8000, "includedTypes": ["cafe"]},
+                headers=self.csrf_headers(),
             )
 
         self.assertEqual(response.status_code, 200)

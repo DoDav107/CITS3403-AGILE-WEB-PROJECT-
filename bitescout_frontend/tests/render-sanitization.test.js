@@ -3,6 +3,23 @@ const assert = require('node:assert/strict');
 
 const { App } = require('../js/app.js');
 
+function jsonResponse(payload, ok = true) {
+  return {
+    ok,
+    headers: {
+      get(name) {
+        return name.toLowerCase() === 'content-type' ? 'application/json' : '';
+      }
+    },
+    async json() {
+      return payload;
+    },
+    async text() {
+      return JSON.stringify(payload);
+    }
+  };
+}
+
 test('rating display uses stars without visible numeric scores', () => {
   const html = App.renderRatingStars(4.5);
 
@@ -70,6 +87,34 @@ test('Browse Google place filters combine normalized search, type, and rating', 
   });
 
   assert.deepEqual(filtered.map(place => place.id), ['p1']);
+});
+
+test('API sends CSRF token on unsafe JSON requests', async () => {
+  const originalFetch = global.fetch;
+  const calls = [];
+  App.state.csrfToken = '';
+  global.fetch = async (path, config = {}) => {
+    calls.push({ path, config });
+    if (path === '/api/csrf-token') return jsonResponse({ csrfToken: 'token-from-server' });
+    return jsonResponse({ ok: true });
+  };
+
+  try {
+    await App.api('/api/reviews', { method: 'POST', body: { title: 'Great bowl' } });
+  } finally {
+    global.fetch = originalFetch;
+    App.state.csrfToken = '';
+  }
+
+  assert.equal(calls[0].path, '/api/csrf-token');
+  assert.equal(calls[1].config.headers['X-CSRFToken'], 'token-from-server');
+});
+
+test('Browse page does not automatically request geolocation without cached coordinates', () => {
+  assert.equal(
+    App.shouldAutoLoadBrowseLocation({ cachedLocation: null, geolocationAvailable: true }),
+    false
+  );
 });
 
 test('restaurant tag links are escaped and point back to Browse filters', () => {

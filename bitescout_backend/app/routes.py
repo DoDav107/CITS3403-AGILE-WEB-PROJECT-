@@ -1,9 +1,11 @@
 from datetime import datetime
 import os
 import re
+import hmac
+import secrets
 from functools import wraps
 import hashlib
-from flask import Blueprint, current_app, jsonify, redirect, request, session
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_wtf.csrf import generate_csrf
 from . import db
@@ -14,12 +16,27 @@ import google.generativeai as genai
 
 bp = Blueprint('main', __name__)
 
-
-@bp.get('/api/csrf-token')
-def csrf_token():
-    """Return a CSRF token for the frontend to include in state-changing requests."""
-    return jsonify({'csrfToken': generate_csrf()})
-
+FRONTEND_PAGES = {
+    'about.html',
+    'browse.html',
+    'dish.html',
+    'edit-review.html',
+    'favourites.html',
+    'forgot-password.html',
+    'index.html',
+    'login.html',
+    'logout.html',
+    'places-request.html',
+    'profile.html',
+    'recommendations.html',
+    'restaurant.html',
+    'signup.html',
+    'user.html',
+    'write-review.html',
+}
+SAFE_METHODS = {'GET', 'HEAD', 'OPTIONS'}
+CSRF_SESSION_KEY = '_csrf_token'
+CSRF_HEADER = 'X-CSRFToken'
 MAX_BIO_LENGTH = 500
 MAX_AVATAR_URL_LENGTH = 1_500_000
 AVATAR_DATA_URL_RE = re.compile(r"^data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+$")
@@ -39,6 +56,28 @@ def login_required(fn):
             return jsonify({'error': 'Authentication required'}), 401
         return fn(*args, **kwargs)
     return wrapper
+
+
+def get_csrf_token():
+    token = session.get(CSRF_SESSION_KEY)
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session[CSRF_SESSION_KEY] = token
+    return token
+
+
+@bp.before_app_request
+def validate_csrf_token():
+    if request.method in SAFE_METHODS:
+        return None
+    if not request.path.startswith('/api/'):
+        return None
+
+    expected = session.get(CSRF_SESSION_KEY)
+    supplied = request.headers.get(CSRF_HEADER) or request.form.get('csrfToken')
+    if not expected or not supplied or not hmac.compare_digest(str(expected), str(supplied)):
+        return jsonify({'error': 'Invalid CSRF token.'}), 400
+    return None
 
 
 def user_to_dict(user):
@@ -186,12 +225,25 @@ def sync_restaurant_rating(restaurant_id):
 
 @bp.get('/')
 def index():
-    return current_app.send_static_file('index.html')
+    return render_template('index.html')
+
+
+@bp.get('/<page_name>.html')
+def frontend_page(page_name):
+    filename = f'{page_name}.html'
+    if filename not in FRONTEND_PAGES:
+        abort(404)
+    return render_template(filename)
 
 
 @bp.get('/health')
 def health():
     return jsonify({'status': 'ok'})
+
+
+@bp.get('/api/csrf-token')
+def csrf_token():
+    return jsonify({'csrfToken': get_csrf_token()})
 
 
 @bp.get('/api/restaurants')

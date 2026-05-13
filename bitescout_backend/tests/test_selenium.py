@@ -57,6 +57,7 @@ class SeleniumTests(unittest.TestCase):
         hero = self.driver.find_element(By.CSS_SELECTOR, ".hero-title")
         self.assertIn("bite", hero.text.lower())
 
+
     # ─── Test 2: Navigation links work ────────────────────────
 
     def test_nav_browse_link_navigates(self):

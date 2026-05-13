@@ -20,30 +20,66 @@ This project demonstrates both frontend and backend development in a team-based 
 - Backend route and model setup for future expansion
 
 
-How to use:
-Run Locally
+## How to use
 
+Run locally:
+
+```bash
 cd bitescout_backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 python run.py
+```
+
 Open in your browser:
 
-http://127.0.0.1:5000/
-http://127.0.0.1:5000/login.html
-http://127.0.0.1:5000/signup.html
-http://127.0.0.1:5000/browse.html
-http://127.0.0.1:5000/recommendations.html
-http://127.0.0.1:5000/places-request.html
+- http://127.0.0.1:5000/
+- http://127.0.0.1:5000/login.html
+- http://127.0.0.1:5000/signup.html
+- http://127.0.0.1:5000/browse.html
+- http://127.0.0.1:5000/recommendations.html
+- http://127.0.0.1:5000/places-request.html
 
+## Configuration
 
-how to run the test
-cd bitescout_backend
-source .venv/bin/activate
-python run.py
-open a new terminal
+Create `bitescout_backend/.env` from `bitescout_backend/.env.example`.
+
+- `SECRET_KEY` secures Flask sessions and CSRF tokens.
+- `GOOGLE_MAPS_API_KEY` enables Google Places location search and place photos.
+- `GEMINI_API_KEY` enables the BiteScout assistant.
+
+The Flask app serves the frontend through Jinja rendering while keeping CSS, JavaScript, and images as static assets.
+
+## How to run the tests
+
+Integration tests:
+
+```bash
 cd bitescout_backend
 source .venv/bin/activate
 python -m unittest tests/test_integration.py
+```
+
+Frontend JavaScript tests:
+
+```bash
+node --test bitescout_frontend/tests/render-sanitization.test.js
+```
+
+Selenium tests require the Flask server to be running:
+
+```bash
+cd bitescout_backend
+source .venv/bin/activate
+python run.py
+```
+
+In another terminal:
+
+```bash
+cd bitescout_backend
+source .venv/bin/activate
 python -m unittest tests/test_selenium.py
+```

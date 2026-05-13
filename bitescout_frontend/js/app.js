@@ -232,6 +232,7 @@
   const App = {
     state: {
       currentUser: null,
+      csrfToken: '',
       restaurants: [],
       reviews: [],
       favourites: { restaurants: [], dishes: [] },
@@ -248,18 +249,23 @@
 
     async bootstrap() {
       this.state.recentSearches = this.getRecentSearches();
-      await this.loadCsrfToken();
+      await this.getCsrfToken();
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
     },
 
-    async loadCsrfToken() {
-      try {
-        const response = await fetch('/api/csrf-token', { credentials: 'same-origin' });
-        const data = await response.json();
-        this.state.csrfToken = data.csrfToken || '';
-      } catch {
-        this.state.csrfToken = '';
+    async getCsrfToken(force = false) {
+      if (this.state.csrfToken && !force) return this.state.csrfToken;
+
+      const response = await fetch('/api/csrf-token', {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.csrfToken) {
+        throw new Error(payload.error || 'Could not prepare a secure request.');
       }
+      this.state.csrfToken = payload.csrfToken;
+      return this.state.csrfToken;
     },
 
     async api(path, options = {}) {
@@ -268,6 +274,8 @@
         headers: { Accept: 'application/json' },
         ...options
       };
+      const method = String(config.method || 'GET').toUpperCase();
+      const isUnsafeMethod = !['GET', 'HEAD', 'OPTIONS'].includes(method);
 
       // Include CSRF token on state-changing requests
       const method = (config.method || 'GET').toUpperCase();
@@ -280,6 +288,13 @@
         config.body = JSON.stringify(config.body);
       }
 
+      if (isUnsafeMethod) {
+        config.headers = {
+          ...config.headers,
+          'X-CSRFToken': config.headers['X-CSRFToken'] || await this.getCsrfToken()
+        };
+      }
+
       const response = await fetch(path, config);
       const contentType = response.headers.get('content-type') || '';
       const payload = contentType.includes('application/json') ? await response.json() : await response.text();
@@ -290,6 +305,10 @@
       }
 
       return payload;
+    },
+
+    shouldAutoLoadBrowseLocation({ cachedLocation = null } = {}) {
+      return Boolean(cachedLocation);
     },
 
     async loadCurrentUser() {
@@ -1584,12 +1603,10 @@
 
       // Auto-detect: use cached location or prompt for geolocation on first visit
       const cachedLocation = this.getUserLocation();
-      if (cachedLocation) {
+      if (this.shouldAutoLoadBrowseLocation({ cachedLocation, geolocationAvailable: Boolean(navigator.geolocation) })) {
         loadLocationByCoords(cachedLocation.lat, cachedLocation.lng, 'My location');
-      } else if (navigator.geolocation) {
-        requestGeolocation();
       } else {
-        this.showMessage('browseLocationMessage', 'Enter a location to search nearby restaurants.', 'info');
+        this.showMessage('browseLocationMessage', 'Enter a location or use your current location to search nearby restaurants.', 'info');
       }
     },
 
@@ -2222,34 +2239,21 @@
             chatPayload.location = { lat: storedLoc.lat, lng: storedLoc.lng };
           }
           
-          const response = await fetch('/api/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(chatPayload)
-          });
-          
-          const data = await response.json();
+          const data = await this.api('/api/chat', { method: 'POST', body: chatPayload });
           typingEl.classList.remove('visible');
-          
-          if (!response.ok) {
-            appendMessage(`<p class="text-danger">Sorry, I encountered an error: ${escapeHtml(data.error || 'Unknown error')}</p>`, 'ai');
-          } else {
-            // Convert markdown style links if any, though system prompt asks for HTML
-            // Add to chat history
-            this.state.chatHistory.push({ role: 'user', content: text });
-            this.state.chatHistory.push({ role: 'model', content: data.response });
-            sessionStorage.setItem('bitescout_chat_history', JSON.stringify(this.state.chatHistory));
-            
-            // Render basic markdown like **bold** to <strong> and newlines to <br>
-            let formattedText = data.response
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\n/g, '<br/>');
-            
-            appendMessage(formattedText, 'ai');
-          }
+
+          this.state.chatHistory.push({ role: 'user', content: text });
+          this.state.chatHistory.push({ role: 'model', content: data.response });
+          sessionStorage.setItem('bitescout_chat_history', JSON.stringify(this.state.chatHistory));
+
+          let formattedText = data.response
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br/>');
+
+          appendMessage(formattedText, 'ai');
         } catch (err) {
           typingEl.classList.remove('visible');
-          appendMessage(`<p class="text-danger">Sorry, I couldn't reach the server.</p>`, 'ai');
+          appendMessage(`<p class="text-danger">Sorry, I encountered an error: ${escapeHtml(err.message || "I couldn't reach the server.")}</p>`, 'ai');
         }
       };
 

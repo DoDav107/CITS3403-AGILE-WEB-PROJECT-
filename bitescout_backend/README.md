@@ -9,12 +9,15 @@ This is a Flask + SQLite backend starter for the BiteScout frontend.
 - JSON API routes for restaurants, users, auth, reviews, favourites, and Google Places
 - Session-based login/logout
 - Password hashing with Werkzeug
+- CSRF token protection for mutating API requests
+- Environment-based configuration for secrets and API keys
 
 ## Quick start
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+cp .env.example .env
 python run.py
 ```
 
@@ -22,6 +25,7 @@ The server will run on `http://127.0.0.1:5000`.
 
 ## Main routes
 - `GET /health`
+- `GET /api/csrf-token`
 - `GET /api/restaurants`
 - `GET /api/restaurants/<id>`
 - `GET /api/restaurants/<id>/reviews`
@@ -40,5 +44,7 @@ The server will run on `http://127.0.0.1:5000`.
 - email: `demo@bitescout.app`
 - password: `password123`
 
-## Next step
-Hook your existing `app.js` frontend actions to these API endpoints using `fetch()`.
+## Configuration
+- `SECRET_KEY` secures Flask sessions and CSRF tokens.
+- `GOOGLE_MAPS_API_KEY` enables Google Places search and photos.
+- `GEMINI_API_KEY` enables the assistant.
