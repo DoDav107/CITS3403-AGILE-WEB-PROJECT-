@@ -11,9 +11,19 @@ This is a Flask + SQLite backend starter for the BiteScout frontend.
 - Password hashing with Werkzeug
 
 ## Quick start
+From the project root:
 ```bash
 python -m venv .venv
 source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python run.py
+```
+
+Or from the backend folder:
+```bash
+cd bitescout_backend
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 python run.py
 ```
