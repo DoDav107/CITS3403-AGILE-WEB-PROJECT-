@@ -3,7 +3,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from app import create_app
+from app import create_app, db
 
 
 class BiteScoutIntegrationTests(unittest.TestCase):
@@ -19,6 +19,9 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             )
 
             self.assertTrue(app.testing)
+            with app.app_context():
+                db.session.remove()
+                db.engine.dispose()
         finally:
             temp_dir.cleanup()
 
@@ -35,6 +38,9 @@ class BiteScoutIntegrationTests(unittest.TestCase):
                 )
 
             self.assertEqual(app.config["GOOGLE_MAPS_API_KEY"], "test-google-key")
+            with app.app_context():
+                db.session.remove()
+                db.engine.dispose()
         finally:
             temp_dir.cleanup()
 
@@ -50,7 +56,6 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.client = self.app.test_client()
 
     def tearDown(self):
-        from app import db
         with self.app.app_context():
             db.session.remove()
             db.engine.dispose()
