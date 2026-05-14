@@ -1,14 +1,14 @@
 from datetime import datetime
-import os
 import re
 from functools import wraps
 import hashlib
+import hmac
+import secrets
 from flask import Blueprint, current_app, jsonify, redirect, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from . import google_places
 from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest
-import google.generativeai as genai
 
 
 bp = Blueprint('main', __name__)
@@ -17,6 +17,42 @@ MAX_BIO_LENGTH = 500
 MAX_AVATAR_URL_LENGTH = 1_500_000
 AVATAR_DATA_URL_RE = re.compile(r"^data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+$")
 AVATAR_PRESET_RE = re.compile(r"^preset:avatar-[a-z0-9-]{1,40}$")
+CSRF_SESSION_KEY = "_csrf_token"
+CSRF_HEADER = "X-CSRFToken"
+SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+def get_csrf_token():
+    token = session.get(CSRF_SESSION_KEY)
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session[CSRF_SESSION_KEY] = token
+    return token
+
+
+def request_csrf_token():
+    token = request.headers.get(CSRF_HEADER)
+    if token:
+        return token
+    if request.is_json:
+        payload = request.get_json(silent=True) or {}
+        return payload.get("csrfToken") or payload.get("csrf_token")
+    return request.form.get("csrfToken") or request.form.get("csrf_token")
+
+
+@bp.before_request
+def protect_against_csrf():
+    if not current_app.config.get("CSRF_PROTECT", True):
+        return None
+    if request.method in SAFE_METHODS:
+        return None
+
+    expected_token = session.get(CSRF_SESSION_KEY)
+    submitted_token = request_csrf_token()
+    if not expected_token or not submitted_token or not hmac.compare_digest(expected_token, submitted_token):
+        return jsonify({"error": "CSRF token is missing or invalid."}), 400
+
+    return None
 
 
 def current_user():
@@ -185,6 +221,11 @@ def index():
 @bp.get('/health')
 def health():
     return jsonify({'status': 'ok'})
+
+
+@bp.get('/api/csrf-token')
+def csrf_token():
+    return jsonify({'csrfToken': get_csrf_token()})
 
 
 @bp.get('/api/restaurants')
@@ -701,10 +742,15 @@ def chat():
     chat_timestamps.append(now)
     session['_chat_ts'] = chat_timestamps
         
-    api_key = os.environ.get('GEMINI_API_KEY')
+    api_key = (current_app.config.get('GEMINI_API_KEY') or '').strip()
     if not api_key:
         return jsonify({'error': 'GEMINI_API_KEY is not configured on the server.'}), 500
-        
+
+    try:
+        import google.generativeai as genai
+    except ImportError:
+        return jsonify({'error': 'Gemini client library is not installed on the server.'}), 500
+
     genai.configure(api_key=api_key)
     
     # --- Context: Local BiteScout database ---
@@ -732,7 +778,7 @@ def chat():
     )
     
     try:
-        maps_api_key = os.environ.get('GOOGLE_MAPS_API_KEY')
+        maps_api_key = google_maps_api_key()
         if maps_api_key:
             search_coords = None
             
