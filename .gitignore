@@ -1,9 +1,13 @@
 .codex*/
 .agents/
 .DS_Store
+.env
+*.env
+bitescout_backend/.env
 __pycache__/
 *.py[cod]
 .venv/
 Project/.venv/
+bitescout_backend/.venv/
 bitescout_backend/instance/
 run_bitescout_demo.sh

@@ -47,7 +47,7 @@
             </div>
             <div class="accordion-item">
               <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">Is login secure yet?</button></h2>
-              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">This starter version uses localStorage for a front-end demo. Real security should be built later with your Flask backend.</div></div>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Login uses the Flask backend session, stores passwords as salted hashes, and protects form submissions with CSRF tokens.</div></div>
             </div>
             <div class="accordion-item">
               <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq3">How are recommendations calculated?</button></h2>

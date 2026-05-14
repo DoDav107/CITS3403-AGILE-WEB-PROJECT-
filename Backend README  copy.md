@@ -20,6 +20,14 @@ python run.py
 
 The server will run on `http://127.0.0.1:5000`.
 
+## Configuration
+Copy `.env.example` to a local `.env` file or export the variables in your shell.
+Do not commit `.env` files because they contain deployment secrets.
+
+- `SECRET_KEY`: Flask session signing secret.
+- `DATABASE_URL`: SQLAlchemy database URL. Defaults to the project SQLite database.
+- `GOOGLE_MAPS_API_KEY`: Optional Google Maps API key.
+
 ## Main routes
 - `GET /health`
 - `GET /api/restaurants`

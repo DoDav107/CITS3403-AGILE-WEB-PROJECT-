@@ -1,0 +1,1 @@
+"""BiteScout backend package."""

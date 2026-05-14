@@ -1,13 +1,45 @@
 (function () {
+  const root = typeof window !== 'undefined' ? window : globalThis;
+  const LOCATION_STORAGE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
   const STORAGE_KEYS = {
     userLocation: 'bitescout_user_location'
   };
 
-  const data = window.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
+  function isGeolocationOriginAllowed(context = {}) {
+    const hostname = context.hostname || '';
+    return Boolean(
+      context.isSecureContext ||
+      hostname === 'localhost' ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1'
+    );
+  }
+
+  function buildLocationErrorMessage(error = {}, context = {}) {
+    if (!isGeolocationOriginAllowed(context)) {
+      return 'Location needs HTTPS, localhost, or 127.0.0.1. Search manually or reopen the site from a secure origin.';
+    }
+    if (error.code === 1) {
+      return 'Allow location access in your browser settings or site settings, then try again.';
+    }
+    if (error.code === 2) {
+      return 'Your device location is unavailable. Check Location Services, try again, or search manually.';
+    }
+    return 'Location access was denied or unavailable. Search manually or try again.';
+  }
+
+  function normalizeStoredUserLocation(value, now = Date.now()) {
+    if (!value || typeof value.lat !== 'number' || typeof value.lng !== 'number') return null;
+    if (typeof value.savedAt !== 'number' || now - value.savedAt > LOCATION_STORAGE_MAX_AGE_MS) return null;
+    return { lat: value.lat, lng: value.lng };
+  }
+
+  const data = root.BiteScoutData || { restaurants: [], sampleUsers: [], sampleReviews: [] };
 
   const App = {
     state: {
       currentUser: null,
+      csrfToken: null,
       restaurants: [],
       reviews: [],
       favourites: { restaurants: [], dishes: [] }
@@ -23,12 +55,28 @@
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
     },
 
+    async ensureCsrfToken() {
+      if (this.state.csrfToken) return this.state.csrfToken;
+      const response = await fetch('/api/csrf-token', {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) throw new Error('Unable to start a secure session.');
+      const payload = await response.json();
+      this.state.csrfToken = payload.csrfToken;
+      return this.state.csrfToken;
+    },
+
     async api(path, options = {}) {
       const config = {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
         ...options
       };
+      const method = (config.method || 'GET').toUpperCase();
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        config.headers = { ...config.headers, 'X-CSRFToken': await this.ensureCsrfToken() };
+      }
 
       if (config.body && !(config.body instanceof FormData)) {
         config.headers = { 'Content-Type': 'application/json', ...config.headers };
@@ -181,11 +229,14 @@
     },
 
     getUserLocation() {
-      return JSON.parse(localStorage.getItem(STORAGE_KEYS.userLocation) || 'null');
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEYS.userLocation) || 'null');
+      const normalized = normalizeStoredUserLocation(stored);
+      if (!normalized && stored) localStorage.removeItem(STORAGE_KEYS.userLocation);
+      return normalized;
     },
 
     setUserLocation(coords) {
-      localStorage.setItem(STORAGE_KEYS.userLocation, JSON.stringify(coords));
+      localStorage.setItem(STORAGE_KEYS.userLocation, JSON.stringify({ ...coords, savedAt: Date.now() }));
     },
 
     formatDate(dateStr) {
@@ -862,11 +913,15 @@
         this.showMessage(messageTarget, 'Geolocation is not supported in this browser.', 'error');
         return;
       }
+      const locationContext = {
+        hostname: window.location.hostname,
+        isSecureContext: window.isSecureContext
+      };
       navigator.geolocation.getCurrentPosition(
         position => {
           onSuccess({ lat: position.coords.latitude, lng: position.coords.longitude });
         },
-        () => this.showMessage(messageTarget, 'Location access was denied or unavailable. Try localhost or HTTPS.', 'error')
+        error => this.showMessage(messageTarget, buildLocationErrorMessage(error, locationContext), 'error')
       );
     },
 
@@ -938,9 +993,20 @@
     }
   };
 
-  window.addEventListener('DOMContentLoaded', () => {
-    App.init().catch(error => {
-      console.error(error);
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+      LOCATION_STORAGE_MAX_AGE_MS,
+      buildLocationErrorMessage,
+      isGeolocationOriginAllowed,
+      normalizeStoredUserLocation
+    };
+  }
+
+  if (root.document) {
+    root.addEventListener('DOMContentLoaded', () => {
+      App.init().catch(error => {
+        console.error(error);
+      });
     });
-  });
+  }
 })();
