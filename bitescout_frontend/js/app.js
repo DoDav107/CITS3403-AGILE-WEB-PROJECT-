@@ -666,6 +666,8 @@
         cafes: ['cafe', 'coffee', 'brunch'],
         nandos: ['nando', 'nandos', 'chicken', 'peri peri'],
         nando: ['nandos', 'chicken', 'peri peri'],
+        restaurant: ['restaurants', 'dining', 'food'],
+        restaurants: ['restaurant', 'dining', 'food'],
         pizza: ['pizzeria', 'dominos', 'domino', 'italian'],
         dominos: ['domino', 'pizza', 'pizzeria'],
         bakery: ['baker', 'cake', 'pastry', 'patisserie'],
