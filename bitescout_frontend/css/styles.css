@@ -2952,19 +2952,26 @@ body[data-page="about"]::after {
   border-bottom-color: rgba(255, 95, 87, 0.2) !important;
 }
 
-.navbar-collapse.show,
-.navbar-collapse.collapsing {
-  background:
-    linear-gradient(135deg, rgba(255, 248, 232, 0.96), rgba(255, 210, 166, 0.9)),
-    url("https://images.unsplash.com/photo-1498837167922-ddd27525d352?auto=format&fit=crop&q=80&w=1200");
-  background-size: cover;
-  background-position: center;
-  background-blend-mode: soft-light;
-  border: 1px solid rgba(255, 95, 87, 0.18);
-  border-radius: 1.15rem;
-  box-shadow: 0 24px 70px rgba(112, 63, 28, 0.18);
-  margin-top: 1rem;
-  padding: 1rem;
+@media (max-width: 767.98px) {
+  .navbar-collapse.show,
+  .navbar-collapse.collapsing {
+    background: linear-gradient(135deg, rgba(255, 252, 244, 0.98), rgba(255, 238, 208, 0.96));
+    border: 1px solid rgba(255, 95, 87, 0.16);
+    border-radius: 1rem;
+    box-shadow: 0 16px 42px rgba(112, 63, 28, 0.16);
+    margin-top: 0.75rem;
+    padding: 0.85rem;
+  }
+
+  .navbar-collapse .d-flex {
+    align-items: stretch !important;
+    flex-direction: column;
+    margin-top: 0.5rem;
+  }
+
+  .navbar-collapse .btn {
+    width: 100%;
+  }
 }
 
 .navbar-nav .nav-link.active,

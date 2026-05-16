@@ -82,13 +82,6 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             db.engine.dispose()
         self.temp_dir.cleanup()
 
-    def login_demo_user(self):
-        return self.client.post(
-            "/api/auth/login",
-            headers=self.csrf_headers(),
-            json={"email": "demo@bitescout.app", "password": "password123"},
-        )
-
     def csrf_headers(self):
         response = self.client.get("/api/csrf-token")
         self.assertEqual(response.status_code, 200)
@@ -103,6 +96,33 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
     def delete_json(self, path):
         return self.client.delete(path, headers=self.csrf_headers())
+
+    def login_demo_user(self):
+        return self.post_json(
+            "/api/auth/login",
+            {"email": "demo@bitescout.app", "password": "password123"},
+        )
+
+    def test_generated_secret_key_replaces_insecure_default_when_env_is_missing(self):
+        temp_dir = tempfile.TemporaryDirectory()
+        try:
+            with patch.dict("os.environ", {"SECRET_KEY": ""}):
+                app = create_app(
+                    {
+                        "TESTING": True,
+                        "SQLALCHEMY_DATABASE_URI": f"sqlite:///{Path(temp_dir.name) / 'test.db'}",
+                    }
+                )
+
+            self.assertTrue(app.config["SECRET_KEY"])
+            self.assertNotEqual(app.config["SECRET_KEY"], "dev-change-me")
+        finally:
+            temp_dir.cleanup()
+
+    def test_run_module_does_not_enable_debug_unconditionally(self):
+        run_source = (Path(__file__).resolve().parents[1] / "run.py").read_text()
+
+        self.assertNotIn("debug=True", run_source)
 
     def test_csrf_token_endpoint_returns_session_token(self):
         response = self.client.get("/api/csrf-token")
@@ -120,6 +140,18 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.get_json()["error"], "CSRF token is missing or invalid.")
+
+    def test_legacy_csrf_header_name_is_accepted(self):
+        response = self.client.get("/api/csrf-token")
+        token = response.get_json()["csrfToken"]
+
+        login_response = self.client.post(
+            "/api/auth/login",
+            headers={"X-CSRF-Token": token},
+            json={"email": "demo@bitescout.app", "password": "password123"},
+        )
+
+        self.assertEqual(login_response.status_code, 200)
 
     def test_signup_stores_salted_password_hash(self):
         response = self.client.post(
@@ -413,6 +445,72 @@ class BiteScoutIntegrationTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.headers["Location"], "https://lh3.googleusercontent.com/test-photo")
+
+    def test_password_reset_request_does_not_disclose_account_or_token(self):
+        response = self.post_json(
+            "/api/auth/request-password-reset",
+            {"email": "demo@bitescout.app"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.get_json()
+        self.assertEqual(
+            payload["message"],
+            "If that email is registered, a password reset link has been sent.",
+        )
+        self.assertNotIn("resetToken", payload)
+
+    def test_password_reset_requires_valid_reset_token(self):
+        response = self.post_json(
+            "/api/auth/reset-password",
+            {
+                "email": "demo@bitescout.app",
+                "password": "Newpass123",
+                "confirmPassword": "Newpass123",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.get_json()["error"], "Enter a valid password reset token.")
+
+    def test_password_reset_consumes_server_issued_token_once(self):
+        self.app.config["PASSWORD_RESET_TOKEN_IN_RESPONSE"] = True
+        request_response = self.post_json(
+            "/api/auth/request-password-reset",
+            {"email": "demo@bitescout.app"},
+        )
+        reset_token = request_response.get_json()["resetToken"]
+
+        reset_response = self.post_json(
+            "/api/auth/reset-password",
+            {
+                "email": "demo@bitescout.app",
+                "resetToken": reset_token,
+                "password": "Newpass123",
+                "confirmPassword": "Newpass123",
+            },
+        )
+        self.assertEqual(reset_response.status_code, 200)
+
+        self.client.post("/api/auth/logout", headers=self.csrf_headers())
+        login_response = self.post_json(
+            "/api/auth/login",
+            {"email": "demo@bitescout.app", "password": "Newpass123"},
+        )
+        self.assertEqual(login_response.status_code, 200)
+
+        reuse_response = self.post_json(
+            "/api/auth/reset-password",
+            {
+                "email": "demo@bitescout.app",
+                "resetToken": reset_token,
+                "password": "Another123",
+                "confirmPassword": "Another123",
+            },
+        )
+
+        self.assertEqual(reuse_response.status_code, 400)
+        self.assertEqual(reuse_response.get_json()["error"], "Enter a valid password reset token.")
 
 
 if __name__ == "__main__":

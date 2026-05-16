@@ -237,7 +237,8 @@
       reviews: [],
       favourites: { restaurants: [], dishes: [] },
       recentSearches: [],
-      chatHistory: []
+      chatHistory: [],
+      csrfToken: ''
     },
 
     async init() {
@@ -252,8 +253,12 @@
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
     },
 
-    async ensureCsrfToken() {
-      if (this.state.csrfToken) return this.state.csrfToken;
+    isUnsafeRequest(method = 'GET') {
+      return ['POST', 'PUT', 'PATCH', 'DELETE'].includes(String(method).toUpperCase());
+    },
+
+    async ensureCsrfToken(force = false) {
+      if (this.state.csrfToken && !force) return this.state.csrfToken;
 
       const response = await fetch('/api/csrf-token', {
         credentials: 'same-origin',
@@ -261,18 +266,17 @@
       });
       const payload = await response.json();
       if (!response.ok || !payload.csrfToken) {
-        throw new Error('Could not prepare a secure request.');
+        throw new Error(payload.error || 'Could not start a secure form session.');
       }
-
       this.state.csrfToken = payload.csrfToken;
       return this.state.csrfToken;
     },
 
-    async api(path, options = {}) {
+    async api(path, options = {}, allowCsrfRetry = true) {
       const config = {
         credentials: 'same-origin',
-        headers: { Accept: 'application/json' },
-        ...options
+        ...options,
+        headers: { Accept: 'application/json', ...(options.headers || {}) }
       };
       const method = String(config.method || 'GET').toUpperCase();
 
@@ -280,7 +284,8 @@
         config.headers = { 'Content-Type': 'application/json', ...config.headers };
         config.body = JSON.stringify(config.body);
       }
-      if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+
+      if (this.isUnsafeRequest(method)) {
         config.headers = { ...config.headers, 'X-CSRFToken': await this.ensureCsrfToken() };
       }
 
@@ -290,6 +295,10 @@
 
       if (!response.ok) {
         const message = typeof payload === 'object' && payload && payload.error ? payload.error : 'Request failed';
+        if (allowCsrfRetry && response.status === 400 && message === 'CSRF token is missing or invalid.' && this.isUnsafeRequest(method)) {
+          this.state.csrfToken = '';
+          return this.api(path, options, false);
+        }
         throw new Error(message);
       }
 
@@ -406,7 +415,7 @@
       this.renderAmbientMotion();
       if (header) {
         header.innerHTML = `
-          <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
+          <nav class="navbar navbar-expand-md bg-white border-bottom sticky-top">
             <div class="container py-2">
               <a class="navbar-brand d-flex align-items-center gap-2" href="index.html">
                 <span class="badge rounded-pill text-bg-dark">BS</span>
@@ -586,9 +595,17 @@
 
     getCuisineOptions() {
       const cuisines = new Set();
-      [...(this.state.restaurants || []), ...(data.restaurants || [])].forEach(restaurant => {
-        if (restaurant.cuisine) cuisines.add(restaurant.cuisine);
+
+      (data.cuisineOptions || []).forEach(cuisine => {
+        const value = String(cuisine || '').trim();
+        if (value) cuisines.add(value);
       });
+
+      [...(this.state.restaurants || []), ...(data.restaurants || [])].forEach(restaurant => {
+        const value = String(restaurant.cuisine || '').trim();
+        if (value) cuisines.add(value);
+      });
+
       return Array.from(cuisines).sort((left, right) => left.localeCompare(right));
     },
 
@@ -1408,9 +1425,32 @@
       });
     },
 
-        initForgotPassword() {
+    initForgotPassword() {
       const form = document.getElementById('forgotPasswordForm');
       if (!form) return;
+      const params = new URLSearchParams(root.location?.search || '');
+      const resetToken = params.get('token') || params.get('resetToken') || '';
+      const email = params.get('email') || '';
+      const resetTokenInput = form.elements.resetToken;
+      const passwordFields = document.getElementById('passwordResetFields');
+      const intro = document.getElementById('forgotPasswordIntro');
+      const submitButton = document.getElementById('forgotPasswordSubmit');
+      const passwordInputs = [form.elements.password, form.elements.confirmPassword].filter(Boolean);
+
+      if (email && form.elements.email) form.elements.email.value = email;
+      if (resetTokenInput) resetTokenInput.value = resetToken;
+
+      if (resetToken) {
+        if (passwordFields) passwordFields.classList.remove('d-none');
+        passwordInputs.forEach(input => { input.required = true; });
+        if (intro) intro.textContent = 'Choose a new password for your account.';
+        if (submitButton) submitButton.textContent = 'Reset password';
+      } else {
+        if (passwordFields) passwordFields.classList.add('d-none');
+        passwordInputs.forEach(input => { input.required = false; });
+        if (intro) intro.textContent = 'Enter your account email and we will send a reset link if the account exists.';
+        if (submitButton) submitButton.textContent = 'Send reset link';
+      }
 
       form.addEventListener('submit', async event => {
         event.preventDefault();
@@ -1419,23 +1459,31 @@
         const payload = Object.fromEntries(formData.entries());
 
         try {
-          await this.api('/api/auth/reset-password', {
-            method: 'POST',
-            body: payload
-          });
+          if (payload.resetToken) {
+            await this.api('/api/auth/reset-password', {
+              method: 'POST',
+              body: payload
+            });
 
-          await this.loadCurrentUser();
-          this.renderLayout();
+            await this.loadCurrentUser();
+            this.renderLayout();
 
-          this.showMessage(
-            'forgotPasswordMessage',
-            'Password reset successfully. Redirecting to your profile...',
-            'success'
-          );
+            this.showMessage(
+              'forgotPasswordMessage',
+              'Password reset successfully. Redirecting to your profile...',
+              'success'
+            );
 
-          window.setTimeout(() => {
-            window.location.href = 'profile.html';
-          }, 900);
+            window.setTimeout(() => {
+              window.location.href = 'profile.html';
+            }, 900);
+          } else {
+            const response = await this.api('/api/auth/request-password-reset', {
+              method: 'POST',
+              body: { email: payload.email }
+            });
+            this.showMessage('forgotPasswordMessage', response.message, 'success');
+          }
         } catch (error) {
           this.showMessage('forgotPasswordMessage', error.message, 'error');
         }
@@ -2017,6 +2065,7 @@
       }
       this.state.currentUser = null;
       this.state.favourites = { restaurants: [], dishes: [] };
+      this.state.csrfToken = '';
       this.renderLayout();
     },
 
@@ -2214,34 +2263,24 @@
             chatPayload.location = { lat: storedLoc.lat, lng: storedLoc.lng };
           }
           
-          const response = await fetch('/api/chat', {
+          const data = await this.api('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': await this.ensureCsrfToken() },
-            body: JSON.stringify(chatPayload)
+            body: chatPayload
           });
-          
-          const data = await response.json();
           typingEl.classList.remove('visible');
-          
-          if (!response.ok) {
-            appendMessage(`<p class="text-danger">Sorry, I encountered an error: ${escapeHtml(data.error || 'Unknown error')}</p>`, 'ai');
-          } else {
-            // Convert markdown style links if any, though system prompt asks for HTML
-            // Add to chat history
-            this.state.chatHistory.push({ role: 'user', content: text });
-            this.state.chatHistory.push({ role: 'model', content: data.response });
-            sessionStorage.setItem('bitescout_chat_history', JSON.stringify(this.state.chatHistory));
-            
-            // Render basic markdown like **bold** to <strong> and newlines to <br>
-            let formattedText = data.response
-              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-              .replace(/\n/g, '<br/>');
-            
-            appendMessage(formattedText, 'ai');
-          }
-        } catch (err) {
+
+          this.state.chatHistory.push({ role: 'user', content: text });
+          this.state.chatHistory.push({ role: 'model', content: data.response });
+          sessionStorage.setItem('bitescout_chat_history', JSON.stringify(this.state.chatHistory));
+
+          let formattedText = data.response
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\n/g, '<br/>');
+
+          appendMessage(formattedText, 'ai');
+        } catch (error) {
           typingEl.classList.remove('visible');
-          appendMessage(`<p class="text-danger">Sorry, I couldn't reach the server.</p>`, 'ai');
+          appendMessage(`<p class="text-danger">Sorry, I encountered an error: ${escapeHtml(error.message || "I couldn't reach the server.")}</p>`, 'ai');
         }
       };
 

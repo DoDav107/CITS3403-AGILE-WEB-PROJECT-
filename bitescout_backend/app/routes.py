@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 from functools import wraps
 import hashlib
@@ -8,13 +8,14 @@ from flask import Blueprint, current_app, jsonify, redirect, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from . import google_places
-from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest
+from .models import User, Restaurant, Dish, Review, FavouriteRestaurant, FavouriteDish, MissingPlaceRequest, PasswordResetToken
 
 
 bp = Blueprint('main', __name__)
 
 MAX_BIO_LENGTH = 500
 MAX_AVATAR_URL_LENGTH = 1_500_000
+PASSWORD_RESET_TOKEN_TTL_MINUTES = 30
 AVATAR_DATA_URL_RE = re.compile(r"^data:image/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+$")
 AVATAR_PRESET_RE = re.compile(r"^preset:avatar-[a-z0-9-]{1,40}$")
 CSRF_SESSION_KEY = "_csrf_token"
@@ -31,7 +32,7 @@ def get_csrf_token():
 
 
 def request_csrf_token():
-    token = request.headers.get(CSRF_HEADER)
+    token = request.headers.get(CSRF_HEADER) or request.headers.get("X-CSRF-Token")
     if token:
         return token
     if request.is_json:
@@ -58,6 +59,42 @@ def protect_against_csrf():
 def current_user():
     user_id = session.get('user_id')
     return db.session.get(User, user_id) if user_id else None
+
+
+def password_reset_token_hash(token):
+    return hashlib.sha256(str(token).encode('utf-8')).hexdigest()
+
+
+def create_password_reset_token(user):
+    raw_token = secrets.token_urlsafe(32)
+    reset_token = PasswordResetToken(
+        user_id=user.id,
+        token_hash=password_reset_token_hash(raw_token),
+        expires_at=datetime.utcnow() + timedelta(minutes=PASSWORD_RESET_TOKEN_TTL_MINUTES),
+    )
+    db.session.add(reset_token)
+    db.session.commit()
+    return raw_token
+
+
+def find_valid_password_reset(email, raw_token):
+    if not email or not raw_token:
+        return None
+
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return None
+
+    reset_token = PasswordResetToken.query.filter_by(
+        user_id=user.id,
+        token_hash=password_reset_token_hash(raw_token),
+        used_at=None,
+    ).order_by(PasswordResetToken.created_at.desc()).first()
+
+    if not reset_token or reset_token.expires_at < datetime.utcnow():
+        return None
+
+    return user, reset_token
 
 
 def login_required(fn):
@@ -425,16 +462,35 @@ def login():
     session['user_id'] = user.id
     return jsonify({'message': 'Logged in', 'user': user_to_dict(user)})
 
+
+@bp.post('/api/auth/request-password-reset')
+def request_password_reset():
+    payload = request.get_json(silent=True) or request.form.to_dict()
+    email = (payload.get('email') or '').strip().lower()
+    response_payload = {'message': 'If that email is registered, a password reset link has been sent.'}
+
+    if email:
+        user = User.query.filter_by(email=email).first()
+        if user:
+            reset_token = create_password_reset_token(user)
+            if current_app.config.get('PASSWORD_RESET_TOKEN_IN_RESPONSE'):
+                response_payload['resetToken'] = reset_token
+
+    return jsonify(response_payload)
+
+
 @bp.post('/api/auth/reset-password')
 def reset_password():
     payload = request.get_json(silent=True) or request.form.to_dict()
 
     email = (payload.get('email') or '').strip().lower()
+    reset_token = (payload.get('resetToken') or '').strip()
     new_password = payload.get('password') or ''
     confirm_password = payload.get('confirmPassword') or ''
 
-    if not email:
-        return jsonify({'error': 'Enter the email address for your account.'}), 400
+    reset_record = find_valid_password_reset(email, reset_token)
+    if not reset_record:
+        return jsonify({'error': 'Enter a valid password reset token.'}), 400
 
     if new_password != confirm_password:
         return jsonify({'error': 'The two password fields do not match.'}), 400
@@ -451,12 +507,10 @@ def reset_password():
     if not any(char.isdigit() for char in new_password):
         return jsonify({'error': 'Password needs at least one number.'}), 400
 
-    user = User.query.filter_by(email=email).first()
-
-    if not user:
-        return jsonify({'error': 'No BiteScout account was found for this email address.'}), 404
+    user, token_record = reset_record
 
     user.password_hash = generate_password_hash(new_password)
+    token_record.used_at = datetime.utcnow()
     db.session.commit()
 
     session['user_id'] = user.id
