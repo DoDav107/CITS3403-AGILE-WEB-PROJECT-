@@ -232,6 +232,7 @@
   const App = {
     state: {
       currentUser: null,
+      csrfToken: null,
       restaurants: [],
       reviews: [],
       favourites: { restaurants: [], dishes: [] },
@@ -251,16 +252,36 @@
       await Promise.all([this.loadCurrentUser(), this.loadRestaurants()]);
     },
 
+    async ensureCsrfToken() {
+      if (this.state.csrfToken) return this.state.csrfToken;
+
+      const response = await fetch('/api/csrf-token', {
+        credentials: 'same-origin',
+        headers: { Accept: 'application/json' }
+      });
+      const payload = await response.json();
+      if (!response.ok || !payload.csrfToken) {
+        throw new Error('Could not prepare a secure request.');
+      }
+
+      this.state.csrfToken = payload.csrfToken;
+      return this.state.csrfToken;
+    },
+
     async api(path, options = {}) {
       const config = {
         credentials: 'same-origin',
         headers: { Accept: 'application/json' },
         ...options
       };
+      const method = String(config.method || 'GET').toUpperCase();
 
       if (config.body && !(config.body instanceof FormData)) {
         config.headers = { 'Content-Type': 'application/json', ...config.headers };
         config.body = JSON.stringify(config.body);
+      }
+      if (!['GET', 'HEAD', 'OPTIONS'].includes(method)) {
+        config.headers = { ...config.headers, 'X-CSRFToken': await this.ensureCsrfToken() };
       }
 
       const response = await fetch(path, config);
@@ -645,6 +666,8 @@
         cafes: ['cafe', 'coffee', 'brunch'],
         nandos: ['nando', 'nandos', 'chicken', 'peri peri'],
         nando: ['nandos', 'chicken', 'peri peri'],
+        restaurant: ['restaurants', 'dining', 'food'],
+        restaurants: ['restaurant', 'dining', 'food'],
         pizza: ['pizzeria', 'dominos', 'domino', 'italian'],
         dominos: ['domino', 'pizza', 'pizzeria'],
         bakery: ['baker', 'cake', 'pastry', 'patisserie'],
@@ -2193,7 +2216,7 @@
           
           const response = await fetch('/api/chat', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'X-CSRFToken': await this.ensureCsrfToken() },
             body: JSON.stringify(chatPayload)
           });
           

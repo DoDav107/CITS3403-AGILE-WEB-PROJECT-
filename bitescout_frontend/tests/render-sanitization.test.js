@@ -72,6 +72,24 @@ test('Browse Google place filters combine normalized search, type, and rating', 
   assert.deepEqual(filtered.map(place => place.id), ['p1']);
 });
 
+test('Browse search treats plural restaurants as Google restaurant places', () => {
+  const filtered = App.filterBrowseGooglePlaces(
+    [
+      {
+        id: 'p1',
+        name: 'Northbridge Dining Room',
+        address: 'Northbridge WA',
+        rating: 4.2,
+        primaryType: 'restaurant',
+        types: ['restaurant', 'food']
+      }
+    ],
+    { search: 'restaurants' }
+  );
+
+  assert.deepEqual(filtered.map(place => place.id), ['p1']);
+});
+
 test('restaurant tag links are escaped and point back to Browse filters', () => {
   const html = App.renderRestaurantTagLinks(['sushi', '<script>alert(1)</script>']);
 
