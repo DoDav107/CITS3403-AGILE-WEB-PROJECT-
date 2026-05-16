@@ -82,6 +82,7 @@ class SeleniumLiveServerTests(unittest.TestCase):
             stdout=subprocess.DEVNULL,
             stderr=subprocess.PIPE,
         )
+
         try:
             _wait_for_http(f"{cls.base_url}/health", timeout_s=45.0)
         except Exception:
@@ -97,8 +98,8 @@ class SeleniumLiveServerTests(unittest.TestCase):
         options.add_argument("--window-size=1280,900")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        # DOM ready only; external fonts/CDN must not block tests on slow networks.
         options.page_load_strategy = "eager"
+
         cls.driver = webdriver.Chrome(options=options)
         cls.driver.set_page_load_timeout(30)
 
@@ -107,7 +108,9 @@ class SeleniumLiveServerTests(unittest.TestCase):
         if cls.driver is not None:
             cls.driver.quit()
             cls.driver = None
+
         cls._terminate_server()
+
         if cls.temp_dir is not None:
             cls.temp_dir.cleanup()
             cls.temp_dir = None
@@ -117,11 +120,14 @@ class SeleniumLiveServerTests(unittest.TestCase):
         proc = cls.server_process
         if proc is None:
             return
+
         proc.terminate()
+
         try:
             proc.wait(timeout=15)
         except subprocess.TimeoutExpired:
             proc.kill()
+
         cls.server_process = None
 
     def setUp(self):
@@ -130,7 +136,9 @@ class SeleniumLiveServerTests(unittest.TestCase):
     def _open(self, path: str):
         if not path.startswith("/"):
             path = "/" + path
+
         url = f"{self.base_url}{path}"
+
         try:
             self.driver.get(url)
         except TimeoutException:
@@ -148,16 +156,21 @@ class SeleniumLiveServerTests(unittest.TestCase):
     def test_browse_page_loads(self):
         self._open("/browse.html")
         self.assertIn("Restaurants near you", self.driver.page_source)
+
         location = self.driver.find_element(By.ID, "locationInput")
         self.assertTrue(location.is_displayed())
 
     def test_login_flow_redirects_to_profile(self):
         self._open("/login.html")
+
         wait = WebDriverWait(self.driver, 15)
+
         self.driver.find_element(By.NAME, "email").send_keys(self.DEMO_EMAIL)
         self.driver.find_element(By.NAME, "password").send_keys(self.DEMO_PASSWORD)
         self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']").click()
+
         wait.until(EC.url_contains("profile.html"))
+
         self.assertIn("profile", self.driver.current_url.lower())
 
     def test_signup_page_loads(self):
@@ -170,13 +183,17 @@ class SeleniumLiveServerTests(unittest.TestCase):
 
     def test_health_endpoint_returns_ok(self):
         self._open("/health")
+
         body = self.driver.find_element(By.TAG_NAME, "body").text.lower()
+
         self.assertTrue("ok" in body or "healthy" in body or "{" in body)
 
     def test_browse_filter_controls_exist(self):
         self._open("/browse.html")
+
         wait = WebDriverWait(self.driver, 10)
         rating_select = wait.until(EC.presence_of_element_located((By.ID, "ratingFilter")))
+
         self.assertTrue(rating_select.is_displayed())
 
 
