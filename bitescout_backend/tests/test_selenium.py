@@ -49,7 +49,7 @@ class SeleniumTests(unittest.TestCase):
 
     def test_search_input_exists(self):
         self.driver.get(f"{BASE_URL}/browse.html")
-        search = self.driver.find_element(By.TAG_NAME, "input")
+        search = self.driver.find_element(By.ID, "locationInput")
         self.assertIsNotNone(search)
 
 
