@@ -1,8 +1,9 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
 import os
 import unittest
-import time
 
 
 BASE_URL = os.getenv("BITESCOUT_BASE_URL", "http://127.0.0.1:5000")
@@ -14,6 +15,7 @@ class SeleniumTests(unittest.TestCase):
 
     def setUp(self):
         self.driver = webdriver.Chrome()
+        self.wait = WebDriverWait(self.driver, 5)
         self.driver.get(BASE_URL)
 
     def tearDown(self):
@@ -38,10 +40,8 @@ class SeleniumTests(unittest.TestCase):
         login_button = self.driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
         login_button.click()
 
-        time.sleep(2)
-
-        self.assertNotIn("Invalid", self.driver.page_source)
-        self.assertIn("BiteScout", self.driver.page_source)
+        self.wait.until(EC.url_contains("profile.html"))
+        self.assertIn("profile.html", self.driver.current_url)
 
     def test_signup_page_loads(self):
         self.driver.get(f"{BASE_URL}/signup.html")
