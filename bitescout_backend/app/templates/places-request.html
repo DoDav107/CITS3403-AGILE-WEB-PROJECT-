@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% set page = "places-request" %}
+{% block title %}BiteScout | Place requests{% endblock %}
+{% block content %}
+    <section class="py-5 page-banner border-bottom">
+      <div class="container">
+        <p class="eyebrow mb-2">Developer review</p>
+        <h1 class="fw-bold mb-3">Missing Place Requests</h1>
+        <p class="text-secondary mb-0">Requests submitted by users when a restaurant or cafe is missing from BiteScout.</p>
+      </div>
+    </section>
+    <section class="py-4">
+      <div class="container">
+        <div id="placeRequestsStatus" class="auth-message text-secondary mb-3"></div>
+        <div class="glass-card p-4">
+          <div id="placeRequestsList"></div>
+        </div>
+      </div>
+    </section>
+  
+{% endblock %}

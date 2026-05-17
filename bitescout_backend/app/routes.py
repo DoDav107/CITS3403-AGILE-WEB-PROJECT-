@@ -4,7 +4,7 @@ from functools import wraps
 import hashlib
 import hmac
 import secrets
-from flask import Blueprint, current_app, jsonify, redirect, request, session
+from flask import Blueprint, abort, current_app, jsonify, redirect, render_template, request, session
 from werkzeug.security import generate_password_hash, check_password_hash
 from . import db
 from . import google_places
@@ -21,6 +21,24 @@ AVATAR_PRESET_RE = re.compile(r"^preset:avatar-[a-z0-9-]{1,40}$")
 CSRF_SESSION_KEY = "_csrf_token"
 CSRF_HEADER = "X-CSRFToken"
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+PAGE_TEMPLATES = {
+    "about": "about",
+    "browse": "browse",
+    "dish": "dish",
+    "edit-review": "edit-review",
+    "favourites": "favourites",
+    "forgot-password": "forgot-password",
+    "index": "home",
+    "login": "login",
+    "logout": "logout",
+    "places-request": "places-request",
+    "profile": "profile",
+    "recommendations": "recommendations",
+    "restaurant": "restaurant",
+    "signup": "signup",
+    "user": "user",
+    "write-review": "write-review",
+}
 
 
 def get_csrf_token():
@@ -59,6 +77,14 @@ def protect_against_csrf():
 def current_user():
     user_id = session.get('user_id')
     return db.session.get(User, user_id) if user_id else None
+
+
+@bp.app_context_processor
+def inject_template_state():
+    return {
+        "csrf_token": get_csrf_token(),
+        "session_user": current_user(),
+    }
 
 
 def password_reset_token_hash(token):
@@ -252,7 +278,23 @@ def sync_restaurant_rating(restaurant_id):
 
 @bp.get('/')
 def index():
-    return current_app.send_static_file('index.html')
+    return render_template('index.html', page='home')
+
+
+@bp.get('/<page_name>.html')
+def page_html(page_name):
+    page = PAGE_TEMPLATES.get(page_name)
+    if not page:
+        abort(404)
+    return render_template(f'{page_name}.html', page=page)
+
+
+@bp.get('/<page_name>')
+def page_clean(page_name):
+    page = PAGE_TEMPLATES.get(page_name)
+    if not page:
+        abort(404)
+    return render_template(f'{page_name}.html', page=page)
 
 
 @bp.get('/health')

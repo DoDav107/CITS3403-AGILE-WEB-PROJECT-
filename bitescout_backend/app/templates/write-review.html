@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% set page = "write-review" %}
+{% block title %}BiteScout | Write review{% endblock %}
+{% block content %}
+    
+<section class="py-5">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="glass-card p-4 p-md-5">
+          <p class="eyebrow mb-2">Share your experience</p>
+          <h1 class="h2 fw-bold mb-3">Write a review</h1>
+          <p class="text-secondary mb-4">Choose a place, then post your rating and feedback.</p>
+          <form id="writeReviewForm">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label">Place</label>
+                <select name="restaurantId" id="reviewRestaurantSelect" class="form-select" required></select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Rating</label>
+                <select name="rating" class="form-select" required>
+                  <option value="">Choose rating</option>
+                  <option value="5">★★★★★ Loved it</option>
+                  <option value="4">★★★★☆ Really good</option>
+                  <option value="3">★★★☆☆ Good</option>
+                  <option value="2">★★☆☆☆ Not for me</option>
+                  <option value="1">★☆☆☆☆ Poor</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">Title</label>
+                <input type="text" name="title" class="form-control" placeholder="Amazing flavour and quick service" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Your review</label>
+                <textarea name="content" class="form-control" rows="5" required></textarea>
+              </div>
+            </div>
+            <button class="btn btn-primary mt-4" type="submit">Post review</button>
+          </form>
+          <div id="writeReviewMessage" class="mt-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  
+{% endblock %}

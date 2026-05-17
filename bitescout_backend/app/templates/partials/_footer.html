@@ -1,0 +1,13 @@
+<footer class="site-footer py-4 mt-5">
+  <div class="container d-flex flex-column flex-lg-row justify-content-between gap-3 align-items-lg-center">
+    <div>
+      <strong>BiteScout</strong>
+      <p class="footer-note mb-0">Food discovery and review website starter built with HTML, CSS, JavaScript and Bootstrap.</p>
+    </div>
+    <div class="d-flex gap-3">
+      <a href="{{ url_for('main.page_html', page_name='browse') }}" class="text-decoration-none">Browse</a>
+      <a href="{{ url_for('main.page_html', page_name='recommendations') }}" class="text-decoration-none">Nearby</a>
+      <a href="{{ url_for('main.page_html', page_name='about') }}" class="text-decoration-none">Help</a>
+    </div>
+  </div>
+</footer>

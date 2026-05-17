@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% set page = "about" %}
+{% block title %}BiteScout | About and help{% endblock %}
+{% block content %}
+    
+<section class="py-5 page-banner border-bottom">
+  <div class="container">
+    <p class="eyebrow mb-2">About the project</p>
+    <h1 class="fw-bold mb-3">About & Help</h1>
+    <p class="text-secondary mb-0">What the app does and how discovery, reviews, and favourites work.</p>
+  </div>
+</section>
+<section class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h4 fw-bold mb-3">Application aims</h2>
+          <p class="text-secondary">BiteScout helps people discover restaurants and cafes, save favourites, and share reviews in one simple food discovery app.</p>
+          <h3 class="h5 fw-bold mt-4 mb-3">User journey</h3>
+          <ul class="text-secondary mb-0">
+            <li>Create an account or log in.</li>
+            <li>Browse restaurants near a chosen area or current location.</li>
+            <li>Filter places by cuisine, place type, and star rating.</li>
+            <li>Open restaurant and cafe pages for more detail.</li>
+            <li>Write reviews, save favourites, and receive recommendations based on preferred cuisine.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h4 fw-bold mb-3">Help</h2>
+          <div class="accordion" id="helpAccordion">
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button" data-bs-toggle="collapse" data-bs-target="#faq1">Contact methods</button></h2>
+              <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#helpAccordion"><div class="accordion-body">For questions or support, email the BiteScout team at <a href="mailto:bitescout.team@gmail.com">bitescout.team@gmail.com</a>.</div></div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq2">Why is location not working?</button></h2>
+              <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Geolocation usually works on localhost or HTTPS. Some browsers block location access from plain file paths.</div></div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq3">How do recommendations work?</button></h2>
+              <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Recommendations start with your preferred cuisine, then include a smaller mix of other cuisines so the results still feel varied.</div></div>
+            </div>
+            <div class="accordion-item">
+              <h2 class="accordion-header"><button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#faq4">Disclaimer</button></h2>
+              <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#helpAccordion"><div class="accordion-body">Restaurant data, ratings, and recommendations are for discovery only. Users should check current opening hours, menus, prices, and dietary information with the venue before visiting.</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row g-4 mt-1">
+      <div class="col-lg-7">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h4 fw-bold mb-3">Roadmap</h2>
+          <p class="text-secondary">The roadmap is the planned next set of improvements for BiteScout.</p>
+          <ul class="text-secondary mb-0">
+            <li>Allow users to request missing restaurants or places that are not found in the app.</li>
+            <li>Improve recommendations using saved favourites, review history, and preferred cuisine.</li>
+            <li>Add stronger profile customisation with avatars, uploaded photos, and editable bios.</li>
+            <li>Add moderation tools for inappropriate reviews and incorrect venue information.</li>
+          </ul>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="glass-card p-4 h-100">
+          <h2 class="h4 fw-bold mb-3">Missing place requests</h2>
+          <p class="text-secondary mb-3">If a restaurant is not available, users can send a request with the place name, suburb, cuisine type, and any useful notes.</p>
+          <form id="missingPlaceForm">
+            <div id="missingPlaceMessage" class="auth-message text-secondary mb-3"></div>
+            <div class="mb-3">
+              <label class="form-label" for="missingPlaceName">Place name</label>
+              <input class="form-control" id="missingPlaceName" name="placeName" type="text" placeholder="Restaurant or cafe name">
+            </div>
+            <div class="mb-3">
+              <label class="form-label" for="missingPlaceDetails">Details</label>
+              <textarea class="form-control" id="missingPlaceDetails" name="details" rows="3" placeholder="Suburb, cuisine, or helpful notes"></textarea>
+            </div>
+            <button class="btn btn-primary" type="submit">Send request</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% set page = "logout" %}
+{% block title %}BiteScout | Log out{% endblock %}
+{% block content %}
+    
+<section class="py-5 auth-shell">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-6">
+        <div class="glass-card p-4 p-md-5 text-center">
+          <p class="eyebrow mb-2">Session ended</p>
+          <h1 class="h2 fw-bold mb-3">You have been logged out</h1>
+          <p class="text-secondary mb-4">Your demo session has been cleared from localStorage.</p>
+          <a href="index.html" class="btn btn-primary">Return home</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  
+{% endblock %}

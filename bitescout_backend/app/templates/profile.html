@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% set page = "profile" %}
+{% block title %}BiteScout | My profile{% endblock %}
+{% block content %}
+    
+<section class="py-5 page-banner border-bottom">
+  <div class="container" id="profileHeader"></div>
+</section>
+<section class="py-4">
+  <div class="container">
+    <div id="profileEditorMessage" class="auth-message text-secondary mb-3"></div>
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="glass-card p-4 mb-4">
+          <h2 class="h4 fw-bold mb-3">My reviews</h2>
+          <div id="myReviews"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card p-4">
+          <h2 class="h4 fw-bold mb-3">Saved favourites</h2>
+          <div id="profileFavourites"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  
+{% endblock %}

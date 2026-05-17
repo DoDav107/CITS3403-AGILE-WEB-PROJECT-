@@ -1,0 +1,41 @@
+<nav class="navbar navbar-expand-md bg-white border-bottom sticky-top">
+  <div class="container py-2">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('main.page_html', page_name='index') }}">
+      <span class="badge rounded-pill text-bg-dark">BS</span>
+      <strong>BiteScout</strong>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link {% if page == 'browse' %}active{% endif %}" href="{{ url_for('main.page_html', page_name='browse') }}">Browse</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if page == 'recommendations' %}active{% endif %}" href="{{ url_for('main.page_html', page_name='recommendations') }}">Recommendations</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if page == 'favourites' %}active{% endif %}" href="{{ url_for('main.page_html', page_name='favourites') }}">Favourites</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if page == 'about' %}active{% endif %}" href="{{ url_for('main.page_html', page_name='about') }}">About</a>
+        </li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        {% if session_user %}
+          <a class="btn btn-outline-dark btn-sm profile-nav-link" href="{{ url_for('main.page_html', page_name='profile') }}">
+            {% if session_user.avatar_url %}
+              <img class="profile-avatar-xs" src="{{ session_user.avatar_url }}" alt="">
+            {% endif %}
+            {{ session_user.name.split()[0] if session_user.name else "User" }}'s profile
+          </a>
+          <a class="btn btn-primary btn-sm" href="{{ url_for('main.page_html', page_name='logout') }}">Log out</a>
+        {% else %}
+          <a class="btn btn-outline-dark btn-sm {% if page == 'login' %}active{% endif %}" href="{{ url_for('main.page_html', page_name='login') }}">Log in</a>
+          <a class="btn btn-primary btn-sm {% if page == 'signup' %}active{% endif %}" href="{{ url_for('main.page_html', page_name='signup') }}">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</nav>

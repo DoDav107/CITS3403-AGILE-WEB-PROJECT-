@@ -184,6 +184,16 @@ class BiteScoutIntegrationTests(unittest.TestCase):
         self.assertIn(b"BiteScout", response.data)
         self.assertIn(b"Find your next favorite bite", response.data)
 
+    def test_pages_are_rendered_with_shared_jinja_shell(self):
+        response = self.client.get("/login.html")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"<nav", response.data)
+        self.assertIn(b"site-footer", response.data)
+        self.assertIn(b'data-page="login"', response.data)
+        self.assertNotIn(b'id="site-header"', response.data)
+        self.assertNotIn(b'id="site-footer"', response.data)
+
     def test_browse_page_is_served(self):
         response = self.client.get("/browse.html")
 

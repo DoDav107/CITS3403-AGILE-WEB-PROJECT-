@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set page = "favourites" %}
+{% block title %}BiteScout | Favourites{% endblock %}
+{% block content %}
+    
+<section class="py-5 page-banner border-bottom">
+  <div class="container">
+    <p class="eyebrow mb-2">Saved for later</p>
+    <h1 class="fw-bold mb-3">My favourites</h1>
+    <p class="text-secondary mb-0">Return to restaurants and cafes you want to revisit.</p>
+  </div>
+</section>
+<section class="py-4">
+  <div class="container">
+    <div class="glass-card p-4">
+      <h2 class="h4 fw-bold mb-3">Saved places</h2>
+      <div id="favouriteRestaurants"></div>
+    </div>
+  </div>
+</section>
+
+  
+{% endblock %}

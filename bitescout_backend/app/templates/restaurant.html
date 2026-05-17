@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set page = "restaurant" %}
+{% block title %}BiteScout | Restaurant details{% endblock %}
+{% block content %}
+    
+<section class="py-5 page-banner border-bottom">
+  <div class="container" id="restaurantHero"></div>
+</section>
+<section class="py-4">
+  <div class="container">
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="glass-card p-4 mb-4" id="restaurantAbout"></div>
+        <div class="glass-card p-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2 class="h4 fw-bold mb-0">Community reviews</h2>
+            <a href="write-review.html" class="btn btn-sm btn-outline-dark">Add review</a>
+          </div>
+          <div id="restaurantReviews"></div>
+        </div>
+      </div>
+      <div class="col-lg-4">
+        <div class="glass-card p-4 mb-4" id="restaurantSidebar"></div>
+        <div class="glass-card p-4">
+          <h3 class="h5 fw-bold">Quick actions</h3>
+          <div class="d-grid gap-2">
+            <button id="saveRestaurantBtn" class="btn btn-primary">Save to favourites</button>
+            <a class="btn btn-outline-dark" href="browse.html">Back to browse</a>
+          </div>
+          <div id="saveRestaurantMessage" class="small mt-3"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+  
+{% endblock %}
