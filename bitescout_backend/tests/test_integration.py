@@ -63,6 +63,9 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             self.assertEqual(app.config["SQLALCHEMY_DATABASE_URI"], f"sqlite:///{database_path}")
             self.assertEqual(app.config["GEMINI_API_KEY"], "test-gemini-key")
         finally:
+            with app.app_context():
+                db.session.remove()
+                db.engine.dispose()
             temp_dir.cleanup()
 
     def setUp(self):
@@ -117,6 +120,9 @@ class BiteScoutIntegrationTests(unittest.TestCase):
             self.assertTrue(app.config["SECRET_KEY"])
             self.assertNotEqual(app.config["SECRET_KEY"], "dev-change-me")
         finally:
+            with app.app_context():
+                db.session.remove()
+                db.engine.dispose()
             temp_dir.cleanup()
 
     def test_run_module_does_not_enable_debug_unconditionally(self):
