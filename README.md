@@ -49,10 +49,40 @@ http://127.0.0.1:5000/browse.html
 http://127.0.0.1:5000/recommendations.html
 http://127.0.0.1:5000/places-request.html
 
-# How to run the test
+## How to Run Tests
 
-From `bitescout_backend`:
+All commands below should be run from the `bitescout_backend` directory.
 
-```python
+### Run all tests
+
+```bash
 python -m unittest discover -s tests -p "test_*.py" --buffer
 ```
+
+### Test suites
+
+The project contains three test files under `bitescout_backend/tests/`:
+
+| File | Type | Count | Description |
+|------|------|-------|-------------|
+| `test_unit.py` | Unit | 7 | Fast, isolated tests for pure helper functions (no database or HTTP). Covers Google Places payload building, deduplication, and API key validation. |
+| `test_integration.py` | Integration | 31 | Tests the full Flask application with a temporary SQLite database. Covers authentication, CSRF protection, reviews, favourites, restaurant CRUD, password reset, and configuration loading. |
+| `test_selenium.py` | End-to-end | 7 | Browser tests against a live Flask server using Selenium + headless Chrome. Covers page loading, login flow, and UI element presence. |
+
+### Running individual suites
+
+```bash
+# Unit tests only
+python -m unittest tests.test_unit -v
+
+# Integration tests only
+python -m unittest tests.test_integration -v
+
+# Selenium end-to-end tests only (requires Google Chrome)
+python -m unittest tests.test_selenium -v
+```
+
+### Prerequisites for Selenium tests
+
+- **Google Chrome** must be installed (Selenium 4 auto-manages chromedriver).
+- To **skip** Selenium tests, set the environment variable `SKIP_SELENIUM=1`.
