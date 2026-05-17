@@ -2,7 +2,7 @@
 
 BiteScout is a restaurant discovery and review web application created for our **CITS3403 Agile Web Development** group project. It is designed to help users find places to eat through restaurant browsing, reviews, favourites, and location-based discovery features.
 
-Finished Sun May 17 8:40
+Finished Sun May 17 8:39 PM
 
 
 
