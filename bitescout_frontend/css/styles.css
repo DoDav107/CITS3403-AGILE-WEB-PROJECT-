@@ -3256,3 +3256,261 @@ body:not([data-page="home"]) main b {
 .hero-premium .text-gold {
   color: transparent !important;
 }
+
+/* Global light/dark theme controls. Keep this block last so every page path obeys the same mode. */
+.theme-toggle {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  gap: 0.35rem;
+  min-height: 31px;
+}
+
+.theme-toggle-icon {
+  align-items: center;
+  display: inline-flex;
+}
+
+.theme-toggle[data-active-theme="light"] .theme-toggle-icon-light,
+.theme-toggle[data-active-theme="dark"] .theme-toggle-icon-dark {
+  display: none;
+}
+
+body[data-theme="dark"] {
+  color: rgba(255, 250, 240, 0.9);
+  background:
+    radial-gradient(circle at 15% 10%, rgba(255, 159, 67, 0.12), transparent 30%),
+    radial-gradient(circle at 85% 12%, rgba(0, 184, 148, 0.09), transparent 34%),
+    linear-gradient(135deg, #0a0a0a 0%, #15100d 46%, #071d19 100%);
+  animation: none;
+}
+
+body[data-theme="dark"]::before {
+  opacity: 0.07;
+  mix-blend-mode: screen;
+}
+
+body[data-theme="dark"]::after {
+  opacity: 0.2;
+  filter: saturate(0.95) brightness(0.72);
+}
+
+body[data-theme="dark"] .navbar {
+  background:
+    linear-gradient(135deg, rgba(12, 10, 9, 0.96), rgba(30, 22, 16, 0.9)),
+    radial-gradient(circle at 90% 8%, rgba(212, 175, 55, 0.12), transparent 32%) !important;
+  border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.42);
+}
+
+body[data-theme="dark"] .navbar.scrolled {
+  background: rgba(10, 10, 10, 0.97) !important;
+  border-bottom-color: rgba(212, 175, 55, 0.24) !important;
+}
+
+body[data-theme="dark"] .navbar-brand,
+body[data-theme="dark"] .navbar-brand strong,
+body[data-theme="dark"] .navbar-nav .nav-link {
+  color: rgba(255, 250, 240, 0.88) !important;
+}
+
+body[data-theme="dark"] .navbar-nav .nav-link:hover,
+body[data-theme="dark"] .navbar-nav .nav-link.active {
+  background: rgba(212, 175, 55, 0.12);
+  color: #f1cc5f !important;
+}
+
+body[data-theme="dark"] .navbar-brand .badge {
+  background: linear-gradient(135deg, #f1cc5f, #d4af37) !important;
+  color: #0a0a0a !important;
+}
+
+body[data-theme="dark"] .navbar-collapse.show,
+body[data-theme="dark"] .navbar-collapse.collapsing {
+  background: linear-gradient(135deg, rgba(15, 13, 12, 0.98), rgba(31, 24, 19, 0.96));
+  border-color: rgba(212, 175, 55, 0.18);
+}
+
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5,
+body[data-theme="dark"] h6,
+body[data-theme="dark"] .section-title,
+body[data-theme="dark"] .cta-title,
+body[data-theme="dark"] .fw-bold,
+body[data-theme="dark"] strong,
+body[data-theme="dark"] b,
+body[data-theme="dark"] main,
+body[data-theme="dark"] body:not([data-page="home"]) main {
+  color: rgba(255, 250, 240, 0.94) !important;
+}
+
+body[data-theme="dark"] .text-secondary,
+body[data-theme="dark"] .text-muted,
+body[data-theme="dark"] small,
+body[data-theme="dark"] .small,
+body[data-theme="dark"] .footer-note,
+body[data-theme="dark"] .review-meta,
+body[data-theme="dark"] .profile-bio,
+body[data-theme="dark"] .cta-subtitle,
+body[data-theme="dark"] .stat-label,
+body[data-theme="dark"] .testimonial-text {
+  color: rgba(255, 250, 240, 0.66) !important;
+}
+
+body[data-theme="dark"] .eyebrow,
+body[data-theme="dark"] .page-banner .eyebrow,
+body[data-theme="dark"] .link-gold,
+body[data-theme="dark"] .stat-number,
+body[data-theme="dark"] .testimonial-stars {
+  color: #f1cc5f !important;
+}
+
+body[data-theme="dark"] .page-banner,
+body[data-theme="dark"] .hero-section,
+body[data-theme="dark"]:not([data-page="home"]) .page-banner,
+body[data-theme="dark"][data-page="write-review"] main > section:first-child,
+body[data-theme="dark"][data-page="edit-review"] main > section:first-child {
+  background:
+    linear-gradient(115deg, rgba(10, 10, 10, 0.9), rgba(31, 24, 19, 0.82), rgba(7, 29, 25, 0.72)),
+    url("https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&q=80&w=1600");
+  background-size: cover;
+  background-position: center;
+  background-blend-mode: multiply;
+  border-bottom-color: rgba(212, 175, 55, 0.18) !important;
+}
+
+body[data-theme="dark"] .section-top-rated,
+body[data-theme="dark"] .section-testimonials,
+body[data-theme="dark"] .section-how,
+body[data-theme="dark"] .stats-bar,
+body[data-theme="dark"] .section-cta,
+body[data-theme="dark"] .site-footer,
+body[data-theme="dark"]:not([data-page="home"]) main > section:not(.hero-premium) {
+  background:
+    linear-gradient(135deg, rgba(16, 14, 13, 0.82), rgba(33, 25, 19, 0.72)),
+    radial-gradient(circle at 15% 10%, rgba(212, 175, 55, 0.1), transparent 32%),
+    radial-gradient(circle at 90% 80%, rgba(0, 184, 148, 0.08), transparent 28%);
+}
+
+body[data-theme="dark"] .restaurant-card,
+body[data-theme="dark"] .dish-card,
+body[data-theme="dark"] .review-card,
+body[data-theme="dark"] .favorite-card,
+body[data-theme="dark"] .how-card,
+body[data-theme="dark"] .testimonial-card,
+body[data-theme="dark"] .glass-card,
+body[data-theme="dark"] .auth-card,
+body[data-theme="dark"] .profile-bar,
+body[data-theme="dark"] .empty-state,
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .list-group-item,
+body[data-theme="dark"] .modal-content,
+body[data-theme="dark"] #bitescout-chatbot .chat-window,
+body[data-theme="dark"] .accordion-item,
+body[data-theme="dark"] .accordion-button {
+  background:
+    linear-gradient(145deg, rgba(28, 24, 21, 0.9), rgba(18, 16, 14, 0.86)),
+    radial-gradient(circle at 100% 0%, rgba(212, 175, 55, 0.08), transparent 30%);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: rgba(255, 250, 240, 0.9);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+body[data-theme="dark"] .restaurant-card:hover,
+body[data-theme="dark"] .dish-card:hover,
+body[data-theme="dark"] .review-card:hover,
+body[data-theme="dark"] .favorite-card:hover,
+body[data-theme="dark"] .glass-card:hover,
+body[data-theme="dark"] .profile-bar:hover {
+  border-color: rgba(212, 175, 55, 0.32);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(212, 175, 55, 0.08);
+}
+
+body[data-theme="dark"] .form-control,
+body[data-theme="dark"] .form-select,
+body[data-theme="dark"] .chat-input,
+body[data-theme="dark"] .input-group-text {
+  background: rgba(10, 10, 10, 0.56);
+  border-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 250, 240, 0.92);
+}
+
+body[data-theme="dark"] .form-control:focus,
+body[data-theme="dark"] .form-select:focus,
+body[data-theme="dark"] .chat-input:focus {
+  background: rgba(15, 14, 13, 0.86);
+  border-color: #d4af37;
+  box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.18), 0 10px 28px rgba(0, 0, 0, 0.3);
+  color: rgba(255, 250, 240, 0.94);
+}
+
+body[data-theme="dark"] .form-control::placeholder {
+  color: rgba(255, 250, 240, 0.46);
+}
+
+body[data-theme="dark"] .form-label,
+body[data-theme="dark"] .auth-card .form-label,
+body[data-theme="dark"] .auth-form .form-label,
+body[data-theme="dark"] .field-hint,
+body[data-theme="dark"] .auth-card .form-text,
+body[data-theme="dark"] .auth-card .text-secondary {
+  color: rgba(255, 250, 240, 0.78) !important;
+}
+
+body[data-theme="dark"] .btn-outline-dark,
+body[data-theme="dark"] .btn-outline-light,
+body[data-theme="dark"] .btn-outline-primary,
+body[data-theme="dark"] .theme-toggle {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 250, 240, 0.22);
+  color: rgba(255, 250, 240, 0.9);
+}
+
+body[data-theme="dark"] .btn-outline-dark:hover,
+body[data-theme="dark"] .btn-outline-light:hover,
+body[data-theme="dark"] .btn-outline-primary:hover,
+body[data-theme="dark"] .theme-toggle:hover {
+  background: rgba(212, 175, 55, 0.14);
+  border-color: rgba(212, 175, 55, 0.42);
+  color: #fffaf0;
+}
+
+body[data-theme="dark"] .rating-pill,
+body[data-theme="dark"] .price-pill,
+body[data-theme="dark"] .distance-pill,
+body[data-theme="dark"] .cuisine-pill,
+body[data-theme="dark"] .badge-soft,
+body[data-theme="dark"] .profile-bar-meta span,
+body[data-theme="dark"] .profile-cuisine-link {
+  background: rgba(212, 175, 55, 0.12);
+  border-color: rgba(212, 175, 55, 0.22);
+  color: #f6da82;
+}
+
+body[data-theme="dark"] .chat-header {
+  background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(0, 184, 148, 0.08));
+}
+
+body[data-theme="dark"] .chat-msg.ai {
+  background: rgba(255, 250, 240, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 250, 240, 0.9);
+}
+
+body[data-theme="dark"] .chat-msg.user {
+  background: rgba(212, 175, 55, 0.16);
+  border-color: rgba(212, 175, 55, 0.22);
+  color: rgba(255, 250, 240, 0.92);
+}
+
+body[data-theme="dark"] .hero-premium,
+body[data-theme="dark"] .hero-premium .hero-title,
+body[data-theme="dark"] .hero-premium .hero-subtitle,
+body[data-theme="dark"] .hero-premium .btn-outline-light,
+body[data-theme="dark"] .hero-premium .btn-outline-light:hover,
+body[data-theme="dark"] .hero-premium .btn-outline-light:focus {
+  color: #fffdf8 !important;
+}

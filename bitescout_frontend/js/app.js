@@ -67,8 +67,51 @@
 
   const STORAGE_KEYS = {
     userLocation: 'bitescout_user_location',
-    recentSearches: 'bitescout_recent_searches'
+    recentSearches: 'bitescout_recent_searches',
+    theme: 'bitescout_theme'
   };
+  const SUPPORTED_THEMES = new Set(['light', 'dark']);
+
+  function normalizeTheme(value) {
+    return SUPPORTED_THEMES.has(value) ? value : 'light';
+  }
+
+  function readStoredTheme() {
+    if (typeof localStorage === 'undefined') return '';
+
+    try {
+      return localStorage.getItem(STORAGE_KEYS.theme) || '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  function writeStoredTheme(theme) {
+    if (typeof localStorage === 'undefined') return;
+
+    try {
+      localStorage.setItem(STORAGE_KEYS.theme, theme);
+    } catch (error) {
+      // Storage can be unavailable in private or restricted browser contexts.
+    }
+  }
+
+  function resolveInitialTheme() {
+    return normalizeTheme(readStoredTheme() || 'light');
+  }
+
+  function applyDocumentTheme(theme, persist = true) {
+    const normalizedTheme = normalizeTheme(theme);
+    if (typeof document === 'undefined') return normalizedTheme;
+
+    document.documentElement.setAttribute('data-theme', normalizedTheme);
+    document.documentElement.setAttribute('data-bs-theme', normalizedTheme);
+    if (document.body) document.body.setAttribute('data-theme', normalizedTheme);
+    if (persist) writeStoredTheme(normalizedTheme);
+    return normalizedTheme;
+  }
+
+  applyDocumentTheme(resolveInitialTheme(), false);
 
   const DEFAULT_AVATAR_ID = 'avatar-scout';
   const AVATAR_PRESETS = [
@@ -242,6 +285,7 @@
     },
 
     async init() {
+      this.applyTheme(this.getTheme(), false);
       await this.bootstrap();
       this.renderLayout();
       this.initChatbot();
@@ -432,6 +476,7 @@
                   ${this.navLink('about.html', 'About')}
                 </ul>
                 <div class="d-flex align-items-center gap-2">
+                  ${this.themeToggleMarkup()}
                   ${user ? `<a class="btn btn-outline-dark btn-sm profile-nav-link" href="profile.html"><img class="profile-avatar-xs" src="${userAvatar}" alt="">${firstName}'s profile</a><a class="btn btn-primary btn-sm" href="logout.html">Log out</a>` : `<a class="btn btn-outline-dark btn-sm" href="login.html">Log in</a><a class="btn btn-primary btn-sm" href="signup.html">Sign up</a>`}
                 </div>
               </div>
@@ -491,6 +536,65 @@
       }
       
       this.highlightActiveNav();
+      this.bindThemeToggle();
+    },
+
+    getTheme() {
+      const current = typeof document !== 'undefined'
+        ? document.documentElement.getAttribute('data-theme')
+        : '';
+      return normalizeTheme(current || readStoredTheme() || 'light');
+    },
+
+    applyTheme(theme, persist = true) {
+      const appliedTheme = applyDocumentTheme(theme, persist);
+      this.updateThemeControls(appliedTheme);
+      return appliedTheme;
+    },
+
+    toggleTheme() {
+      const nextTheme = this.getTheme() === 'dark' ? 'light' : 'dark';
+      return this.applyTheme(nextTheme);
+    },
+
+    themeToggleMarkup() {
+      return `
+        <button class="btn btn-outline-dark btn-sm theme-toggle" type="button" data-theme-toggle aria-label="Toggle color theme">
+          <span class="theme-toggle-icon theme-toggle-icon-light" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"></circle>
+              <path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path>
+            </svg>
+          </span>
+          <span class="theme-toggle-icon theme-toggle-icon-dark" aria-hidden="true">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 3a6 6 0 0 0 9 7.4A9 9 0 1 1 12 3z"></path>
+            </svg>
+          </span>
+          <span class="theme-toggle-label">Dark</span>
+        </button>
+      `;
+    },
+
+    bindThemeToggle() {
+      this.updateThemeControls(this.getTheme());
+      document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+        button.onclick = () => this.toggleTheme();
+      });
+    },
+
+    updateThemeControls(theme = this.getTheme()) {
+      if (typeof document === 'undefined') return;
+
+      const normalizedTheme = normalizeTheme(theme);
+      const nextTheme = normalizedTheme === 'dark' ? 'light' : 'dark';
+      document.querySelectorAll('[data-theme-toggle]').forEach(button => {
+        button.dataset.activeTheme = normalizedTheme;
+        button.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+        button.setAttribute('title', `Switch to ${nextTheme} mode`);
+        const label = button.querySelector('.theme-toggle-label');
+        if (label) label.textContent = nextTheme === 'dark' ? 'Dark' : 'Light';
+      });
     },
 
     renderAmbientMotion() {
